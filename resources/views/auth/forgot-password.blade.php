@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Login - Portal ERP</title>
+    <title>Forgot Password - Portal ERP</title>
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -17,14 +17,13 @@
 
         <div class="erp-login-card">
 
-            {{-- Header --}}
             <div class="erp-login-header">
 
                 <div class="erp-login-brand">
-                    <h1>Welcome Back!</h1>
+                    <h1>Forgot Password?</h1>
 
                     <p>
-                        Sign in to continue to Portal ERP.
+                        Enter your email to receive a password reset link.
                     </p>
                 </div>
 
@@ -32,8 +31,13 @@
 
             </div>
 
-            {{-- Form --}}
             <div class="erp-login-body">
+
+                @if (session('status'))
+                    <div class="erp-login-success">
+                        {{ session('status') }}
+                    </div>
+                @endif
 
                 @if ($errors->any())
                     <div class="erp-login-error">
@@ -41,7 +45,7 @@
                     </div>
                 @endif
 
-                <form method="POST" action="{{ route('login') }}">
+                <form method="POST" action="{{ route('password.email') }}">
 
                     @csrf
 
@@ -67,69 +71,24 @@
 
                     </div>
 
-                    <div class="erp-form-group">
-
-                        <label
-                            for="password"
-                            class="erp-form-label"
-                        >
-                            Password
-                        </label>
-
-                        <input
-                            type="password"
-                            id="password"
-                            name="password"
-                            class="erp-form-input"
-                            placeholder="Enter your password"
-                            required
-                        >
-
-                    </div>
-
-                    <div class="erp-login-options">
-
-                        <label class="erp-checkbox-wrapper">
-
-                            <input
-                                type="checkbox"
-                                name="remember"
-                                class="erp-checkbox"
-                            >
-
-                            <span>Remember me</span>
-
-                        </label>
-
-                        <a
-    href="{{ route('password.request') }}"
-    class="erp-forgot-link"
->
-    Forgot password?
-</a>
-
-                    </div>
-
                     <button
                         type="submit"
                         class="erp-login-button"
                     >
-                        Log In
+                        Send Reset Link
                     </button>
 
                 </form>
 
             </div>
 
-            {{-- Footer --}}
             <div class="erp-login-footer">
 
                 <p>
-                    Don't have an account?
-                   <a href="https://wa.me/994993051511?text=Salam%2C%20m%C9%99n%20administratorla%20%C9%99laq%C9%99%20saxlamaq%20ist%C9%99yir%C9%99m"
-   target="_blank" rel="noopener noreferrer">
-    Contact administrator
-</a>
+                    Remember your password?
+                    <a href="{{ route('login') }}">
+                        Back to login
+                    </a>
                 </p>
 
                 <p class="erp-login-copyright">
