@@ -20,9 +20,21 @@ Route::post('/logout', [LoginController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
-    Route::get('/dashboard', function () {
-    return view('dashboard.index');
-})->middleware('auth')->name('dashboard');
+use App\Http\Controllers\AccountingController;
+use App\Services\PortalWebsiteService;
+
+Route::middleware('auth')->group(function () {
+    Route::get('/dashboard', function (PortalWebsiteService $portalService) {
+        $report = $portalService->getAccountingReport(['month' => date('Y-m')]);
+        return view('dashboard.index', [
+            'summary' => $report['summary'] ?? [],
+            'connected' => $report['connected'] ?? false,
+        ]);
+    })->name('dashboard');
+
+    Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.index');
+    Route::get('/accounting/export', [AccountingController::class, 'export'])->name('accounting.export');
+});
 
 Route::get('/forgot-password', [ForgotPasswordController::class, 'showLinkRequestForm'])
     ->middleware('guest')

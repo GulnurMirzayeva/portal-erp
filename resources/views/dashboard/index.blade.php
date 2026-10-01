@@ -103,8 +103,8 @@
                     <div class="card-body">
                         <div class="d-flex">
                             <div class="flex-grow-1">
-                                <p class="text-muted font-weight-500 font-size-13 mb-2">Ümumi Satışlar</p>
-                                <h4 class="mb-0 font-weight-700 font-size-20">—</h4>
+                                <p class="text-muted font-weight-500 font-size-13 mb-2">Bu Ay Satışlar</p>
+                                <h4 class="mb-0 font-weight-700 font-size-20">{{ number_format($summary['total_sales'] ?? 0) }}</h4>
                             </div>
                             <div class="avatar-sm rounded-circle bg-primary align-self-center mini-stat-icon">
                                 <span class="avatar-title rounded-circle bg-primary">
@@ -125,8 +125,8 @@
                     <div class="card-body">
                         <div class="d-flex">
                             <div class="flex-grow-1">
-                                <p class="text-muted font-weight-500 font-size-13 mb-2">Ümumi Gəlir</p>
-                                <h4 class="mb-0 font-weight-700 font-size-20">— ₼</h4>
+                                <p class="text-muted font-weight-500 font-size-13 mb-2">Aylıq Dövriyyə</p>
+                                <h4 class="mb-0 font-weight-700 font-size-20 text-success">{{ number_format($summary['total_revenue'] ?? 0, 2) }} ₼</h4>
                             </div>
                             <div class="avatar-sm rounded-circle bg-primary align-self-center mini-stat-icon">
                                 <span class="avatar-title rounded-circle bg-primary">
@@ -147,7 +147,7 @@
                         <div class="d-flex">
                             <div class="flex-grow-1">
                                 <p class="text-muted font-weight-500 font-size-13 mb-2">Orta Qiymət</p>
-                                <h4 class="mb-0 font-weight-700 font-size-20">— ₼</h4>
+                                <h4 class="mb-0 font-weight-700 font-size-20">{{ number_format($summary['average_price'] ?? 0, 2) }} ₼</h4>
                             </div>
                             <div class="avatar-sm rounded-circle bg-primary align-self-center mini-stat-icon">
                                 <span class="avatar-title rounded-circle bg-primary">
@@ -168,37 +168,26 @@
             <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <h4 class="card-title m-0 font-size-15 font-weight-600">
-                        🚀 ERP İnteqrasiyası və Növbəti Addımlar
+                        📊 Mühasibatlıq və 32 Sütunlu Hesabat
                     </h4>
-                    <span class="badge bg-soft-primary text-primary font-size-12 px-2 py-1">Struktur Hazırdır</span>
+                    <span class="badge {{ $connected ? 'bg-success' : 'bg-soft-warning text-dark' }} font-size-12 px-2 py-1">
+                        {{ $connected ? '✓ API Qoşuldu' : '⏳ API Gözlənilir' }}
+                    </span>
                 </div>
 
                 <p class="text-muted font-size-13 mb-4">
-                    Dashboard, sidebar naviqasiyası və navbar infrastrukturu Skote üslubuna uyğun olaraq quruldu. İndi növbəti addım kimi PortalWebsite ilə API əlaqəsini təmin edib mühasibatlıq (32-sütunlu cədvəl və bonus) məlumatlarını buraya daşıya bilərik.
+                    PortalWebsite ilə təhlükəsiz API əlaqəsi quruldu. Buxalteriyanın tələb etdiyi 32 sütunlu hesabat cədvəli (satışlar, 00:00 gecə seansı bonusları, PlusBir nailiyyətləri və ödənişlər) ERP sistemində canlı izlənilə və Excel/CSV kimi ixrac edilə bilər.
                 </p>
 
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="step-card p-3 border rounded-3 bg-light">
-                            <div class="step-num badge bg-success mb-2">1. Tamamlandı</div>
-                            <h6 class="font-size-14 font-weight-600 mb-1">Layout & Struktur</h6>
-                            <p class="text-muted font-size-12 mb-0">Responsive Navbar, Sidebar, Dropdown menyular və Skote dizaynı quruldu.</p>
-                        </div>
+                <div class="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-light">
+                    <div>
+                        <h6 class="font-size-14 font-weight-700 mb-1 text-dark">32 Sütunlu Mühasibatlıq Cədvəlinə Keçid</h6>
+                        <p class="text-muted font-size-12 mb-0">Bütün filialların və işçilərin detallı satış və bonus statistikasına baxın.</p>
                     </div>
-                    <div class="col-md-4">
-                        <div class="step-card p-3 border rounded-3 bg-light border-primary-dashed">
-                            <div class="step-num badge bg-primary mb-2">2. Növbəti Addım</div>
-                            <h6 class="font-size-14 font-weight-600 mb-1">API Əlaqəsi</h6>
-                            <p class="text-muted font-size-12 mb-0">PortalWebsite və PortalErp arasında təhlükəsiz Bearer Token / API əlaqəsi.</p>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="step-card p-3 border rounded-3 bg-light">
-                            <div class="step-num badge bg-secondary mb-2">3. Son Addım</div>
-                            <h6 class="font-size-14 font-weight-600 mb-1">Mühasibatlıq Hesabatı</h6>
-                            <p class="text-muted font-size-12 mb-0">32 sütunlu satış cədvəli, PlusBir və 00:00 bonus məlumatlarının ERP-də əksi.</p>
-                        </div>
-                    </div>
+                    <a href="{{ route('accounting.index') }}" class="btn btn-primary btn-sm font-size-13 px-3 py-2">
+                        Hesabata Keç
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="ms-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                    </a>
                 </div>
             </div>
         </div>

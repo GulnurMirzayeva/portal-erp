@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'portal_website' => [
+        'url' => env('PORTAL_WEBSITE_API_URL', 'https://portal.land'),
+        'token' => env('PORTAL_WEBSITE_API_TOKEN', 'portal_erp_sec_2026_9a8b7c6d5e4f3a2b1c'),
+    ],
+
 ];
