@@ -134,7 +134,7 @@ class AccountingController extends Controller
     /**
      * Mühasibin Excel xanalarında etdiyi dəyişiklikləri həqiqi verilənlər bazasında (DB) yeniləyir.
      */
-    public function save(Request $request)
+    public function save(Request $request, PortalWebsiteService $portalService)
     {
         $request->validate([
             'branch_id' => 'required',
@@ -147,9 +147,20 @@ class AccountingController extends Controller
         $sales = $request->input('sales');
         $summary = $this->calculateSummary($sales);
 
-        // 1. portalGamesWebsite bazasında real cədvəli (sales və reservations) həqiqətən UPDATE edirik
         $updatedDbCount = 0;
+        $apiErrors = [];
+
+        // 1. Əvvəlcə əsas PortalWebsite API vasitəsilə əsas verilənlər bazasını yeniləyirik
+        $apiResult = $portalService->updateSales($sales);
+        if ($apiResult['success']) {
+            $updatedDbCount = $apiResult['updated_count'];
+        } else {
+            $apiErrors[] = $apiResult['message'] ?? 'API ilə yeniləmə baş tutmadı';
+        }
+
+        // 2. Əgər API ilə yenilənməyibsə və ya lokal DB əlaqəsi aktivdirsə, birbaşa DB connection vasitəsilə də yeniləyirik
         try {
+            $directDbUpdated = 0;
             foreach ($sales as $row) {
                 $saleId = $row['id'] ?? null;
                 if ($saleId && is_numeric($saleId)) {
@@ -163,7 +174,7 @@ class AccountingController extends Controller
                     }
 
                     // Saat
-                    if (!empty($row['time'])) {
+                    if (!empty($row['time']) && $row['time'] !== '—') {
                         try {
                             $updateFields['reservation_time'] = Carbon::parse($row['time'])->format('H:i:s');
                         } catch (\Exception $e) {}
@@ -172,6 +183,7 @@ class AccountingController extends Controller
                     // Say və Qiymət
                     if (isset($row['player_count'])) {
                         $updateFields['player_count'] = (int)$row['player_count'];
+                        $updateFields['actual_player_count'] = (int)$row['player_count'];
                     }
                     if (isset($row['price_per_person'])) {
                         $updateFields['price_per_person'] = (float)$row['price_per_person'];
@@ -191,6 +203,7 @@ class AccountingController extends Controller
                     // Qeyd və Endirim
                     if (isset($row['note'])) {
                         $updateFields['note'] = (string)$row['note'];
+                        $updateFields['team_review'] = (string)$row['note'];
                     }
                     if (isset($row['discount_note'])) {
                         $updateFields['discount_type'] = (string)$row['discount_note'];
@@ -209,7 +222,7 @@ class AccountingController extends Controller
                         ->update($updateFields);
 
                     if ($affected) {
-                        $updatedDbCount++;
+                        $directDbUpdated++;
                     }
 
                     // Müştəri nömrəsi varsa, əlaqəli rezervasiyanı da yeniləyirik
@@ -225,11 +238,15 @@ class AccountingController extends Controller
                     }
                 }
             }
+
+            if ($updatedDbCount === 0 && $directDbUpdated > 0) {
+                $updatedDbCount = $directDbUpdated;
+            }
         } catch (\Exception $e) {
-            Log::error("Real database update error: " . $e->getMessage());
+            Log::warning("Direct database update fallback error: " . $e->getMessage());
         }
 
-        // 2. ERP sisteminin özündə də AccountingRecord-u yeniləyirik
+        // 3. ERP sisteminin özündə də AccountingRecord-u yeniləyirik
         $record = AccountingRecord::updateOrCreate(
             [
                 'branch_id' => $branchId,
@@ -244,10 +261,13 @@ class AccountingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Məlumatlar bazada (DB) və sistemdə həqiqətən yeniləndi!",
+            'message' => $updatedDbCount > 0
+                ? "Məlumatlar əsas Portal bazasında ({$updatedDbCount} satış) və ERP sistemində uğurla yeniləndi!"
+                : "Məlumatlar ERP sistemində yadda saxlanıldı.",
             'saved_at' => $record->updated_at->format('d.m.Y H:i'),
             'summary' => $summary,
             'db_updated' => $updatedDbCount,
+            'api_errors' => $apiErrors,
         ]);
     }
 

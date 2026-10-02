@@ -121,4 +121,45 @@ class PortalWebsiteService
             ];
         }
     }
+
+    /**
+     * Mühasibin dəyişdirdiyi satış məlumatlarını PortalWebsite API vasitəsilə əsas bazada yeniləyir.
+     */
+    public function updateSales(array $sales): array
+    {
+        try {
+            $response = Http::timeout(25)
+                ->withHeaders([
+                    'X-ERP-API-KEY' => $this->apiToken,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("{$this->baseUrl}/api/erp/accounting-report/save", [
+                    'sales' => $sales,
+                ]);
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'updated_count' => $response->json('updated_count', 0),
+                    'message' => $response->json('message', 'Məlumatlar uğurla yeniləndi.'),
+                    'errors' => $response->json('errors', []),
+                ];
+            }
+
+            return [
+                'success' => false,
+                'updated_count' => 0,
+                'message' => 'API Xətası (' . $response->status() . '): ' . ($response->json('message') ?? 'Yeniləmək mümkün olmadı.'),
+            ];
+        } catch (Exception $e) {
+            Log::warning("PortalWebsite API updateSales error: " . $e->getMessage());
+
+            return [
+                'success' => false,
+                'updated_count' => 0,
+                'message' => 'Server ilə əlaqə xətası: ' . $e->getMessage(),
+            ];
+        }
+    }
 }
