@@ -54,7 +54,6 @@
             </div>
             <!-- End Page-content -->
 
-            @include('layouts.partials.footer')
         </div>
         <!-- end main content-->
 
