@@ -296,7 +296,7 @@
                 @php
                     $isActive = ($filterBranch == $b['id']);
                 @endphp
-                <a href="{{ route('accounting.index', ['branch_id' => $b['id'], 'month' => $filterMonth]) }}"
+                <a href="{{ route('accounting.index', ['branch_id' => $b['id']]) }}"
                    class="branch-pill {{ $isActive ? 'active' : '' }}">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 21h18"></path>
@@ -309,15 +309,6 @@
                     @endif
                 </a>
             @endforeach
-        </div>
-
-        {{-- Month Selector --}}
-        <div class="d-flex align-items-center gap-2 ps-3 border-start">
-            <label class="form-label m-0 font-size-12 font-weight-600 text-muted">Ay:</label>
-            <form method="GET" action="{{ route('accounting.index') }}" class="d-inline">
-                <input type="hidden" name="branch_id" value="{{ $filterBranch }}">
-                <input type="month" name="month" value="{{ $filterMonth }}" onchange="this.form.submit()" class="form-control form-control-sm font-size-12" style="width: 140px; height: 32px; border-radius: 4px;">
-            </form>
         </div>
     </div>
 </div>
@@ -333,12 +324,9 @@
             <line x1="3" y1="15" x2="21" y2="15"></line>
         </svg>
         <span>{{ $selectedBranchName }} — Elektron Qaimə</span>
-        <span class="badge" style="background: rgba(255,255,255,0.2); font-weight: normal; font-size: 11px;">
-            {{ \Carbon\Carbon::parse($filterMonth . '-01')->translatedFormat('F Y') }}
-        </span>
         @if($hasCustomEdits)
             <span class="badge bg-warning text-dark font-size-11" id="editedBadge">
-                ✏️ Yenilənib ({{ $lastSavedAt }})
+                ✏️ Yenilənib
             </span>
         @endif
     </div>
@@ -613,7 +601,6 @@
         <div class="d-flex align-items-center gap-3 text-muted font-size-12">
             <span>Sətir sayı: <strong id="rowCountDisplay">{{ count($sales) }}</strong></span>
             <span>Ümumi Dövriyyə: <strong class="text-success font-size-13" id="bottomRevDisplay">{{ number_format($summary['total_revenue'] ?? 0, 2) }} ₼</strong></span>
-            <span id="saveStatusIndicator" class="badge bg-light text-muted border">Bütün xanalar sinxronlaşdırılıb</span>
         </div>
     </div>
 </div>
@@ -670,8 +657,11 @@
         const btn = document.getElementById('saveSheetBtn');
         btn.classList.add('has-changes');
         document.getElementById('saveBtnText').innerText = '💾 Yadda Saxla *';
-        document.getElementById('saveStatusIndicator').className = 'badge bg-warning text-dark border';
-        document.getElementById('saveStatusIndicator').innerText = 'Yadda saxlanılmamış dəyişikliklər var';
+        const statusInd = document.getElementById('saveStatusIndicator');
+        if (statusInd) {
+            statusInd.className = 'badge bg-warning text-dark border';
+            statusInd.innerText = 'Yadda saxlanılmamış dəyişikliklər var';
+        }
     }
 
     function recalcRow(cell) {
@@ -828,8 +818,11 @@
                 isDirty = false;
                 saveBtn.classList.remove('has-changes');
                 document.getElementById('saveBtnText').innerText = 'Yadda Saxla (Ctrl+S)';
-                document.getElementById('saveStatusIndicator').className = 'badge bg-success text-white';
-                document.getElementById('saveStatusIndicator').innerText = 'Bazada yeniləndi (' + data.saved_at + ')';
+                const statusInd = document.getElementById('saveStatusIndicator');
+                if (statusInd) {
+                    statusInd.className = 'badge bg-success text-white';
+                    statusInd.innerText = 'Bazada yeniləndi (' + data.saved_at + ')';
+                }
 
                 // Remove dirty classes
                 document.querySelectorAll('.is-dirty').forEach(c => c.classList.remove('is-dirty'));
