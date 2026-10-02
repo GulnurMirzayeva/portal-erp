@@ -18,21 +18,24 @@
     .excel-container {
         background: #ffffff;
         border: 1px solid #d4d4d4;
-        border-radius: 6px;
+        border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.06);
         overflow: hidden;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     }
 
-    /* Green Excel Ribbon / Top Bar */
+    /* Green Excel Ribbon / Top Bar (Standalone action toolbar) */
     .excel-ribbon {
         background: #107c41;
         color: #ffffff;
-        padding: 8px 16px;
+        padding: 10px 18px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
+        margin-bottom: 12px;
     }
 
     .excel-ribbon-title {
@@ -129,9 +132,9 @@
     table.excel-table thead tr.cat-header th {
         font-size: 11px;
         font-weight: 700;
-        letter-spacing: 0.3px;
+        letter-spacing: 0.5px;
         text-align: center;
-        padding: 5px 6px;
+        padding: 7px 8px;
         color: #ffffff;
         position: sticky;
         top: 0;
@@ -144,25 +147,27 @@
         font-size: 10px;
         font-weight: 600;
         text-align: center;
-        padding: 2px 4px;
+        padding: 3px 4px;
         position: sticky;
-        top: 28px;
+        top: 31px;
         z-index: 14;
         border-top: 1px solid #d4d4d4;
+        border-bottom: 1px solid #d4d4d4;
     }
 
     table.excel-table thead tr.col-name-header th {
-        background: #e9ecef;
-        color: #343a40;
+        background: #f1f3f5;
+        color: #212529;
         font-size: 11px;
         font-weight: 700;
         text-align: center;
-        padding: 6px 8px;
+        padding: 7px 8px;
         position: sticky;
-        top: 48px;
+        top: 52px;
         z-index: 14;
         box-shadow: 0 1px 2px rgba(0,0,0,0.06);
     }
+
 
     /* Left row number header */
     td.row-idx-header {
@@ -317,102 +322,102 @@
     </div>
 </div>
 
-{{-- 2. Excel Workbook View (Direct Spreadsheet Grid) --}}
-<div class="excel-container mb-4">
-    {{-- Green Excel Ribbon Toolbar --}}
-    <div class="excel-ribbon">
-        <div class="excel-ribbon-title">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
-                <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="9" y1="3" x2="9" y2="21"></line>
-                <line x1="15" y1="3" x2="15" y2="21"></line>
-                <line x1="3" y1="9" x2="21" y2="9"></line>
-                <line x1="3" y1="15" x2="21" y2="15"></line>
-            </svg>
-            <span>{{ $selectedBranchName }} — Elektron Qaimə</span>
-            <span class="badge" style="background: rgba(255,255,255,0.2); font-weight: normal; font-size: 11px;">
-                {{ \Carbon\Carbon::parse($filterMonth . '-01')->translatedFormat('F Y') }}
+{{-- 2. Excel Ribbon Toolbar (Dedicated Action Bar) --}}
+<div class="excel-ribbon mb-3">
+    <div class="excel-ribbon-title">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="9" y1="3" x2="9" y2="21"></line>
+            <line x1="15" y1="3" x2="15" y2="21"></line>
+            <line x1="3" y1="9" x2="21" y2="9"></line>
+            <line x1="3" y1="15" x2="21" y2="15"></line>
+        </svg>
+        <span>{{ $selectedBranchName }} — Elektron Qaimə</span>
+        <span class="badge" style="background: rgba(255,255,255,0.2); font-weight: normal; font-size: 11px;">
+            {{ \Carbon\Carbon::parse($filterMonth . '-01')->translatedFormat('F Y') }}
+        </span>
+        @if($hasCustomEdits)
+            <span class="badge bg-warning text-dark font-size-11" id="editedBadge">
+                ✏️ Yenilənib ({{ $lastSavedAt }})
             </span>
-            @if($hasCustomEdits)
-                <span class="badge bg-warning text-dark font-size-11" id="editedBadge">
-                    ✏️ Yenilənib ({{ $lastSavedAt }})
-                </span>
-            @endif
-        </div>
-
-        <div class="excel-ribbon-actions">
-            {{-- Save Edits Button --}}
-            <button type="button" class="excel-btn excel-btn-save" id="saveSheetBtn" onclick="saveAccountingSheet()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                    <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                    <polyline points="7 3 7 8 15 8"></polyline>
-                </svg>
-                <span id="saveBtnText">Yadda Saxla (Ctrl+S)</span>
-            </button>
-
-            {{-- Add Row Button --}}
-            <button type="button" class="excel-btn" onclick="addNewRow()">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                <span>Sətir Əlavə Et</span>
-            </button>
-
-            {{-- Reset to Original Button --}}
-            @if($hasCustomEdits)
-                <form method="POST" action="{{ route('accounting.reset') }}" class="d-inline" onsubmit="return confirm('Bütün dəyişiklikləri ləğv edib əsas sayt məlumatlarına qayıtmaq istədiyinizdən əminsiniz?');">
-                    @csrf
-                    <input type="hidden" name="branch_id" value="{{ $filterBranch }}">
-                    <input type="hidden" name="month" value="{{ $filterMonth }}">
-                    <button type="submit" class="excel-btn" style="background: rgba(220, 53, 69, 0.4); border-color: rgba(220,53,69,0.8);">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="1 4 1 10 7 10"></polyline>
-                            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-                        </svg>
-                        <span>İlkinə Qaytar</span>
-                    </button>
-                </form>
-            @endif
-
-            {{-- Native Excel (.xlsx) Download --}}
-            <a href="{{ route('accounting.export', ['branch_id' => $filterBranch, 'month' => $filterMonth, 'format' => 'excel']) }}"
-               class="excel-btn"
-               title="Tam formatlı standart Microsoft Excel (.xlsx) faylını yüklə">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                </svg>
-                <span>Excel Yüklə (.xlsx)</span>
-            </a>
-
-            {{-- CSV Download --}}
-            <a href="{{ route('accounting.export', ['branch_id' => $filterBranch, 'month' => $filterMonth, 'format' => 'csv']) }}"
-               class="excel-btn font-size-11"
-               title="CSV formatında yüklə">
-                CSV
-            </a>
-        </div>
+        @endif
     </div>
 
+    <div class="excel-ribbon-actions">
+        {{-- Save Edits Button --}}
+        <button type="button" class="excel-btn excel-btn-save" id="saveSheetBtn" onclick="saveAccountingSheet()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+                <polyline points="17 21 17 13 7 13 7 21"></polyline>
+                <polyline points="7 3 7 8 15 8"></polyline>
+            </svg>
+            <span id="saveBtnText">Yadda Saxla (Ctrl+S)</span>
+        </button>
+
+        {{-- Add Row Button --}}
+        <button type="button" class="excel-btn" onclick="addNewRow()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>Sətir Əlavə Et</span>
+        </button>
+
+        {{-- Reset to Original Button --}}
+        @if($hasCustomEdits)
+            <form method="POST" action="{{ route('accounting.reset') }}" class="d-inline" onsubmit="return confirm('Bütün dəyişiklikləri ləğv edib əsas sayt məlumatlarına qayıtmaq istədiyinizdən əminsiniz?');">
+                @csrf
+                <input type="hidden" name="branch_id" value="{{ $filterBranch }}">
+                <input type="hidden" name="month" value="{{ $filterMonth }}">
+                <button type="submit" class="excel-btn" style="background: rgba(220, 53, 69, 0.4); border-color: rgba(220,53,69,0.8);">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="1 4 1 10 7 10"></polyline>
+                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+                    </svg>
+                    <span>İlkinə Qaytar</span>
+                </button>
+            </form>
+        @endif
+
+        {{-- Native Excel (.xlsx) Download --}}
+        <a href="{{ route('accounting.export', ['branch_id' => $filterBranch, 'month' => $filterMonth, 'format' => 'excel']) }}"
+           class="excel-btn"
+           title="Tam formatlı standart Microsoft Excel (.xlsx) faylını yüklə">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Excel Yüklə (.xlsx)</span>
+        </a>
+
+        {{-- CSV Download --}}
+        <a href="{{ route('accounting.export', ['branch_id' => $filterBranch, 'month' => $filterMonth, 'format' => 'csv']) }}"
+           class="excel-btn font-size-11"
+           title="CSV formatında yüklə">
+            CSV
+        </a>
+    </div>
+</div>
+
+{{-- 3. Excel Spreadsheet Grid Container (Standalone Card) --}}
+<div class="excel-container mb-4">
     {{-- Spreadsheet Grid --}}
     <div class="excel-table-wrapper" id="excelWrapper">
         <table class="excel-table" id="accountingExcelTable">
             <thead>
                 {{-- 1. Category Headers --}}
                 <tr class="cat-header">
-                    <th style="background: #e9ecef; border-right: 2px solid #adb5bd; width: 38px;"></th>
-                    <th colspan="9" style="background: #107c41;">SATIŞ MƏLUMATLARI</th>
-                    <th colspan="3" style="background: #4b546a;">RESEPŞN</th>
-                    <th colspan="3" style="background: #343a40;">HOSTES</th>
-                    <th colspan="3" style="background: #17a2b8;">AKTYOR 1</th>
-                    <th colspan="3" style="background: #138496;">AKTYOR 2</th>
-                    <th colspan="3" style="background: #4b546a;">OPERATOR</th>
-                    <th colspan="2" style="background: #d39e00; color: #000;">⭐ PLUS-BİR AKTYOR</th>
-                    <th colspan="2" style="background: #d39e00; color: #000;">⭐ PLUS-BİR RESEPŞN</th>
-                    <th colspan="4" style="background: #1e7e34;">MÜŞTƏRİ VƏ YEKUN</th>
+                    <th style="background: #e9ecef; border-right: 2px solid #ced4da; width: 38px; border-bottom: 2px solid #ffffff;"></th>
+                    <th colspan="9" style="background: #1e5631; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff;">SATIŞ MƏLUMATLARI</th>
+                    <th colspan="3" style="background: #3b4252; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff;">RESEPŞN</th>
+                    <th colspan="3" style="background: #2e3440; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff;">HOSTES</th>
+                    <th colspan="3" style="background: #0f5b99; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff;">AKTYOR 1</th>
+                    <th colspan="3" style="background: #0a4270; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff;">AKTYOR 2</th>
+                    <th colspan="3" style="background: #434c5e; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff;">OPERATOR</th>
+                    <th colspan="2" style="background: #996500; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff; color: #ffffff;">⭐ PLUS-BİR AKTYOR</th>
+                    <th colspan="2" style="background: #996500; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff; color: #ffffff;">⭐ PLUS-BİR RESEPŞN</th>
+                    <th colspan="4" style="background: #1b4332; border-bottom: 2px solid #ffffff;">MÜŞTƏRİ VƏ YEKUN</th>
                 </tr>
 
                 {{-- 2. Excel Column Letter Headers (A, B, C, D...) --}}
