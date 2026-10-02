@@ -1,6 +1,6 @@
 @extends('layouts.erp')
 
-@section('title', 'Elektron Qaimələr — ' . $selectedBranchName)
+@section('title', 'Elektron Qaimələr — ' . $selectedBranchName . ' (' . ($selectedMonthName ?? $filterMonth) . ')')
 @section('page-title', 'ELEKTRON QAİMƏLƏR')
 
 @section('breadcrumb')
@@ -231,24 +231,126 @@
     .excel-sheets-bar {
         background: #f1f3f4;
         border-top: 1px solid #d4d4d4;
-        padding: 4px 12px;
+        padding: 4px 8px;
         display: flex;
         align-items: center;
         justify-content: space-between;
+        gap: 12px;
         font-size: 12px;
+        position: relative;
+    }
+
+    .excel-tabs-nav-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
+    }
+
+    .excel-tab-scroll-btn {
+        background: #ffffff;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        width: 24px;
+        height: 26px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: #495057;
+        cursor: pointer;
+        flex-shrink: 0;
+        transition: all 0.15s ease;
+        padding: 0;
+    }
+
+    .excel-tab-scroll-btn:hover {
+        background: #e2e8f0;
+        color: #107c41;
+        border-color: #adb5bd;
+    }
+
+    .excel-tabs-scroll-container {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        overflow-x: auto;
+        white-space: nowrap;
+        scroll-behavior: smooth;
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: 2px 2px 0 2px;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+
+    .excel-tabs-scroll-container::-webkit-scrollbar {
+        display: none;
     }
 
     .excel-tab {
+        background: #e9ecef;
+        color: #495057;
+        font-weight: 500;
+        padding: 5px 13px;
+        border-radius: 4px 4px 0 0;
+        border: 1px solid #ced4da;
+        border-bottom: 1px solid #ced4da;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+        flex-shrink: 0;
+        user-select: none;
+        transition: all 0.15s ease;
+        font-size: 12px;
+    }
+
+    .excel-tab:hover {
+        background: #f8f9fa;
+        color: #107c41;
+        border-color: #adb5bd;
+        text-decoration: none;
+    }
+
+    .excel-tab.active {
         background: #ffffff;
         color: #107c41;
         font-weight: 700;
-        padding: 5px 16px;
-        border-radius: 4px 4px 0 0;
-        border: 1px solid #d4d4d4;
-        border-bottom: 2px solid #107c41;
+        border-color: #ced4da #ced4da transparent #ced4da;
+        border-bottom: 3px solid #107c41;
+        box-shadow: 0 -1px 3px rgba(0,0,0,0.04);
+        position: relative;
+        z-index: 2;
+    }
+
+    .excel-tab-add-btn {
+        flex-shrink: 0;
+        height: 26px;
+        line-height: 24px;
+    }
+
+    .excel-sheets-summary {
         display: flex;
         align-items: center;
-        gap: 6px;
+        gap: 10px;
+        flex-shrink: 0;
+        white-space: nowrap;
+        padding-left: 12px;
+        border-left: 1px solid #d4d4d4;
+        font-size: 12px;
+    }
+
+    .excel-stat-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .excel-stat-divider {
+        color: #ced4da;
+        font-weight: 300;
     }
 
     /* Branch selector tabs */
@@ -296,17 +398,15 @@
                 @php
                     $isActive = ($filterBranch == $b['id']);
                 @endphp
-                <a href="{{ route('accounting.index', ['branch_id' => $b['id']]) }}"
-                   class="branch-pill {{ $isActive ? 'active' : '' }}">
+                <a href="{{ route('accounting.index', ['branch_id' => $b['id'], 'month' => $filterMonth]) }}"
+                   class="branch-pill {{ $isActive ? 'active' : '' }}"
+                   title="{{ $b['name'] }}">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M3 21h18"></path>
                         <path d="M5 21V7l8-4v18"></path>
                         <path d="M19 21V11l-6-3"></path>
                     </svg>
                     <span>{{ $b['name'] }}</span>
-                    @if($isActive)
-                        <span class="badge bg-white text-dark ms-1" style="font-size: 10px; padding: 1px 5px;">Aktiv</span>
-                    @endif
                 </a>
             @endforeach
         </div>
@@ -323,7 +423,7 @@
             <line x1="3" y1="9" x2="21" y2="9"></line>
             <line x1="3" y1="15" x2="21" y2="15"></line>
         </svg>
-        <span>{{ $selectedBranchName }} — Elektron Qaimə</span>
+        <span>{{ $selectedBranchName }} — Elektron Qaimə ({{ $selectedMonthName ?? $filterMonth }})</span>
         @if($hasCustomEdits)
             <span class="badge bg-warning text-dark font-size-11" id="editedBadge">
                 ✏️ Yenilənib
@@ -585,22 +685,56 @@
         </table>
     </div>
 
-    {{-- Bottom Excel Sheet Bar --}}
+    {{-- Bottom Excel Sheet Bar (Excel Tabs for Months & Sticky Totals) --}}
     <div class="excel-sheets-bar">
-        <div class="d-flex align-items-center gap-2">
-            <div class="excel-tab">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                    <polyline points="14 2 14 8 20 8"></polyline>
+        {{-- Left Area: Scroll Buttons + Horizontally Scrollable Months Tabs --}}
+        <div class="excel-tabs-nav-wrapper">
+            {{-- Navigation Arrow Buttons for Horizontal Scrolling --}}
+            <button type="button" class="excel-tab-scroll-btn" id="scrollTabsLeftBtn" title="Əvvəlki aylar">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="15 18 9 12 15 6"></polyline>
                 </svg>
-                <span>{{ $selectedBranchName }}</span>
+            </button>
+            <button type="button" class="excel-tab-scroll-btn" id="scrollTabsRightBtn" title="Növbəti aylar">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <polyline points="9 18 15 12 9 6"></polyline>
+                </svg>
+            </button>
+
+            {{-- Horizontally Scrollable Tabs Container --}}
+            <div class="excel-tabs-scroll-container" id="excelTabsContainer">
+                @foreach($availableMonths as $m)
+                    @php
+                        $isMonthActive = ($filterMonth === $m['key']);
+                    @endphp
+                    <a href="{{ route('accounting.index', ['branch_id' => $filterBranch, 'month' => $m['key']]) }}"
+                       class="excel-tab {{ $isMonthActive ? 'active' : '' }}"
+                       id="month-tab-{{ $m['key'] }}"
+                       title="{{ $m['name'] }}">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <span>{{ $m['name'] }}</span>
+                    </a>
+                @endforeach
             </div>
-            <button type="button" class="btn btn-sm btn-light border py-0 px-2 font-size-11" onclick="addNewRow()" title="Yeni sətir əlavə et">+</button>
+
+            {{-- New Row Button --}}
+            <button type="button" class="btn btn-sm btn-light border py-0 px-2 font-size-11 excel-tab-add-btn" onclick="addNewRow()" title="Yeni sətir əlavə et">+</button>
         </div>
 
-        <div class="d-flex align-items-center gap-3 text-muted font-size-12">
-            <span>Sətir sayı: <strong id="rowCountDisplay">{{ count($sales) }}</strong></span>
-            <span>Ümumi Dövriyyə: <strong class="text-success font-size-13" id="bottomRevDisplay">{{ number_format($summary['total_revenue'] ?? 0, 2) }} ₼</strong></span>
+        {{-- Right Area: Pinned Summary Statistics (Never pushed off screen) --}}
+        <div class="excel-sheets-summary">
+            <span class="excel-stat-item">
+                <span class="text-muted">Sətir sayı:</span>
+                <strong id="rowCountDisplay">{{ count($sales) }}</strong>
+            </span>
+            <span class="excel-stat-divider">|</span>
+            <span class="excel-stat-item">
+                <span class="text-muted">Ümumi Dövriyyə:</span>
+                <strong class="text-success font-size-13" id="bottomRevDisplay">{{ number_format($summary['total_revenue'] ?? 0, 2) }} ₼</strong>
+            </span>
         </div>
     </div>
 </div>
@@ -613,6 +747,7 @@
 
     document.addEventListener('DOMContentLoaded', function () {
         initCellEvents();
+        initExcelTabs();
 
         // Keyboard Shortcut: Ctrl+S or Cmd+S to Save
         document.addEventListener('keydown', function (e) {
@@ -621,7 +756,61 @@
                 saveAccountingSheet();
             }
         });
+
+        // Warn before leaving if changes are unsaved
+        window.addEventListener('beforeunload', function (e) {
+            if (isDirty) {
+                e.preventDefault();
+                e.returnValue = 'Yadda saxlanılmamış dəyişikliklər var!';
+                return e.returnValue;
+            }
+        });
+
+        document.querySelectorAll('.excel-tab, .branch-pill').forEach(link => {
+            link.addEventListener('click', function (e) {
+                if (isDirty) {
+                    if (!confirm('Dəyişiklikləriniz hələ yadda saxlanılmayıb! Başqa aya və ya filiala keçmək istədiyinizdən əminsiniz?')) {
+                        e.preventDefault();
+                    }
+                }
+            });
+        });
     });
+
+    function initExcelTabs() {
+        const tabsContainer = document.getElementById('excelTabsContainer');
+        const activeTab = document.querySelector('.excel-tab.active');
+
+        // Center active tab into view horizontally
+        if (activeTab && tabsContainer) {
+            setTimeout(() => {
+                const containerRect = tabsContainer.getBoundingClientRect();
+                const tabRect = activeTab.getBoundingClientRect();
+                if (tabRect.left < containerRect.left || tabRect.right > containerRect.right) {
+                    activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                }
+            }, 100);
+        }
+
+        // Mouse wheel horizontal scroll support
+        if (tabsContainer) {
+            tabsContainer.addEventListener('wheel', function (e) {
+                if (e.deltaY !== 0) {
+                    e.preventDefault();
+                    tabsContainer.scrollLeft += (e.deltaY * 1.5);
+                }
+            }, { passive: false });
+        }
+
+        // Left / Right arrow navigation buttons
+        document.getElementById('scrollTabsLeftBtn')?.addEventListener('click', function () {
+            if (tabsContainer) tabsContainer.scrollBy({ left: -220, behavior: 'smooth' });
+        });
+
+        document.getElementById('scrollTabsRightBtn')?.addEventListener('click', function () {
+            if (tabsContainer) tabsContainer.scrollBy({ left: 220, behavior: 'smooth' });
+        });
+    }
 
     function initCellEvents() {
         const cells = document.querySelectorAll('td.excel-cell');
