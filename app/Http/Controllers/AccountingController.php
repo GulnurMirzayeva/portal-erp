@@ -6,6 +6,8 @@ use App\Models\AccountingRecord;
 use App\Services\PortalWebsiteService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -95,7 +97,7 @@ class AccountingController extends Controller
     }
 
     /**
-     * Mühasibin Excel xanalarında etdiyi dəyişiklikləri yadda saxlayır.
+     * Mühasibin Excel xanalarında etdiyi dəyişiklikləri həqiqi verilənlər bazasında (DB) yeniləyir.
      */
     public function save(Request $request)
     {
@@ -110,6 +112,89 @@ class AccountingController extends Controller
         $sales = $request->input('sales');
         $summary = $this->calculateSummary($sales);
 
+        // 1. portalGamesWebsite bazasında real cədvəli (sales və reservations) həqiqətən UPDATE edirik
+        $updatedDbCount = 0;
+        try {
+            foreach ($sales as $row) {
+                $saleId = $row['id'] ?? null;
+                if ($saleId && is_numeric($saleId)) {
+                    $updateFields = [];
+
+                    // Tarix
+                    if (!empty($row['date'])) {
+                        try {
+                            $updateFields['reservation_date'] = Carbon::parse($row['date'])->format('Y-m-d');
+                        } catch (\Exception $e) {}
+                    }
+
+                    // Saat
+                    if (!empty($row['time'])) {
+                        try {
+                            $updateFields['reservation_time'] = Carbon::parse($row['time'])->format('H:i:s');
+                        } catch (\Exception $e) {}
+                    }
+
+                    // Say və Qiymət
+                    if (isset($row['player_count'])) {
+                        $updateFields['player_count'] = (int)$row['player_count'];
+                    }
+                    if (isset($row['price_per_person'])) {
+                        $updateFields['price_per_person'] = (float)$row['price_per_person'];
+                    }
+
+                    // Nağd və Terminal (Kart) ödənişləri və Yekun Məbləğ
+                    $cash = isset($row['cash_amount']) ? (float)$row['cash_amount'] : 0.0;
+                    $card = isset($row['card_amount']) ? (float)$row['card_amount'] : 0.0;
+                    $totalPrice = isset($row['total_price']) ? (float)$row['total_price'] : ($cash + $card);
+
+                    $updateFields['total_price'] = $totalPrice;
+                    $updateFields['payments'] = json_encode([
+                        ['type' => 'cash', 'amount' => number_format($cash, 2, '.', '')],
+                        ['type' => 'card', 'amount' => number_format($card, 2, '.', '')],
+                    ]);
+
+                    // Qeyd və Endirim
+                    if (isset($row['note'])) {
+                        $updateFields['note'] = (string)$row['note'];
+                    }
+                    if (isset($row['discount_note'])) {
+                        $updateFields['discount_type'] = (string)$row['discount_note'];
+                    }
+
+                    // Müştəri adı
+                    if (isset($row['customer_name'])) {
+                        $updateFields['group_leader_name'] = (string)$row['customer_name'];
+                    }
+
+                    $updateFields['updated_at'] = Carbon::now();
+
+                    // Real portalGamesWebsite.sales cədvəlini UPDATE edirik
+                    $affected = DB::connection('portal_website')->table('sales')
+                        ->where('id', $saleId)
+                        ->update($updateFields);
+
+                    if ($affected) {
+                        $updatedDbCount++;
+                    }
+
+                    // Müştəri nömrəsi varsa, əlaqəli rezervasiyanı da yeniləyirik
+                    if (!empty($row['customer_phone'])) {
+                        $saleRecord = DB::connection('portal_website')->table('sales')
+                            ->where('id', $saleId)
+                            ->first(['reservation_id']);
+                        if ($saleRecord && $saleRecord->reservation_id) {
+                            DB::connection('portal_website')->table('reservations')
+                                ->where('id', $saleRecord->reservation_id)
+                                ->update(['user_phone' => (string)$row['customer_phone']]);
+                        }
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::error("Real database update error: " . $e->getMessage());
+        }
+
+        // 2. ERP sisteminin özündə də AccountingRecord-u yeniləyirik
         $record = AccountingRecord::updateOrCreate(
             [
                 'branch_id' => $branchId,
@@ -124,9 +209,10 @@ class AccountingController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => 'Dəyişikliklər uğurla yadda saxlanıldı!',
+            'message' => "Məlumatlar bazada (DB) və sistemdə həqiqətən yeniləndi!",
             'saved_at' => $record->updated_at->format('d.m.Y H:i'),
             'summary' => $summary,
+            'db_updated' => $updatedDbCount,
         ]);
     }
 

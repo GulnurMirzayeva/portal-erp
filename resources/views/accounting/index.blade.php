@@ -98,55 +98,9 @@
         100% { transform: scale(1); }
     }
 
-    /* Excel Formula Bar */
-    .excel-formula-bar {
-        background: #fdfdfd;
-        border-bottom: 1px solid #e0e0e0;
-        padding: 5px 12px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        font-size: 12px;
-    }
-
-    .cell-coordinate {
-        min-width: 60px;
-        padding: 2px 8px;
-        background: #f0f0f0;
-        border: 1px solid #d4d4d4;
-        font-weight: 600;
-        text-align: center;
-        color: #333333;
-        font-family: monospace;
-    }
-
-    .fx-symbol {
-        font-style: italic;
-        font-weight: bold;
-        color: #777777;
-        font-size: 13px;
-        user-select: none;
-    }
-
-    .formula-input {
-        flex-grow: 1;
-        border: 1px solid #d4d4d4;
-        background: #ffffff;
-        padding: 3px 8px;
-        font-size: 12px;
-        border-radius: 3px;
-        outline: none;
-        font-family: inherit;
-    }
-
-    .formula-input:focus {
-        border-color: #107c41;
-        box-shadow: 0 0 0 1px #107c41;
-    }
-
     /* Excel Grid Table */
     .excel-table-wrapper {
-        max-height: 720px;
+        max-height: 750px;
         overflow-x: auto;
         overflow-y: auto;
         position: relative;
@@ -330,25 +284,9 @@
 
 {{-- 1. Filial Selector Pills Bar (Excludes "Ofis") --}}
 <div class="card mb-3 border-0 shadow-sm" style="border-radius: 8px;">
-    <div class="card-body p-3">
-        <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-            <div class="d-flex align-items-center gap-2">
-                <span class="badge" style="background: #107c41; color: #fff; font-size: 12px; padding: 4px 8px;">
-                    🏢 Filial Seçimi
-                </span>
-                <span class="font-size-13 text-muted">Filialın elektron qaimə cədvəlini açmaq üçün seçin:</span>
-            </div>
-            <div class="d-flex align-items-center gap-2">
-                <label class="form-label m-0 font-size-12 font-weight-600 text-muted">Ay:</label>
-                <form method="GET" action="{{ route('accounting.index') }}" class="d-inline">
-                    <input type="hidden" name="branch_id" value="{{ $filterBranch }}">
-                    <input type="month" name="month" value="{{ $filterMonth }}" onchange="this.form.submit()" class="form-control form-control-sm font-size-12" style="width: 140px; height: 32px; border-radius: 4px; display: inline-block;">
-                </form>
-            </div>
-        </div>
-
+    <div class="card-body p-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
         {{-- Filial Buttons --}}
-        <div class="d-flex flex-wrap gap-2 pt-1" style="max-height: 120px; overflow-y: auto;">
+        <div class="d-flex flex-wrap gap-2 flex-grow-1 align-items-center" style="max-height: 120px; overflow-y: auto;">
             @foreach($branches as $b)
                 @php
                     $isActive = ($filterBranch == $b['id']);
@@ -367,6 +305,15 @@
                 </a>
             @endforeach
         </div>
+
+        {{-- Month Selector --}}
+        <div class="d-flex align-items-center gap-2 ps-3 border-start">
+            <label class="form-label m-0 font-size-12 font-weight-600 text-muted">Ay:</label>
+            <form method="GET" action="{{ route('accounting.index') }}" class="d-inline">
+                <input type="hidden" name="branch_id" value="{{ $filterBranch }}">
+                <input type="month" name="month" value="{{ $filterMonth }}" onchange="this.form.submit()" class="form-control form-control-sm font-size-12" style="width: 140px; height: 32px; border-radius: 4px;">
+            </form>
+        </div>
     </div>
 </div>
 
@@ -382,13 +329,13 @@
                 <line x1="3" y1="9" x2="21" y2="9"></line>
                 <line x1="3" y1="15" x2="21" y2="15"></line>
             </svg>
-            <span>{{ $selectedBranchName }} — Elektron Qaimə (Excel Cədvəli)</span>
+            <span>{{ $selectedBranchName }} — Elektron Qaimə</span>
             <span class="badge" style="background: rgba(255,255,255,0.2); font-weight: normal; font-size: 11px;">
                 {{ \Carbon\Carbon::parse($filterMonth . '-01')->translatedFormat('F Y') }}
             </span>
             @if($hasCustomEdits)
                 <span class="badge bg-warning text-dark font-size-11" id="editedBadge">
-                    ✏️ Dəyişdirilib ({{ $lastSavedAt }})
+                    ✏️ Yenilənib ({{ $lastSavedAt }})
                 </span>
             @endif
         </div>
@@ -448,14 +395,6 @@
                 CSV
             </a>
         </div>
-    </div>
-
-    {{-- Formula Bar --}}
-    <div class="excel-formula-bar">
-        <div class="cell-coordinate" id="activeCellName">A1</div>
-        <div class="fx-symbol">fx</div>
-        <input type="text" class="formula-input" id="formulaInput" placeholder="Xanaya klik edərək birbaşa redaktə edin..." oninput="syncFormulaToCell(this.value)">
-        <span class="text-muted font-size-11 ms-auto" id="editNotice">Xanalara klikləyərək istənilən sütunu redaktə edə bilərsiniz</span>
     </div>
 
     {{-- Spreadsheet Grid --}}
@@ -551,7 +490,7 @@
                         $card = (float)($row['card_amount'] ?? 0);
                         $total = (float)($row['total_price'] ?? ($cash + $card));
                     @endphp
-                    <tr data-row-index="{{ $index }}">
+                    <tr data-row-index="{{ $index }}" data-sale-id="{{ $row['id'] ?? '' }}">
                         <td class="row-idx-header">{{ $index + 1 }}</td>
                         <td class="excel-cell align-center" contenteditable="true" data-field="row_number" data-col="A">{{ $row['row_number'] ?? ($index + 1) }}</td>
                         <td class="excel-cell align-center" contenteditable="true" data-field="date" data-col="B">{{ $row['date'] ?? '' }}</td>
@@ -680,7 +619,6 @@
     const branchId = "{{ $filterBranch }}";
     const month = "{{ $filterMonth }}";
 
-    // Setup cell focus and formula bar sync
     document.addEventListener('DOMContentLoaded', function () {
         initCellEvents();
 
@@ -698,17 +636,11 @@
         cells.forEach(cell => {
             cell.addEventListener('focus', function () {
                 activeCell = this;
-                const row = this.closest('tr');
-                const rowIdx = row.rowIndex ? row.rowIndex - 1 : (row.dataset.rowIndex ? parseInt(row.dataset.rowIndex) + 1 : 1);
-                const colLetter = this.dataset.col || 'A';
-                document.getElementById('activeCellName').innerText = colLetter + rowIdx;
-                document.getElementById('formulaInput').value = this.innerText.trim();
             });
 
             cell.addEventListener('input', function () {
                 this.classList.add('is-dirty');
                 markDirty();
-                document.getElementById('formulaInput').value = this.innerText;
             });
 
             // Enter key moves down, Tab moves right
@@ -726,17 +658,6 @@
                 }
             });
         });
-    }
-
-    function syncFormulaToCell(val) {
-        if (activeCell) {
-            activeCell.innerText = val;
-            activeCell.classList.add('is-dirty');
-            markDirty();
-            if (activeCell.dataset.field === 'cash_amount' || activeCell.dataset.field === 'card_amount' || activeCell.dataset.field === 'player_count' || activeCell.dataset.field === 'price_per_person') {
-                recalcRow(activeCell);
-            }
-        }
     }
 
     function markDirty() {
@@ -805,6 +726,7 @@
         const newIdx = currentCount + 1;
         const tr = document.createElement('tr');
         tr.dataset.rowIndex = currentCount;
+        tr.dataset.saleId = '';
 
         tr.innerHTML = `
             <td class="row-idx-header">${newIdx}</td>
@@ -858,6 +780,7 @@
         rows.forEach((tr, idx) => {
             if (tr.id === 'emptyRow') return;
             const rowObj = {};
+            rowObj['id'] = tr.dataset.saleId || '';
             const cells = tr.querySelectorAll('td.excel-cell');
             cells.forEach(c => {
                 const field = c.dataset.field;
@@ -878,7 +801,7 @@
         const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
         const saveBtn = document.getElementById('saveSheetBtn');
         saveBtn.disabled = true;
-        document.getElementById('saveBtnText').innerText = 'Yadda saxlanılır...';
+        document.getElementById('saveBtnText').innerText = 'Bazada yenilənir...';
 
         fetch("{{ route('accounting.save') }}", {
             method: "POST",
@@ -901,12 +824,12 @@
                 saveBtn.classList.remove('has-changes');
                 document.getElementById('saveBtnText').innerText = 'Yadda Saxla (Ctrl+S)';
                 document.getElementById('saveStatusIndicator').className = 'badge bg-success text-white';
-                document.getElementById('saveStatusIndicator').innerText = 'Bütün xanalar saxlanıldı (' + data.saved_at + ')';
+                document.getElementById('saveStatusIndicator').innerText = 'Bazada yeniləndi (' + data.saved_at + ')';
 
                 // Remove dirty classes
                 document.querySelectorAll('.is-dirty').forEach(c => c.classList.remove('is-dirty'));
 
-                showToast('✓ Dəyişikliklər uğurla yadda saxlanıldı!', '#107c41');
+                showToast('✓ ' + data.message, '#107c41');
             } else {
                 showToast('Xəta baş verdi: ' + (data.message || 'Məlumat saxlanıla bilmədi.'), '#dc3545');
             }

@@ -64,6 +64,22 @@ return [
             ]) : [],
         ],
 
+        'portal_website' => [
+            'driver' => 'mysql',
+            'host' => env('PORTAL_WEBSITE_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('PORTAL_WEBSITE_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('PORTAL_WEBSITE_DB_DATABASE', 'portalGamesWebsite'),
+            'username' => env('PORTAL_WEBSITE_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('PORTAL_WEBSITE_DB_PASSWORD', env('DB_PASSWORD', '0554216349')),
+            'unix_socket' => env('DB_SOCKET', ''),
+            'charset' => env('DB_CHARSET', 'utf8mb4'),
+            'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => false,
+            'engine' => null,
+        ],
+
         'mariadb' => [
             'driver' => 'mariadb',
             'url' => env('DB_URL'),
