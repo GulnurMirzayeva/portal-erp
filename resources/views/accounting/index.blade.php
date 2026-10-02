@@ -437,21 +437,6 @@
             <span>Sətir Əlavə Et</span>
         </button>
 
-        {{-- Reset to Original Button --}}
-        @if($hasCustomEdits)
-            <form method="POST" action="{{ route('accounting.reset') }}" class="d-inline" onsubmit="return confirm('Bütün dəyişiklikləri ləğv edib əsas sayt məlumatlarına qayıtmaq istədiyinizdən əminsiniz?');">
-                @csrf
-                <input type="hidden" name="branch_id" value="{{ $filterBranch }}">
-                <input type="hidden" name="month" value="{{ $filterMonth }}">
-                <button type="submit" class="excel-btn" style="background: rgba(220, 53, 69, 0.4); border-color: rgba(220,53,69,0.8);">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="1 4 1 10 7 10"></polyline>
-                        <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
-                    </svg>
-                    <span>İlkinə Qaytar</span>
-                </button>
-            </form>
-        @endif
 
         {{-- Native Excel (.xlsx) Download --}}
         <a href="{{ route('accounting.export', ['branch_id' => $filterBranch, 'month' => $filterMonth, 'format' => 'excel']) }}"

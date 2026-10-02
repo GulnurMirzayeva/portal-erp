@@ -34,7 +34,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.index');
     Route::post('/accounting/save', [AccountingController::class, 'save'])->name('accounting.save');
-    Route::post('/accounting/reset', [AccountingController::class, 'reset'])->name('accounting.reset');
     Route::get('/accounting/export', [AccountingController::class, 'export'])->name('accounting.export');
 });
 

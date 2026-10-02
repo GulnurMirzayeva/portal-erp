@@ -271,25 +271,6 @@ class AccountingController extends Controller
         ]);
     }
 
-    /**
-     * Filialın qaimə məlumatlarını ilkin API vəziyyətinə qaytarır.
-     */
-    public function reset(Request $request)
-    {
-        $branchId = (string)$request->input('branch_id');
-        $month = $request->input('month');
-
-        if ($branchId && $month) {
-            AccountingRecord::where('branch_id', $branchId)
-                ->where('month', $month)
-                ->delete();
-        }
-
-        return redirect()->route('accounting.index', [
-            'branch_id' => $branchId,
-            'month' => $month,
-        ])->with('success', 'Məlumatlar ilkin sayt göstəricilərinə bərpa olundu.');
-    }
 
     /**
      * Filialın qaiməsini peşəkar Microsoft Excel (.xlsx) formatında ixrac edir.
