@@ -26,23 +26,8 @@ class AccountingController extends Controller
     {
         $availableMonths = $this->getAvailableMonths();
 
-        // Əgər istifadəçi xüsusi ay seçməyibsə, ən son satış datası olan ayı, yaxud cari ayı seçirik
-        if ($request->has('month') && !empty($request->query('month'))) {
-            $filterMonth = $request->query('month');
-        } else {
-            $latestWithData = null;
-            try {
-                $maxDate = DB::connection('portal_website')->table('sales')
-                    ->where('reservation_date', '>=', '2020-01-01')
-                    ->whereNotNull('reservation_date')
-                    ->max('reservation_date');
-                if ($maxDate) {
-                    $latestWithData = Carbon::parse($maxDate)->format('Y-m');
-                }
-            } catch (\Exception $e) {}
-
-            $filterMonth = $latestWithData ?: (!empty($availableMonths) ? $availableMonths[0]['key'] : Carbon::now()->format('Y-m'));
-        }
+        // Əgər istifadəçi xüsusi ay seçməyibsə, default olaraq 'all' (bütün datanı çəkir)
+        $filterMonth = $request->query('month', 'all');
 
         $filterBranch = $request->query('branch_id');
 
@@ -73,25 +58,29 @@ class AccountingController extends Controller
 
         // Seçilmiş ayın Azərbaycan dilində adını təyin edirik
         $selectedMonthName = '';
-        foreach ($availableMonths as $m) {
-            if ($m['key'] === $filterMonth) {
-                $selectedMonthName = $m['name'];
-                break;
+        if ($filterMonth === 'all') {
+            $selectedMonthName = 'Bütün Dövrlər';
+        } else {
+            foreach ($availableMonths as $m) {
+                if ($m['key'] === $filterMonth) {
+                    $selectedMonthName = $m['name'];
+                    break;
+                }
             }
-        }
-        if (!$selectedMonthName) {
-            $monthNamesAz = [
-                '01' => 'Yanvar', '02' => 'Fevral', '03' => 'Mart', '04' => 'Aprel',
-                '05' => 'May', '06' => 'İyun', '07' => 'İyul', '08' => 'Avqust',
-                '09' => 'Sentyabr', '10' => 'Oktyabr', '11' => 'Noyabr', '12' => 'Dekabr',
-            ];
-            $parts = explode('-', $filterMonth);
-            $selectedMonthName = ($monthNamesAz[$parts[1] ?? ''] ?? ($parts[1] ?? '')) . ' ' . ($parts[0] ?? '');
+            if (!$selectedMonthName) {
+                $monthNamesAz = [
+                    '01' => 'Yanvar', '02' => 'Fevral', '03' => 'Mart', '04' => 'Aprel',
+                    '05' => 'May', '06' => 'İyun', '07' => 'İyul', '08' => 'Avqust',
+                    '09' => 'Sentyabr', '10' => 'Oktyabr', '11' => 'Noyabr', '12' => 'Dekabr',
+                ];
+                $parts = explode('-', $filterMonth);
+                $selectedMonthName = ($monthNamesAz[$parts[1] ?? ''] ?? ($parts[1] ?? '')) . ' ' . ($parts[0] ?? '');
+            }
         }
 
         // Əvvəlcə yerli bazada mühasibin redaktə edib yadda saxladığı qeyd varmı yoxlayırıq
         $savedRecord = null;
-        if ($apiBranchId !== null) {
+        if ($apiBranchId !== null && $filterMonth !== 'all') {
             $savedRecord = AccountingRecord::where('branch_id', (string)$apiBranchId)
                 ->where('month', $filterMonth)
                 ->first();

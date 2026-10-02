@@ -76,13 +76,21 @@ class PortalWebsiteService
             'filter_branch_id' => $filters['branch_id'] ?? null,
         ];
 
+        $queryParams = $filters;
+        // Əgər bütün aylar/datalar istənibsə, API-yə date_from və date_to göndəririk ki, oktyabr limiti tətbiq olunmasın
+        if (isset($queryParams['month']) && $queryParams['month'] === 'all') {
+            unset($queryParams['month']);
+            $queryParams['date_from'] = '2020-01-01';
+            $queryParams['date_to'] = date('Y-12-31', strtotime('+1 year'));
+        }
+
         try {
-            $response = Http::timeout(10)
+            $response = Http::timeout(25)
                 ->withHeaders([
                     'X-ERP-API-KEY' => $this->apiToken,
                     'Accept' => 'application/json',
                 ])
-                ->get("{$this->baseUrl}/api/erp/accounting-report", $filters);
+                ->get("{$this->baseUrl}/api/erp/accounting-report", $queryParams);
 
             if ($response->successful()) {
                 $data = $response->json();
