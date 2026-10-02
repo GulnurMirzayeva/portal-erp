@@ -465,7 +465,7 @@
                 {{-- 1. Category Headers --}}
                 <tr class="cat-header">
                     <th style="background: #e9ecef; border-right: 2px solid #adb5bd; width: 38px;"></th>
-                    <th colspan="9" style="background: #2a3042;">SATIŞ MƏLUMATLARI</th>
+                    <th colspan="9" style="background: #107c41;">SATIŞ MƏLUMATLARI</th>
                     <th colspan="3" style="background: #4b546a;">RESEPŞN</th>
                     <th colspan="3" style="background: #343a40;">HOSTES</th>
                     <th colspan="3" style="background: #17a2b8;">AKTYOR 1</th>

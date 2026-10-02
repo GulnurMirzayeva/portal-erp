@@ -23,7 +23,7 @@
                     </div>
                     <div class="col-5 align-self-end text-end">
                         <div class="welcome-badge-icon">
-                            <svg width="68" height="68" viewBox="0 0 24 24" fill="none" stroke="#556ee6" stroke-width="1.3" opacity="0.6">
+                            <svg width="68" height="68" viewBox="0 0 24 24" fill="none" stroke="#107c41" stroke-width="1.3" opacity="0.6">
                                 <rect width="20" height="14" x="2" y="5" rx="2"></rect>
                                 <line x1="2" x2="22" y1="10" y2="10"></line>
                             </svg>
@@ -83,7 +83,7 @@
                         <div class="circular-indicator mt-2">
                             <svg width="74" height="74" viewBox="0 0 36 36" class="circular-chart">
                                 <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#f1f1f5" stroke-width="3.5" />
-                                <path class="circle" stroke-dasharray="85, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#556ee6" stroke-width="3.5" stroke-linecap="round" />
+                                <path class="circle" stroke-dasharray="85, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke="#107c41" stroke-width="3.5" stroke-linecap="round" />
                                 <text x="18" y="20.35" class="percentage" text-anchor="middle" font-size="7.5" font-weight="700" fill="#495057">100%</text>
                             </svg>
                             <span class="font-size-11 text-muted d-block mt-1">Sistem Hazır</span>

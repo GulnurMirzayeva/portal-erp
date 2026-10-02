@@ -285,7 +285,7 @@ class AccountingController extends Controller
         // 3. Kateqoriya Başlıqları (Sətir 3)
         $sheet->mergeCells('A3:I3');
         $sheet->setCellValue('A3', 'SATIŞ MƏLUMATLARI');
-        $sheet->getStyle('A3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('2A3042');
+        $sheet->getStyle('A3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('107C41');
         $sheet->getStyle('A3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
 
         $sheet->mergeCells('J3:L3');
