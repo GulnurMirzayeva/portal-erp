@@ -163,29 +163,29 @@
             </div>
         </div>
 
-        {{-- Next Phase Roadmap Banner --}}
+        {{-- Elektron Qaimələr Card --}}
         <div class="card">
             <div class="card-body">
                 <div class="d-flex align-items-center justify-content-between mb-3">
                     <h4 class="card-title m-0 font-size-15 font-weight-600">
-                        📊 Mühasibatlıq və 32 Sütunlu Hesabat
+                        📊 Elektron Qaimələr (Mühasibatlıq)
                     </h4>
                     <span class="badge {{ $connected ? 'bg-success' : 'bg-soft-warning text-dark' }} font-size-12 px-2 py-1">
-                        {{ $connected ? '✓ API Qoşuldu' : '⏳ API Gözlənilir' }}
+                        {{ $connected ? '✓ API Aktiv' : '⏳ API Gözlənilir' }}
                     </span>
                 </div>
 
                 <p class="text-muted font-size-13 mb-4">
-                    PortalWebsite ilə təhlükəsiz API əlaqəsi quruldu. Buxalteriyanın tələb etdiyi 32 sütunlu hesabat cədvəli (satışlar, 00:00 gecə seansı bonusları, PlusBir nailiyyətləri və ödənişlər) ERP sistemində canlı izlənilə və Excel/CSV kimi ixrac edilə bilər.
+                    PortalWebsite ilə inteqrasiya olunmuş elektron qaimələr sistemi. Hər bir filialın satış məlumatları ayrı-ayrılıqda rəsmi qaimə formasında tərtib olunur və Excel formatında ixrac edilə bilir.
                 </p>
 
                 <div class="d-flex align-items-center justify-content-between p-3 border rounded-3 bg-light">
                     <div>
-                        <h6 class="font-size-14 font-weight-700 mb-1 text-dark">32 Sütunlu Mühasibatlıq Cədvəlinə Keçid</h6>
-                        <p class="text-muted font-size-12 mb-0">Bütün filialların və işçilərin detallı satış və bonus statistikasına baxın.</p>
+                        <h6 class="font-size-14 font-weight-700 mb-1 text-dark">Elektron Qaimələr Bölməsi</h6>
+                        <p class="text-muted font-size-12 mb-0">Filiallar üzrə ayrılmış elektron satış qaimələrinə və Excel cədvəllərinə baxın.</p>
                     </div>
                     <a href="{{ route('accounting.index') }}" class="btn btn-primary btn-sm font-size-13 px-3 py-2">
-                        Hesabata Keç
+                        Qaimələrə Keç
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="ms-1"><polyline points="9 18 15 12 9 6"></polyline></svg>
                     </a>
                 </div>

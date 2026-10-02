@@ -33,7 +33,7 @@
                         <div class="col-sm-6">
                             <h5 class="font-size-14 mt-0">ERP Əməliyyatları</h5>
                             <ul class="list-unstyled megamenu-list">
-                                <li><a href="javascript:void(0);">Mühasibatlıq 32 Sütun</a></li>
+                                <li><a href="{{ route('accounting.index') }}">Elektron Qaimələr</a></li>
                                 <li><a href="javascript:void(0);">İşçi Bonus Hesabatı</a></li>
                                 <li><a href="javascript:void(0);">Gündəlik Satışlar</a></li>
                                 <li><a href="javascript:void(0);">Filiallar və Növbələr</a></li>

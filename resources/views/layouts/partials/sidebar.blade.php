@@ -20,14 +20,6 @@
                 </span>
             </span>
         </a>
-
-        {{-- Mobile close button (only visible on mobile drawer) --}}
-        <button type="button" class="btn sidebar-close-btn d-lg-none" id="sidebarCloseBtn" aria-label="Menyunu bağla">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="18" y1="6" x2="6" y2="18"></line>
-                <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-        </button>
     </div>
 
     {{-- Menu Scroll Container --}}
@@ -73,13 +65,12 @@
                         <path d="M8 18h.01"></path>
                     </svg>
                     <span class="menu-text">Mühasibatlıq</span>
-                    <span class="badge badge-pill badge-primary">32 Sütun</span>
                     <span class="menu-arrow">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </span>
                 </a>
                 <ul class="sub-menu {{ request()->routeIs('accounting.*') ? 'show' : '' }}" id="menuAccounting">
-                    <li><a href="{{ route('accounting.index') }}" class="{{ request()->routeIs('accounting.index') ? 'active' : '' }}"><span class="sub-bullet"></span> 32 Sütunlu Cədvəl</a></li>
+                    <li><a href="{{ route('accounting.index') }}" class="{{ request()->routeIs('accounting.index') ? 'active' : '' }}"><span class="sub-bullet"></span> Elektron Qaimələr</a></li>
                     <li><a href="{{ route('accounting.index') }}"><span class="sub-bullet"></span> İşçi Bonus Hesabatı</a></li>
                     <li><a href="javascript:void(0);" class="disabled-link"><span class="sub-bullet"></span> Kassa və Bank Girişləri</a></li>
                 </ul>
