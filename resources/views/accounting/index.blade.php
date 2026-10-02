@@ -410,11 +410,6 @@
             <line x1="3" y1="15" x2="21" y2="15"></line>
         </svg>
         <span>{{ $selectedBranchName }} — Elektron Qaimə ({{ $selectedMonthName ?? $filterMonth }})</span>
-        @if($hasCustomEdits)
-            <span class="badge bg-warning text-dark font-size-11" id="editedBadge">
-                ✏️ Yenilənib
-            </span>
-        @endif
     </div>
 
     <div class="excel-ribbon-actions">
