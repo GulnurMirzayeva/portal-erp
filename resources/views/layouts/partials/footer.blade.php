@@ -4,9 +4,6 @@
             <div class="col-sm-6 text-sm-start text-center">
                 {{ date('Y') }} © Portal ERP.
             </div>
-            <div class="col-sm-6 text-sm-end text-center d-none d-sm-block">
-                Portal Games üçün hazırlanmışdır
-            </div>
         </div>
     </div>
 </footer>
