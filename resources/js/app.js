@@ -14,8 +14,18 @@ document.addEventListener('DOMContentLoaded', () => {
  */
 function initSidebar() {
     const toggleBtn = document.getElementById('vertical-menu-btn');
+    const closeBtn = document.getElementById('sidebarCloseBtn');
     const backdrop = document.getElementById('sidebarBackdrop');
     const body = document.body;
+
+    // Restore desktop collapsed state from localStorage
+    if (window.innerWidth >= 992) {
+        if (localStorage.getItem('erp_sidebar_collapsed') === 'true') {
+            body.classList.add('vertical-collpsed');
+        }
+    } else {
+        body.classList.remove('vertical-collpsed');
+    }
 
     if (toggleBtn) {
         toggleBtn.addEventListener('click', (e) => {
@@ -23,12 +33,21 @@ function initSidebar() {
 
             if (window.innerWidth >= 992) {
                 // Desktop: Toggle mini-sidebar
-                body.classList.toggle('vertical-collpsed');
+                const isCollapsed = body.classList.toggle('vertical-collpsed');
                 body.classList.remove('sidebar-enable');
+                localStorage.setItem('erp_sidebar_collapsed', isCollapsed ? 'true' : 'false');
             } else {
                 // Mobile: Toggle off-canvas drawer
+                body.classList.remove('vertical-collpsed');
                 body.classList.toggle('sidebar-enable');
             }
+        });
+    }
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            body.classList.remove('sidebar-enable');
         });
     }
 
@@ -38,10 +57,27 @@ function initSidebar() {
         });
     }
 
-    // Handle resize
+    // Auto-close mobile drawer when navigating via link
+    const regularLinks = document.querySelectorAll('#side-menu a:not([data-toggle])');
+    regularLinks.forEach((link) => {
+        link.addEventListener('click', () => {
+            if (window.innerWidth < 992) {
+                body.classList.remove('sidebar-enable');
+            }
+        });
+    });
+
+    // Handle window resize
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 992) {
             body.classList.remove('sidebar-enable');
+            if (localStorage.getItem('erp_sidebar_collapsed') === 'true') {
+                body.classList.add('vertical-collpsed');
+            } else {
+                body.classList.remove('vertical-collpsed');
+            }
+        } else {
+            body.classList.remove('vertical-collpsed');
         }
     });
 }
@@ -50,11 +86,19 @@ function initSidebar() {
  * Sidebar Accordion Submenus
  */
 function initSubmenus() {
-    const toggles = document.querySelectorAll('#side-menu [data-toggle="collapse"]');
+    const toggles = document.querySelectorAll('#side-menu [data-toggle="sub-menu"], #side-menu [data-toggle="collapse"]');
+    const body = document.body;
 
     toggles.forEach((btn) => {
         btn.addEventListener('click', (e) => {
             e.preventDefault();
+
+            // If mini-sidebar is collapsed on desktop, expand it and reveal the menu
+            if (window.innerWidth >= 992 && body.classList.contains('vertical-collpsed')) {
+                body.classList.remove('vertical-collpsed');
+                localStorage.setItem('erp_sidebar_collapsed', 'false');
+            }
+
             const targetId = btn.getAttribute('data-target');
             if (!targetId) return;
 

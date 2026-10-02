@@ -346,19 +346,39 @@ body {
     box-shadow: 0 0.75rem 1.5rem rgba(18, 38, 63, 0.05);
     display: flex;
     flex-direction: column;
-    transition: all 0.3s ease;
+    transition: width 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
 .navbar-brand-box {
     padding: 0 20px;
     text-align: left;
-    width: var(--erp-sidebar-width);
+    width: 100%;
     height: var(--erp-header-height);
     display: flex;
     align-items: center;
+    justify-content: space-between;
     background: var(--erp-sidebar-bg);
     border-bottom: 1px solid var(--erp-sidebar-sub-bg);
     transition: width 0.3s ease;
+    flex-shrink: 0;
+}
+
+.sidebar-close-btn {
+    background: transparent;
+    border: 0;
+    color: #a6b0cf;
+    cursor: pointer;
+    padding: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.sidebar-close-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .navbar-brand-box a {
@@ -400,6 +420,7 @@ body {
 /* Sidebar scroll area */
 .sidebar-scroll {
     overflow-y: auto;
+    overflow-x: hidden;
     flex: 1;
     padding-bottom: 30px;
 }
@@ -463,7 +484,7 @@ body {
     margin-left: auto;
     display: inline-flex;
     align-items: center;
-    transition: transform 0.2s ease;
+    transition: transform 0.25s ease;
     color: #6a7187;
 }
 
@@ -494,24 +515,46 @@ body {
 /* Submenu */
 .sub-menu {
     list-style: none;
-    padding: 4px 0 4px 34px;
+    padding: 4px 0;
     margin: 0;
     display: none;
+    visibility: visible !important;
+    opacity: 1 !important;
     background-color: var(--erp-sidebar-sub-bg);
 }
 
 .sub-menu.show {
-    display: block;
+    display: block !important;
+    visibility: visible !important;
+    animation: submenuFadeIn 0.2s ease-in-out;
+}
+
+@keyframes submenuFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Ensure Tailwind's .collapse utility never hides our submenus */
+.sub-menu,
+.sub-menu * {
+    visibility: visible !important;
 }
 
 .sub-menu li a {
     display: flex;
     align-items: center;
-    padding: 7px 16px;
+    padding: 8px 20px 8px 48px;
     font-size: 13px;
-    color: #79859c;
+    color: #8f9bb3;
     text-decoration: none;
     transition: all 0.2s ease;
+    position: relative;
 }
 
 .sub-menu li a .sub-bullet {
@@ -519,20 +562,28 @@ body {
     height: 5px;
     background: #555b6d;
     border-radius: 50%;
-    margin-right: 10px;
+    position: absolute;
+    left: 32px;
     display: inline-block;
-    transition: background 0.2s ease;
+    transition: all 0.2s ease;
 }
 
 .sub-menu li a:hover,
 .sub-menu li a.active {
     color: #ffffff;
+    background-color: rgba(255, 255, 255, 0.03);
 }
 
 .sub-menu li a:hover .sub-bullet,
 .sub-menu li a.active .sub-bullet {
     background: var(--erp-primary);
     box-shadow: 0 0 6px var(--erp-primary);
+}
+
+.disabled-link {
+    opacity: 0.5;
+    cursor: not-allowed !important;
+    pointer-events: none;
 }
 
 /* Badges inside sidebar */
@@ -718,52 +769,141 @@ body {
 }
 
 /* ==============================================================
-   Desktop Collapsed Sidebar Mode
+   Desktop Collapsed Sidebar Mode (>= 992px)
    ============================================================== */
-body.vertical-collpsed #page-topbar {
-    left: var(--erp-sidebar-collapsed-width);
-}
+@media (min-width: 992px) {
+    body.vertical-collpsed #page-topbar {
+        left: var(--erp-sidebar-collapsed-width);
+    }
 
-body.vertical-collpsed .vertical-menu {
-    width: var(--erp-sidebar-collapsed-width);
-}
+    body.vertical-collpsed .vertical-menu {
+        width: var(--erp-sidebar-collapsed-width);
+        overflow: visible !important;
+    }
 
-body.vertical-collpsed .navbar-brand-box {
-    width: var(--erp-sidebar-collapsed-width);
-    padding: 0;
-    justify-content: center;
-}
+    body.vertical-collpsed .navbar-brand-box {
+        width: var(--erp-sidebar-collapsed-width);
+        padding: 0;
+        justify-content: center;
+    }
 
-body.vertical-collpsed .logo-lg {
-    display: none;
-}
+    body.vertical-collpsed .logo-lg {
+        display: none;
+    }
 
-body.vertical-collpsed .logo-sm {
-    display: block;
-}
+    body.vertical-collpsed .logo-sm {
+        display: block;
+    }
 
-body.vertical-collpsed .main-content {
-    margin-left: var(--erp-sidebar-collapsed-width);
-}
+    body.vertical-collpsed .main-content {
+        margin-left: var(--erp-sidebar-collapsed-width);
+    }
 
-body.vertical-collpsed #side-menu .menu-title,
-body.vertical-collpsed #side-menu .menu-text,
-body.vertical-collpsed #side-menu .menu-arrow,
-body.vertical-collpsed #side-menu .sub-menu,
-body.vertical-collpsed #side-menu .badge {
-    display: none !important;
-}
+    body.vertical-collpsed .sidebar-scroll {
+        overflow: visible !important;
+    }
 
-body.vertical-collpsed #side-menu > li > a {
-    padding: 16px 0;
-    justify-content: center;
-    border-left: 3px solid transparent;
-}
+    body.vertical-collpsed #side-menu {
+        overflow: visible !important;
+    }
 
-body.vertical-collpsed #side-menu > li > a .menu-icon {
-    margin-right: 0;
-    width: 20px;
-    height: 20px;
+    body.vertical-collpsed #side-menu .menu-title,
+    body.vertical-collpsed #side-menu .menu-arrow,
+    body.vertical-collpsed #side-menu .badge {
+        display: none !important;
+    }
+
+    body.vertical-collpsed #side-menu > li {
+        position: relative;
+    }
+
+    body.vertical-collpsed #side-menu > li > a {
+        padding: 16px 0;
+        justify-content: center;
+        border-left: 3px solid transparent;
+        position: relative;
+    }
+
+    body.vertical-collpsed #side-menu > li > a .menu-icon {
+        margin-right: 0;
+        width: 20px;
+        height: 20px;
+    }
+
+    body.vertical-collpsed #side-menu > li > a .menu-text {
+        display: none;
+    }
+
+    /* In collapsed mode, normal inline submenus stay hidden */
+    body.vertical-collpsed #side-menu > li:not(:hover) > .sub-menu {
+        display: none !important;
+    }
+
+    /* Flyout Popup on Hover in Collapsed Mode */
+    body.vertical-collpsed #side-menu > li:hover > .sub-menu {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        position: absolute;
+        left: var(--erp-sidebar-collapsed-width);
+        top: 0;
+        min-width: 220px;
+        background: #2a3042;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.45);
+        border-radius: 0 8px 8px 0;
+        border: 1px solid #363d54;
+        border-left: none;
+        z-index: 1055;
+        padding: 8px 0;
+        animation: flyoutSlideIn 0.2s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+
+    @keyframes flyoutSlideIn {
+        from {
+            opacity: 0;
+            transform: translateX(-6px);
+        }
+        to {
+            opacity: 1;
+            transform: translateX(0);
+        }
+    }
+
+    body.vertical-collpsed #side-menu > li:hover > .sub-menu li a {
+        padding: 9px 20px 9px 36px;
+        color: #a6b0cf;
+    }
+
+    body.vertical-collpsed #side-menu > li:hover > .sub-menu li a .sub-bullet {
+        left: 18px;
+    }
+
+    body.vertical-collpsed #side-menu > li:hover > .sub-menu li a:hover,
+    body.vertical-collpsed #side-menu > li:hover > .sub-menu li a.active {
+        color: #ffffff;
+        background: rgba(255, 255, 255, 0.06);
+    }
+
+    /* Tooltip flyout for single items without submenus */
+    body.vertical-collpsed #side-menu > li:hover > a:not(.has-arrow) .menu-text {
+        display: block !important;
+        position: absolute;
+        left: var(--erp-sidebar-collapsed-width);
+        top: 50%;
+        transform: translateY(-50%);
+        background: #222736;
+        color: #ffffff;
+        padding: 7px 16px;
+        border-radius: 0 6px 6px 0;
+        font-size: 13px;
+        font-weight: 500;
+        white-space: nowrap;
+        box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+        z-index: 1055;
+        pointer-events: none;
+        border: 1px solid #363d54;
+        border-left: none;
+    }
 }
 
 /* ==============================================================
@@ -775,8 +915,8 @@ body.vertical-collpsed #side-menu > li > a .menu-icon {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: rgba(0, 0, 0, 0.45);
-    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.55);
+    z-index: 1040;
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.3s ease, visibility 0.3s ease;
@@ -785,6 +925,7 @@ body.vertical-collpsed #side-menu > li > a .menu-icon {
 @media (max-width: 991.98px) {
     #page-topbar {
         left: 0 !important;
+        z-index: 1000;
     }
 
     .main-content {
@@ -792,18 +933,47 @@ body.vertical-collpsed #side-menu > li > a .menu-icon {
     }
 
     .vertical-menu {
-        left: -260px;
+        left: -280px;
+        width: 260px !important;
+        z-index: 1050;
         box-shadow: none;
+        transition: left 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
     }
 
     body.sidebar-enable .vertical-menu {
         left: 0;
-        box-shadow: 0 0 25px rgba(0, 0, 0, 0.25);
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.45);
     }
 
     body.sidebar-enable .sidebar-backdrop {
         opacity: 1;
         visibility: visible;
+    }
+
+    /* Ensure mobile drawer always shows full text & brand */
+    .vertical-menu #side-menu .menu-title,
+    .vertical-menu #side-menu .menu-text,
+    .vertical-menu #side-menu .menu-arrow,
+    .vertical-menu #side-menu .badge {
+        display: flex !important;
+    }
+
+    .vertical-menu #side-menu .menu-title {
+        display: block !important;
+    }
+
+    .vertical-menu .navbar-brand-box {
+        width: 100% !important;
+        justify-content: space-between !important;
+        padding: 0 20px !important;
+    }
+
+    .vertical-menu .logo-lg {
+        display: block !important;
+    }
+
+    .vertical-menu .logo-sm {
+        display: none !important;
     }
 
     .page-title-box {
