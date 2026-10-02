@@ -243,32 +243,10 @@
     .excel-tabs-nav-wrapper {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: 6px;
         flex: 1 1 auto;
         min-width: 0;
         overflow: hidden;
-    }
-
-    .excel-tab-scroll-btn {
-        background: #ffffff;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        width: 24px;
-        height: 26px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        color: #495057;
-        cursor: pointer;
-        flex-shrink: 0;
-        transition: all 0.15s ease;
-        padding: 0;
-    }
-
-    .excel-tab-scroll-btn:hover {
-        background: #e2e8f0;
-        color: #107c41;
-        border-color: #adb5bd;
     }
 
     .excel-tabs-scroll-container {
@@ -280,13 +258,27 @@
         scroll-behavior: smooth;
         flex: 1 1 auto;
         min-width: 0;
-        padding: 2px 2px 0 2px;
-        scrollbar-width: none;
-        -ms-overflow-style: none;
+        padding: 3px 4px 6px 4px;
+        scrollbar-width: thin;
+        scrollbar-color: #b0b8c0 #edf0f2;
     }
 
     .excel-tabs-scroll-container::-webkit-scrollbar {
-        display: none;
+        height: 6px;
+    }
+
+    .excel-tabs-scroll-container::-webkit-scrollbar-track {
+        background: #edf0f2;
+        border-radius: 3px;
+    }
+
+    .excel-tabs-scroll-container::-webkit-scrollbar-thumb {
+        background: #b0b8c0;
+        border-radius: 3px;
+    }
+
+    .excel-tabs-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #107c41;
     }
 
     .excel-tab {
@@ -323,12 +315,6 @@
         box-shadow: 0 -1px 3px rgba(0,0,0,0.04);
         position: relative;
         z-index: 2;
-    }
-
-    .excel-tab-add-btn {
-        flex-shrink: 0;
-        height: 26px;
-        line-height: 24px;
     }
 
     .excel-sheets-summary {
@@ -687,35 +673,10 @@
 
     {{-- Bottom Excel Sheet Bar (Excel Tabs for Months & Sticky Totals) --}}
     <div class="excel-sheets-bar">
-        {{-- Left Area: Scroll Buttons + Horizontally Scrollable Months Tabs --}}
+        {{-- Left Area: Horizontally Scrollable Months Tabs --}}
         <div class="excel-tabs-nav-wrapper">
-            {{-- Navigation Arrow Buttons for Horizontal Scrolling --}}
-            <button type="button" class="excel-tab-scroll-btn" id="scrollTabsLeftBtn" title="Əvvəlki aylar">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="15 18 9 12 15 6"></polyline>
-                </svg>
-            </button>
-            <button type="button" class="excel-tab-scroll-btn" id="scrollTabsRightBtn" title="Növbəti aylar">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <polyline points="9 18 15 12 9 6"></polyline>
-                </svg>
-            </button>
-
             {{-- Horizontally Scrollable Tabs Container --}}
             <div class="excel-tabs-scroll-container" id="excelTabsContainer">
-                {{-- Bütün Dövrlər (Bütün Datalar) Tabı --}}
-                <a href="{{ route('accounting.index', ['branch_id' => $filterBranch, 'month' => 'all']) }}"
-                   class="excel-tab {{ $filterMonth === 'all' ? 'active' : '' }}"
-                   id="month-tab-all"
-                   title="Bütün tarixlər üzrə satışlar">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <line x1="18" y1="20" x2="18" y2="10"></line>
-                        <line x1="12" y1="20" x2="12" y2="4"></line>
-                        <line x1="6" y1="20" x2="6" y2="14"></line>
-                    </svg>
-                    <span>📊 Bütün Dövrlər</span>
-                </a>
-
                 @foreach($availableMonths as $m)
                     @php
                         $isMonthActive = ($filterMonth === $m['key']);
@@ -732,9 +693,6 @@
                     </a>
                 @endforeach
             </div>
-
-            {{-- New Row Button --}}
-            <button type="button" class="btn btn-sm btn-light border py-0 px-2 font-size-11 excel-tab-add-btn" onclick="addNewRow()" title="Yeni sətir əlavə et">+</button>
         </div>
 
         {{-- Right Area: Pinned Summary Statistics (Never pushed off screen) --}}
@@ -794,35 +752,48 @@
         const tabsContainer = document.getElementById('excelTabsContainer');
         const activeTab = document.querySelector('.excel-tab.active');
 
-        // Center active tab into view horizontally
+        // Səhifə yüklənəndə aktiv ayı (cari ay ən sonda yerləşir) görünən vəziyyətə gətiririk
         if (activeTab && tabsContainer) {
             setTimeout(() => {
-                const containerRect = tabsContainer.getBoundingClientRect();
-                const tabRect = activeTab.getBoundingClientRect();
-                if (tabRect.left < containerRect.left || tabRect.right > containerRect.right) {
-                    activeTab.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-                }
-            }, 100);
+                activeTab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+            }, 150);
         }
 
-        // Mouse wheel horizontal scroll support
         if (tabsContainer) {
+            // Siçan təkəri ilə sağa-sola üfüqi sürüşdürmə (wheel horizontal scroll)
             tabsContainer.addEventListener('wheel', function (e) {
                 if (e.deltaY !== 0) {
                     e.preventDefault();
-                    tabsContainer.scrollLeft += (e.deltaY * 1.5);
+                    tabsContainer.scrollLeft += e.deltaY;
                 }
             }, { passive: false });
+
+            // Siçanla tutub sürüşdürmə (drag-to-scroll)
+            let isDown = false;
+            let startX = 0;
+            let scrollLeft = 0;
+
+            tabsContainer.addEventListener('mousedown', function (e) {
+                if (e.button !== 0) return;
+                isDown = true;
+                tabsContainer.style.cursor = 'grabbing';
+                startX = e.pageX - tabsContainer.offsetLeft;
+                scrollLeft = tabsContainer.scrollLeft;
+            });
+
+            window.addEventListener('mouseup', function () {
+                isDown = false;
+                if (tabsContainer) tabsContainer.style.cursor = 'default';
+            });
+
+            tabsContainer.addEventListener('mousemove', function (e) {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - tabsContainer.offsetLeft;
+                const walk = (x - startX) * 1.5;
+                tabsContainer.scrollLeft = scrollLeft - walk;
+            });
         }
-
-        // Left / Right arrow navigation buttons
-        document.getElementById('scrollTabsLeftBtn')?.addEventListener('click', function () {
-            if (tabsContainer) tabsContainer.scrollBy({ left: -220, behavior: 'smooth' });
-        });
-
-        document.getElementById('scrollTabsRightBtn')?.addEventListener('click', function () {
-            if (tabsContainer) tabsContainer.scrollBy({ left: 220, behavior: 'smooth' });
-        });
     }
 
     function initCellEvents() {

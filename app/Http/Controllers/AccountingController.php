@@ -24,10 +24,21 @@ class AccountingController extends Controller
      */
     public function index(Request $request, PortalWebsiteService $portalService)
     {
+        // Əgər URL-də 'month=all' gələrsə, cari aya yönləndiririk
+        if ($request->query('month') === 'all') {
+            return redirect()->route('accounting.index', array_filter([
+                'branch_id' => $request->query('branch_id'),
+                'month' => Carbon::now()->format('Y-m'),
+            ]));
+        }
+
         $availableMonths = $this->getAvailableMonths();
 
-        // Əgər istifadəçi xüsusi ay seçməyibsə, default olaraq 'all' (bütün datanı çəkir)
-        $filterMonth = $request->query('month', 'all');
+        // Əgər istifadəçi xüsusi ay seçməyibsə və ya format düz deyilsə, cari ayı default edirik
+        $filterMonth = $request->query('month');
+        if (empty($filterMonth) || !preg_match('/^\d{4}-\d{2}$/', $filterMonth)) {
+            $filterMonth = Carbon::now()->format('Y-m');
+        }
 
         $filterBranch = $request->query('branch_id');
 
@@ -58,29 +69,25 @@ class AccountingController extends Controller
 
         // Seçilmiş ayın Azərbaycan dilində adını təyin edirik
         $selectedMonthName = '';
-        if ($filterMonth === 'all') {
-            $selectedMonthName = 'Bütün Dövrlər';
-        } else {
-            foreach ($availableMonths as $m) {
-                if ($m['key'] === $filterMonth) {
-                    $selectedMonthName = $m['name'];
-                    break;
-                }
+        foreach ($availableMonths as $m) {
+            if ($m['key'] === $filterMonth) {
+                $selectedMonthName = $m['name'];
+                break;
             }
-            if (!$selectedMonthName) {
-                $monthNamesAz = [
-                    '01' => 'Yanvar', '02' => 'Fevral', '03' => 'Mart', '04' => 'Aprel',
-                    '05' => 'May', '06' => 'İyun', '07' => 'İyul', '08' => 'Avqust',
-                    '09' => 'Sentyabr', '10' => 'Oktyabr', '11' => 'Noyabr', '12' => 'Dekabr',
-                ];
-                $parts = explode('-', $filterMonth);
-                $selectedMonthName = ($monthNamesAz[$parts[1] ?? ''] ?? ($parts[1] ?? '')) . ' ' . ($parts[0] ?? '');
-            }
+        }
+        if (!$selectedMonthName) {
+            $monthNamesAz = [
+                '01' => 'Yanvar', '02' => 'Fevral', '03' => 'Mart', '04' => 'Aprel',
+                '05' => 'May', '06' => 'İyun', '07' => 'İyul', '08' => 'Avqust',
+                '09' => 'Sentyabr', '10' => 'Oktyabr', '11' => 'Noyabr', '12' => 'Dekabr',
+            ];
+            $parts = explode('-', $filterMonth);
+            $selectedMonthName = ($monthNamesAz[$parts[1] ?? ''] ?? ($parts[1] ?? '')) . ' ' . ($parts[0] ?? '');
         }
 
         // Əvvəlcə yerli bazada mühasibin redaktə edib yadda saxladığı qeyd varmı yoxlayırıq
         $savedRecord = null;
-        if ($apiBranchId !== null && $filterMonth !== 'all') {
+        if ($apiBranchId !== null) {
             $savedRecord = AccountingRecord::where('branch_id', (string)$apiBranchId)
                 ->where('month', $filterMonth)
                 ->first();
@@ -686,72 +693,24 @@ class AccountingController extends Controller
             '12' => 'Dekabr',
         ];
 
-        $rawMonths = collect();
-
-        // 1. portalGamesWebsite.sales (reservation_date)
-        try {
-            $s1 = DB::connection('portal_website')->table('sales')
-                ->selectRaw('DISTINCT DATE_FORMAT(reservation_date, "%Y-%m") as m')
-                ->whereNotNull('reservation_date')
-                ->where('reservation_date', '>=', '2020-01-01')
-                ->pluck('m');
-            $rawMonths = $rawMonths->merge($s1);
-        } catch (\Exception $e) {
-            Log::warning("Could not fetch sales reservation_date months: " . $e->getMessage());
-        }
-
-        // 2. portalGamesWebsite.sales (created_at)
-        try {
-            $s2 = DB::connection('portal_website')->table('sales')
-                ->selectRaw('DISTINCT DATE_FORMAT(created_at, "%Y-%m") as m')
-                ->whereNotNull('created_at')
-                ->where('created_at', '>=', '2020-01-01')
-                ->pluck('m');
-            $rawMonths = $rawMonths->merge($s2);
-        } catch (\Exception $e) {
-            Log::warning("Could not fetch sales created_at months: " . $e->getMessage());
-        }
-
-        // 3. portalGamesWebsite.reservations (reservation_date)
-        try {
-            $r1 = DB::connection('portal_website')->table('reservations')
-                ->selectRaw('DISTINCT DATE_FORMAT(reservation_date, "%Y-%m") as m')
-                ->whereNotNull('reservation_date')
-                ->where('reservation_date', '>=', '2020-01-01')
-                ->pluck('m');
-            $rawMonths = $rawMonths->merge($r1);
-        } catch (\Exception $e) {
-            Log::warning("Could not fetch reservations reservation_date months: " . $e->getMessage());
-        }
-
-        // 4. ERP daxilindəki AccountingRecord
-        try {
-            $acc = AccountingRecord::select('month')->distinct()->pluck('month');
-            $rawMonths = $rawMonths->merge($acc);
-        } catch (\Exception $e) {
-            Log::warning("Could not fetch accounting_records months: " . $e->getMessage());
-        }
-
-        // Cari ayı da əlavə edirik
         $currentYm = Carbon::now()->format('Y-m');
-        $rawMonths->push($currentYm);
+        $minYm = '2025-11';
+        $maxYm = $currentYm;
 
-        // Formatı və ili yoxlayırıq (2020 - növbəti il arası)
-        $validMonths = $rawMonths->filter(function ($m) {
-            if (!is_string($m) || !preg_match('/^(\d{4})-(0[1-9]|1[0-2])$/', $m, $matches)) {
-                return false;
+        // Yerli AccountingRecord-da hər hansı başqa ay varsa, onları da əhatə edirik
+        try {
+            $accMonths = AccountingRecord::select('month')->distinct()->pluck('month');
+            foreach ($accMonths as $m) {
+                if (is_string($m) && preg_match('/^\d{4}-\d{2}$/', $m)) {
+                    if ($m < $minYm) $minYm = $m;
+                    if ($m > $maxYm) $maxYm = $m;
+                }
             }
-            $y = (int)$matches[1];
-            return $y >= 2020 && $y <= (Carbon::now()->year + 1);
-        })->unique()->values();
-
-        // Bazadakı ən köhnə və ən yeni ay arasındakı bütün ayları kəsintisiz doldururuq
-        $minYm = $validMonths->min() ?: Carbon::now()->subMonths(12)->format('Y-m');
-        $maxYm = $validMonths->max() ?: $currentYm;
-        if ($maxYm < $currentYm) {
-            $maxYm = $currentYm;
+        } catch (\Exception $e) {
+            // ignore
         }
 
+        // 2025-11-dən cari aya qədər bütün ayları ardıcıl və kəsintisiz doldururuq
         $cur = Carbon::parse($minYm . '-01');
         $end = Carbon::parse($maxYm . '-01');
         $allMonths = collect();
@@ -760,8 +719,8 @@ class AccountingController extends Controller
             $cur->addMonth();
         }
 
-        // Ən yeni aydan ən köhnə aya doğru sıralayırıq
-        $sorted = $allMonths->unique()->sortDesc()->values();
+        // Aylar üzrə ardıcıl şəkildə sıralayırıq (xronoloji: ən köhnədən cari aya doğru, cari ay ən sonda)
+        $sorted = $allMonths->unique()->sort()->values();
 
         return $sorted->map(function ($ym) use ($monthNamesAz) {
             [$y, $m] = explode('-', $ym);
