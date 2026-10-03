@@ -40,7 +40,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/expenses/export', [ExpenseController::class, 'export'])->name('expenses.export');
 
     // Mühasibatlıq: Xərc Təsnifatları (CRUD)
-    Route::resource('expense-classifications', ExpenseClassificationController::class)->except(['create', 'show', 'edit']);
+    Route::resource('expense-classifications', ExpenseClassificationController::class)->except(['show']);
     Route::patch('/expense-classifications/{id}/toggle', [ExpenseClassificationController::class, 'toggleStatus'])->name('expense-classifications.toggle');
 });
 

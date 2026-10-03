@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\ExpenseClassification;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Validation\Rule;
 
 class ExpenseClassificationController extends Controller
@@ -15,19 +16,41 @@ class ExpenseClassificationController extends Controller
     {
         $search = $request->input('search');
 
-        $query = ExpenseClassification::query();
+        try {
+            $query = ExpenseClassification::query();
 
-        if ($search) {
-            $query->where('name', 'like', "%{$search}%");
+            if ($search) {
+                $query->where('name', 'like', "%{$search}%");
+            }
+
+            $classifications = $query->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->paginate(20)
+                ->withQueryString();
+        } catch (\Throwable $e) {
+            $classifications = new LengthAwarePaginator([], 0, 20);
         }
-
-        $classifications = $query->orderBy('sort_order', 'asc')
-            ->orderBy('id', 'asc')
-            ->paginate(30);
 
         return view('expense_classifications.index', [
             'classifications' => $classifications,
             'search' => $search,
+        ]);
+    }
+
+    /**
+     * Yeni təsnifat yaratma səhifəsi
+     */
+    public function create()
+    {
+        $nextOrder = 1;
+        try {
+            $nextOrder = (ExpenseClassification::max('sort_order') ?? 0) + 1;
+        } catch (\Throwable $e) {
+            $nextOrder = 1;
+        }
+
+        return view('expense_classifications.create', [
+            'nextOrder' => $nextOrder,
         ]);
     }
 
@@ -39,25 +62,43 @@ class ExpenseClassificationController extends Controller
         $validated = $request->validate([
             'name' => 'required|string|max:191|unique:expense_classifications,name',
             'sort_order' => 'nullable|integer',
+            'is_active' => 'nullable|boolean',
         ], [
             'name.required' => 'Təsnifat adı mütləq daxil edilməlidir.',
             'name.unique' => 'Bu adda təsnifat artıq mövcuddur.',
         ]);
 
-        $maxOrder = ExpenseClassification::max('sort_order') ?? 0;
+        $maxOrder = 0;
+        try {
+            $maxOrder = ExpenseClassification::max('sort_order') ?? 0;
+        } catch (\Throwable $e) {
+            $maxOrder = 0;
+        }
 
         ExpenseClassification::create([
             'name' => trim($validated['name']),
             'sort_order' => $validated['sort_order'] ?? ($maxOrder + 1),
-            'is_active' => true,
+            'is_active' => $request->has('is_active') ? (bool)$request->input('is_active') : true,
         ]);
 
         return redirect()->route('expense-classifications.index')
-            ->with('success', 'Yeni xərc təsnifatı uğurla əlavə edildi.');
+            ->with('success', '«' . trim($validated['name']) . '» təsnifatı uğurla əlavə edildi.');
     }
 
     /**
-     * Təsnifatı redaktə et
+     * Təsnifatı redaktə etmə səhifəsi
+     */
+    public function edit($id)
+    {
+        $classification = ExpenseClassification::findOrFail($id);
+
+        return view('expense_classifications.edit', [
+            'classification' => $classification,
+        ]);
+    }
+
+    /**
+     * Təsnifatı yenilə
      */
     public function update(Request $request, $id)
     {
@@ -80,11 +121,11 @@ class ExpenseClassificationController extends Controller
         $classification->update([
             'name' => trim($validated['name']),
             'sort_order' => $validated['sort_order'] ?? $classification->sort_order,
-            'is_active' => $request->has('is_active') ? (bool)$request->input('is_active') : $classification->is_active,
+            'is_active' => $request->has('is_active') ? (bool)$request->input('is_active') : false,
         ]);
 
         return redirect()->route('expense-classifications.index')
-            ->with('success', 'Xərc təsnifatı uğurla yeniləndi.');
+            ->with('success', '«' . $classification->name . '» təsnifatı uğurla yeniləndi.');
     }
 
     /**
@@ -109,9 +150,10 @@ class ExpenseClassificationController extends Controller
     public function destroy($id)
     {
         $classification = ExpenseClassification::findOrFail($id);
+        $name = $classification->name;
         $classification->delete();
 
         return redirect()->route('expense-classifications.index')
-            ->with('success', 'Xərc təsnifatı uğurla silindi.');
+            ->with('success', '«' . $name . '» təsnifatı uğurla silindi.');
     }
 }
