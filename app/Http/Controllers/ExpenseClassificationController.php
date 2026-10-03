@@ -25,10 +25,9 @@ class ExpenseClassificationController extends Controller
 
             $classifications = $query->orderBy('sort_order', 'asc')
                 ->orderBy('id', 'asc')
-                ->paginate(20)
-                ->withQueryString();
+                ->get();
         } catch (\Throwable $e) {
-            $classifications = new LengthAwarePaginator([], 0, 20);
+            $classifications = collect();
         }
 
         return view('expense_classifications.index', [
