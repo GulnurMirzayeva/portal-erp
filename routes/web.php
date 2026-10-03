@@ -21,16 +21,11 @@ Route::post('/logout', [LoginController::class, 'logout'])
     ->name('logout');
 
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\DashboardController;
 use App\Services\PortalWebsiteService;
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function (PortalWebsiteService $portalService) {
-        $report = $portalService->getAccountingReport(['month' => date('Y-m')]);
-        return view('dashboard.index', [
-            'summary' => $report['summary'] ?? [],
-            'connected' => $report['connected'] ?? false,
-        ]);
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.index');
     Route::post('/accounting/save', [AccountingController::class, 'save'])->name('accounting.save');

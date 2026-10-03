@@ -28,22 +28,17 @@
             {{-- Category: Menu --}}
             <li class="menu-title">MENU</li>
 
-            {{-- Dashboards --}}
+            {{-- Dashboard --}}
             <li class="{{ request()->routeIs('dashboard') ? 'mm-active' : '' }}">
-                <a href="javascript:void(0);" class="waves-effect has-arrow {{ request()->routeIs('dashboard') ? 'active' : '' }}" data-toggle="sub-menu" data-target="#menuDashboards" title="Dashboards">
+                <a href="{{ route('dashboard') }}" class="waves-effect {{ request()->routeIs('dashboard') ? 'active' : '' }}" title="Dashboard">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="menu-icon">
-                        <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                        <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                        <rect width="7" height="9" x="3" y="3" rx="1"></rect>
+                        <rect width="7" height="5" x="14" y="3" rx="1"></rect>
+                        <rect width="7" height="9" x="14" y="12" rx="1"></rect>
+                        <rect width="7" height="5" x="3" y="16" rx="1"></rect>
                     </svg>
-                    <span class="menu-text">Dashboards</span>
-                    <span class="menu-arrow">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                    </span>
+                    <span class="menu-text">Dashboard</span>
                 </a>
-                <ul class="sub-menu {{ request()->routeIs('dashboard') ? 'show' : '' }}" id="menuDashboards">
-                    <li><a href="{{ route('dashboard') }}" class="{{ request()->routeIs('dashboard') ? 'active' : '' }}"><span class="sub-bullet"></span> Default (Əsas)</a></li>
-                    <li><a href="javascript:void(0);" class="disabled-link"><span class="sub-bullet"></span> Analitika</a></li>
-                </ul>
             </li>
 
             {{-- Category: Apps & ERP Modules --}}
