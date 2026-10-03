@@ -75,11 +75,16 @@ class ExpenseController extends Controller
         }
 
         // ERP-dən aktiv təsnifatları çəkirik
-        $classifications = ExpenseClassification::where('is_active', true)
-            ->orderBy('sort_order', 'asc')
-            ->orderBy('id', 'asc')
-            ->pluck('name')
-            ->toArray();
+        $classifications = [];
+        try {
+            $classifications = ExpenseClassification::where('is_active', true)
+                ->orderBy('sort_order', 'asc')
+                ->orderBy('id', 'asc')
+                ->pluck('name')
+                ->toArray();
+        } catch (\Exception $e) {
+            Log::warning("ExpenseClassification fetch error: " . $e->getMessage());
+        }
 
         if (empty($classifications)) {
             $classifications = [
@@ -104,10 +109,14 @@ class ExpenseController extends Controller
 
         // Əvvəlcə yerli bazada yadda saxlanılmış redaktə varmı yoxlayırıq
         $savedRecord = null;
-        if ($filterBranch && $filterBranch !== 'all') {
-            $savedRecord = ExpenseRecord::where('branch_id', (string)$filterBranch)
-                ->where('month', $filterMonth)
-                ->first();
+        try {
+            if ($filterBranch && $filterBranch !== 'all') {
+                $savedRecord = ExpenseRecord::where('branch_id', (string)$filterBranch)
+                    ->where('month', $filterMonth)
+                    ->first();
+            }
+        } catch (\Exception $e) {
+            $savedRecord = null;
         }
 
         if ($savedRecord && !empty($savedRecord->expenses_data)) {
