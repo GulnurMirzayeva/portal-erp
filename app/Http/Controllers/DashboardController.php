@@ -203,7 +203,7 @@ class DashboardController extends Controller
         $branchMap = [];
         foreach ($branches as $b) {
             $branchMap[(string)$b['id']] = [
-                'id' => $b['id'],
+                'id' => (string)$b['id'],
                 'name' => $b['name'],
                 'sales_count' => 0,
                 'revenue' => 0.0,
@@ -217,10 +217,13 @@ class DashboardController extends Controller
 
         foreach ($sales as $s) {
             $bId = (string)($s['branch_id'] ?? '');
+            if (empty($bId) || $bId === '0' || $bId === '#') {
+                continue;
+            }
+
             if (!isset($branchMap[$bId])) {
-                $bName = $s['branch_name'] ?? ('Filial #' . $bId);
-                // "Ofis" filialını nəzərə almırıq
-                if (str_contains(mb_strtolower($bName), 'ofis') || str_contains(mb_strtolower($bName), 'office')) {
+                $bName = trim($s['branch_name'] ?? '');
+                if (empty($bName) || $bName === 'Filial #' || str_contains(mb_strtolower($bName), 'ofis') || str_contains(mb_strtolower($bName), 'office')) {
                     continue;
                 }
                 $branchMap[$bId] = [
@@ -255,8 +258,12 @@ class DashboardController extends Controller
         }
         unset($data);
 
-        // Yalnız satışı olan və ya adı olan filiallar saxlanılır, gəlirə görə çoxdan aza sıralanır
-        $sorted = array_values($branchMap);
+        // Naməlum və ya filial # kimi qeydləri çıxarırıq, yalnız real filialları saxlayırıq
+        $validBranches = array_filter($branchMap, function ($item) {
+            return !empty($item['name']) && $item['name'] !== 'Filial #' && !empty($item['id']) && $item['id'] !== '#';
+        });
+
+        $sorted = array_values($validBranches);
         usort($sorted, fn($a, $b) => $b['revenue'] <=> $a['revenue']);
 
         // Reytinq indeksi təyin edilir
