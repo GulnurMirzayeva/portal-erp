@@ -25,6 +25,14 @@ class ExpenseController extends Controller
      */
     public function index(Request $request, PortalWebsiteService $portalService)
     {
+        // Əgər URL-də 'month=all' gələrsə, cari aya yönləndiririk
+        if ($request->query('month') === 'all') {
+            return redirect()->route('expenses.index', array_filter([
+                'branch_id' => $request->query('branch_id'),
+                'month' => Carbon::now()->format('Y-m'),
+            ]));
+        }
+
         $availableMonths = $this->getAvailableMonths();
 
         // Cari ay default

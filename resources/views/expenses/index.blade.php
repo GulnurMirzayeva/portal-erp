@@ -6,8 +6,7 @@
 @section('breadcrumb')
     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">ERP</a></li>
     <li class="breadcrumb-item"><a href="javascript:void(0);">Mühasibatlıq</a></li>
-    <li class="breadcrumb-item"><a href="javascript:void(0);">Xərclər</a></li>
-    <li class="breadcrumb-item active">Xərclərin siyahısı</li>
+    <li class="breadcrumb-item active">Xərclər</li>
 @endsection
 
 @section('content')
@@ -103,16 +102,33 @@
         100% { transform: scale(1); }
     }
 
-    /* Filters Form Selects in Ribbon */
-    .excel-select {
-        background: rgba(255,255,255,0.9);
-        color: #212529;
+    /* Branch selector tabs (Top Filiallar bar) */
+    .branch-pill {
+        border-radius: 5px;
+        padding: 6px 14px;
         font-size: 12px;
-        border: 1px solid #ced4da;
-        border-radius: 4px;
-        padding: 4px 8px;
-        font-weight: 500;
-        outline: none;
+        font-weight: 600;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        border: 1px solid #dcdcdc;
+        background: #ffffff;
+        color: #495057;
+        transition: all 0.15s ease;
+    }
+
+    .branch-pill:hover {
+        background: #eef7ee;
+        border-color: #107c41;
+        color: #107c41;
+    }
+
+    .branch-pill.active {
+        background: #107c41;
+        color: #ffffff;
+        border-color: #107c41;
+        box-shadow: 0 2px 6px rgba(16, 124, 65, 0.25);
     }
 
     /* Top Banner Row (Exact Match from User's Screenshot: Lime-Green banner) */
@@ -138,15 +154,15 @@
         font-size: 20px;
         font-weight: 800;
         color: #1a2e05;
-        font-family: 'Segoe UI', monospace, sans-serif;
+        white-space: nowrap;
+        font-variant-numeric: tabular-nums;
     }
 
     /* Table Grid Styling */
     .excel-table-wrapper {
-        max-height: 720px;
         overflow-x: auto;
-        overflow-y: auto;
-        position: relative;
+        max-height: calc(100vh - 340px);
+        min-height: 380px;
         background: #ffffff;
     }
 
@@ -154,7 +170,7 @@
         border-collapse: separate;
         border-spacing: 0;
         width: 100%;
-        font-size: 12px;
+        font-size: 13px;
         color: #212529;
         table-layout: fixed;
     }
@@ -165,151 +181,208 @@
         border-bottom: 1px solid #d4d4d4;
         padding: 4px 8px;
         white-space: nowrap;
-        user-select: text;
         vertical-align: middle;
     }
 
-    /* Pink Column Header Row (Exact match from User's Screenshot: Pink Mauve) */
+    /* Pink Header: Exact match to Screenshot */
     table.excel-table thead tr.pink-header th {
-        background: #f7b4ce;
-        color: #222222;
-        font-size: 12px;
+        background: #e39bb5;
+        color: #3b0818;
         font-weight: 700;
+        font-size: 13px;
         text-align: center;
-        padding: 8px 6px;
+        padding: 8px 10px;
         position: sticky;
         top: 0;
-        z-index: 10;
-        border-bottom: 2px solid #e290af;
+        z-index: 15;
+        border-bottom: 2px solid #c97f9b;
         letter-spacing: 0.2px;
     }
 
-    /* Row Number Header */
-    td.row-idx {
-        background: #f8f9fa;
-        color: #6c757d;
-        font-weight: 600;
-        text-align: center;
-        font-size: 11px;
-        position: sticky;
-        left: 0;
-        z-index: 5;
-        border-right: 2px solid #adb5bd !important;
-        width: 44px;
-        min-width: 44px;
-        max-width: 44px;
-        user-select: none;
-    }
-
     table.excel-table tbody tr:hover td {
-        background-color: #fafdf7;
+        background-color: #fafbfc;
     }
 
-    /* Editable cells */
+    /* Inputs inside Excel cells */
     .cell-input {
         width: 100%;
-        border: none;
+        border: 1px solid transparent;
         background: transparent;
-        font-size: 12px;
-        color: inherit;
-        padding: 3px 4px;
-        outline: none;
+        padding: 4px 6px;
+        font-size: 13px;
         font-family: inherit;
+        color: #212529;
+        outline: none;
+        border-radius: 3px;
+        transition: all 0.12s ease;
     }
 
     .cell-input:focus {
-        background-color: #ffffff;
-        box-shadow: inset 0 0 0 2px #107c41;
-        border-radius: 2px;
+        background: #ffffff;
+        border-color: #107c41;
+        box-shadow: 0 0 0 2px rgba(16, 124, 65, 0.2);
     }
 
     .cell-select {
         width: 100%;
-        border: none;
+        border: 1px solid transparent;
         background: transparent;
-        font-size: 12px;
-        color: inherit;
-        padding: 3px 2px;
-        outline: none;
-        cursor: pointer;
+        padding: 4px 6px;
+        font-size: 13px;
         font-family: inherit;
+        color: #212529;
+        outline: none;
+        border-radius: 3px;
+        cursor: pointer;
     }
 
     .cell-select:focus {
-        background-color: #ffffff;
-        box-shadow: inset 0 0 0 2px #107c41;
-        border-radius: 2px;
+        background: #ffffff;
+        border-color: #107c41;
+        box-shadow: 0 0 0 2px rgba(16, 124, 65, 0.2);
     }
 
-    /* When cell is edited */
     td.is-dirty {
         background-color: #fff9db !important;
     }
 
-    /* Alignments */
     .align-right { text-align: right; }
     .align-center { text-align: center; }
     .align-left { text-align: left; }
 
-    /* Footer Row */
+    /* Footer Totals Row */
     table.excel-table tfoot tr td {
-        background: #eaf5ea;
-        color: #0b5e30;
+        background: #f4f6f8;
+        color: #1a2e05;
         font-weight: 700;
-        font-size: 12px;
+        font-size: 13px;
         position: sticky;
         bottom: 0;
-        z-index: 9;
-        border-top: 2px solid #107c41;
-        border-bottom: 2px solid #107c41;
+        z-index: 10;
+        border-top: 2px solid #b8d966;
+        border-bottom: 2px solid #b8d966;
+        padding: 8px 10px;
     }
 
-    /* Excel Sheet Tabs Bar at bottom */
+    .row-idx {
+        background: #f8f9fa;
+        color: #6c757d;
+        font-weight: 600;
+        text-align: center;
+        font-size: 12px;
+        user-select: none;
+    }
+
+    /* Bottom Excel Sheet Tabs Bar (Aylar aşağıda) */
     .excel-sheets-bar {
         background: #f1f3f4;
         border-top: 1px solid #d4d4d4;
-        padding: 6px 12px;
+        padding: 4px 8px;
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 12px;
         font-size: 12px;
+        position: relative;
     }
 
     .excel-tabs-nav-wrapper {
         display: flex;
         align-items: center;
-        gap: 4px;
-        overflow-x: auto;
+        gap: 6px;
+        flex: 1 1 auto;
+        min-width: 0;
+        overflow: hidden;
     }
 
-    .excel-sheet-tab {
-        background: #e8eaed;
-        color: #3c4043;
-        border: 1px solid #dadce0;
-        border-bottom: none;
-        border-radius: 4px 4px 0 0;
-        padding: 5px 14px;
+    .excel-tabs-scroll-container {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        overflow-x: auto;
+        white-space: nowrap;
+        scroll-behavior: smooth;
+        flex: 1 1 auto;
+        min-width: 0;
+        padding: 3px 4px 6px 4px;
+        scrollbar-width: thin;
+        scrollbar-color: #b0b8c0 #edf0f2;
+    }
+
+    .excel-tabs-scroll-container::-webkit-scrollbar {
+        height: 6px;
+    }
+
+    .excel-tabs-scroll-container::-webkit-scrollbar-track {
+        background: #edf0f2;
+        border-radius: 3px;
+    }
+
+    .excel-tabs-scroll-container::-webkit-scrollbar-thumb {
+        background: #b0b8c0;
+        border-radius: 3px;
+    }
+
+    .excel-tabs-scroll-container::-webkit-scrollbar-thumb:hover {
+        background: #107c41;
+    }
+
+    .excel-tab {
+        background: #e9ecef;
+        color: #495057;
         font-weight: 500;
-        font-size: 12px;
-        text-decoration: none;
+        padding: 5px 13px;
+        border-radius: 4px 4px 0 0;
+        border: 1px solid #ced4da;
+        border-bottom: 1px solid #ced4da;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        text-decoration: none;
+        flex-shrink: 0;
+        user-select: none;
         transition: all 0.15s ease;
-        white-space: nowrap;
+        font-size: 12px;
     }
 
-    .excel-sheet-tab:hover {
-        background: #ffffff;
+    .excel-tab:hover {
+        background: #f8f9fa;
         color: #107c41;
+        border-color: #adb5bd;
+        text-decoration: none;
     }
 
-    .excel-sheet-tab.active {
+    .excel-tab.active {
         background: #ffffff;
         color: #107c41;
         font-weight: 700;
-        border-top: 2px solid #107c41;
+        border-color: #ced4da #ced4da transparent #ced4da;
+        border-bottom: 3px solid #107c41;
+        box-shadow: 0 -1px 3px rgba(0,0,0,0.04);
+        position: relative;
+        z-index: 2;
+    }
+
+    .excel-sheets-summary {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-shrink: 0;
+        white-space: nowrap;
+        padding-left: 12px;
+        border-left: 1px solid #d4d4d4;
+        font-size: 12px;
+    }
+
+    .excel-stat-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .excel-stat-divider {
+        color: #ced4da;
+        font-weight: 300;
     }
 
     .del-row-btn {
@@ -332,19 +405,46 @@
     }
 </style>
 
-{{-- Action Toolbar / Ribbon --}}
-<div class="excel-ribbon">
+{{-- Toast Notification Box --}}
+<div id="excelToast" style="display: none; position: fixed; top: 20px; right: 25px; z-index: 9999; background: #107c41; color: white; padding: 12px 20px; border-radius: 6px; box-shadow: 0 4px 14px rgba(0,0,0,0.18); font-size: 13px; font-weight: 600; align-items: center; gap: 8px;">
+    <span id="toastIcon">✓</span>
+    <span id="toastMessage">Uğurla yadda saxlanıldı!</span>
+</div>
+
+{{-- 1. Filial Selector Pills Bar (YUXARIDA - Filiallar) --}}
+<div class="card mb-3 border-0 shadow-sm" style="border-radius: 8px;">
+    <div class="card-body p-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2 flex-grow-1 align-items-center">
+            @foreach($branches as $b)
+                @php
+                    $isActive = ($filterBranch == $b['id']);
+                @endphp
+                <a href="{{ route('expenses.index', ['branch_id' => $b['id'], 'month' => $filterMonth]) }}"
+                   class="branch-pill {{ $isActive ? 'active' : '' }}"
+                   title="{{ $b['name'] }}">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 21h18"></path>
+                        <path d="M5 21V7l8-4v18"></path>
+                        <path d="M19 21V11l-6-3"></path>
+                    </svg>
+                    <span>{{ $b['name'] }}</span>
+                </a>
+            @endforeach
+        </div>
+    </div>
+</div>
+
+{{-- 2. Excel Ribbon Toolbar (ORTADA - Action Bar) --}}
+<div class="excel-ribbon mb-3">
     <div class="excel-ribbon-title">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2">
             <rect width="18" height="18" x="3" y="3" rx="2"></rect>
             <path d="M3 9h18"></path>
             <path d="M3 15h18"></path>
             <path d="M9 3v18"></path>
             <path d="M15 3v18"></path>
         </svg>
-        <span>Xərclər Cədvəli</span>
-        <span class="badge bg-light text-dark fw-bold px-2 py-1">{{ $selectedBranchName }}</span>
-        <span class="badge bg-white text-success fw-bold px-2 py-1">{{ $selectedMonthName ?? $filterMonth }}</span>
+        <span>{{ $selectedBranchName }} — Xərclər ({{ $selectedMonthName ?? $filterMonth }})</span>
 
         @if($hasCustomEdits)
             <span class="badge bg-warning text-dark ms-2" title="ERP yerli yaddaşında xüsusi redaktələr mövcuddur">
@@ -354,65 +454,41 @@
     </div>
 
     <div class="excel-ribbon-actions">
-        {{-- Filial Seçimi --}}
-        <div class="d-flex align-items-center gap-1">
-            <span class="text-white small fw-semibold">Filial:</span>
-            <select class="excel-select" onchange="changeFilter('branch_id', this.value)">
-                @foreach($branches as $b)
-                    <option value="{{ $b['id'] }}" {{ $filterBranch == $b['id'] ? 'selected' : '' }}>
-                        {{ $b['name'] }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        {{-- Ay Seçimi --}}
-        <div class="d-flex align-items-center gap-1">
-            <span class="text-white small fw-semibold">Ay:</span>
-            <select class="excel-select" onchange="changeFilter('month', this.value)">
-                @foreach($availableMonths as $m)
-                    <option value="{{ $m['key'] }}" {{ $filterMonth == $m['key'] ? 'selected' : '' }}>
-                        {{ $m['name'] }} {{ $m['is_current'] ? '(Cari Ay)' : '' }}
-                    </option>
-                @endforeach
-            </select>
-        </div>
-
-        {{-- Sətir Əlavə Et Button --}}
-        <button type="button" class="excel-btn" id="addRowBtn" title="Yeni xərc sətri əlavə et">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                <line x1="12" y1="5" x2="12" y2="19"></line>
-                <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-            Sətir Əlavə Et
-        </button>
-
-        {{-- Excel Export --}}
-        <a href="{{ route('expenses.export', ['branch_id' => $filterBranch, 'month' => $filterMonth]) }}" class="excel-btn" title="Excel (.xlsx) faylı kimi yüklə">
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-            </svg>
-            Excel İxrac
-        </a>
-
         {{-- Yadda Saxla Button --}}
         <button type="button" class="excel-btn excel-btn-save" id="saveBtn">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
                 <polyline points="7 3 7 8 15 8"></polyline>
             </svg>
-            <span>Yadda Saxla</span>
+            <span id="saveBtnText">Yadda Saxla (Ctrl+S)</span>
         </button>
+
+        {{-- Sətir Əlavə Et Button --}}
+        <button type="button" class="excel-btn" id="addRowBtn" title="Yeni xərc sətri əlavə et">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+            <span>+ Sətir Əlavə Et</span>
+        </button>
+
+        {{-- Excel Export Button --}}
+        <a href="{{ route('expenses.export', ['branch_id' => $filterBranch, 'month' => $filterMonth, 'format' => 'xlsx']) }}" class="excel-btn" title="Excel (.xlsx) faylı kimi yüklə">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <span>Excel Yüklə (.xlsx)</span>
+        </a>
     </div>
 </div>
 
-{{-- Excel Sheet Container --}}
+{{-- 3. Excel Sheet Container (CƏDVƏL) --}}
 <div class="excel-container">
 
-    {{-- Top Banner: Exact match to User's Screenshot (Lime Green Banner with Branch Name & Grand Total) --}}
+    {{-- Top Banner: Exact match to Screenshot (Lime Green Banner with Branch Name & Grand Total) --}}
     <div class="excel-banner-row">
         <div style="width: 140px;"></div>
         <div class="excel-banner-title">
@@ -472,16 +548,18 @@
                         {{-- 3. Oyun --}}
                         <td>
                             <select class="cell-select game-select">
-                                <option value="general" {{ empty($row['game_id']) || $row['game_id'] === 'general' ? 'selected' : '' }}>Ümumi</option>
+                                <option value="general" {{ empty($row['game_id']) || $row['game_id'] === 'general' ? 'selected' : '' }}>
+                                    Ümumi
+                                </option>
                                 @foreach($branchGames as $game)
-                                    <option value="{{ $game['id'] }}" {{ (isset($row['game_id']) && $row['game_id'] == $game['id']) ? 'selected' : '' }}>
+                                    <option value="{{ $game['id'] }}" {{ isset($row['game_id']) && $row['game_id'] == $game['id'] ? 'selected' : '' }}>
                                         {{ $game['name'] }}
                                     </option>
                                 @endforeach
                             </select>
                         </td>
 
-                        {{-- 4. Xərclər (Yazıla bilsin, dropdown yox) --}}
+                        {{-- 4. Xərclər (Yazıla bilsin, select yox) --}}
                         <td>
                             <input type="text" class="cell-input title-input" value="{{ $row['title'] ?? '' }}" placeholder="Xərc adı...">
                         </td>
@@ -494,13 +572,13 @@
                         {{-- 6. Məbləğ nəğd --}}
                         <td class="align-right">
                             <input type="number" step="0.01" min="0" class="cell-input text-end amount-cash-input"
-                                   value="{{ $cash > 0 ? $cash : '' }}" placeholder="0.00">
+                                   value="{{ $cash > 0 ? number_format($cash, 2, '.', '') : '' }}" placeholder="0.00">
                         </td>
 
                         {{-- 7. Məbləğ nəğdsiz --}}
                         <td class="align-right">
                             <input type="number" step="0.01" min="0" class="cell-input text-end amount-card-input"
-                                   value="{{ $card > 0 ? $card : '' }}" placeholder="0.00">
+                                   value="{{ $card > 0 ? number_format($card, 2, '.', '') : '' }}" placeholder="0.00">
                         </td>
 
                         {{-- 8. Təsnifat (Dropdown) --}}
@@ -508,7 +586,7 @@
                             <select class="cell-select classification-select">
                                 <option value="">-- Seçin --</option>
                                 @foreach($classifications as $c)
-                                    <option value="{{ $c }}" {{ (isset($row['classification']) && $row['classification'] === $c) ? 'selected' : '' }}>
+                                    <option value="{{ $c }}" {{ ($row['classification'] ?? '') === $c ? 'selected' : '' }}>
                                         {{ $c }}
                                     </option>
                                 @endforeach
@@ -517,10 +595,10 @@
 
                         {{-- 9. Cəmi Məbləğ (Avtomatik hesablanır) --}}
                         <td class="align-right fw-bold row-total-cell" style="background-color: #fafbfc;">
-                            {{ $total > 0 ? number_format($total, 2, '.', '') : '0.00' }}
+                            {{ number_format($total, 2, '.', '') }}
                         </td>
 
-                        {{-- Əməliyyat (Sətir sil) --}}
+                        {{-- 10. Əməliyyat (Sətir silmə) --}}
                         <td class="text-center">
                             <button type="button" class="del-row-btn" title="Sətri sil">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -582,21 +660,40 @@
         </table>
     </div>
 
-    {{-- Bottom Excel Sheet Tabs Bar --}}
+    {{-- 4. Bottom Excel Sheet Tabs Bar (AŞAĞIDA - Aylar və Sticky Yekun Statistikası) --}}
     <div class="excel-sheets-bar">
+        {{-- Left Area: Horizontally Scrollable Months Tabs --}}
         <div class="excel-tabs-nav-wrapper">
-            <span class="text-muted small me-2"><i class="mdi mdi-table me-1"></i> Filiallar:</span>
-            @foreach($branches as $b)
-                <a href="{{ route('expenses.index', ['branch_id' => $b['id'], 'month' => $filterMonth]) }}"
-                   class="excel-sheet-tab {{ $filterBranch == $b['id'] ? 'active' : '' }}">
-                    <i class="mdi mdi-file-document-outline"></i>
-                    {{ $b['name'] }}
-                </a>
-            @endforeach
+            <div class="excel-tabs-scroll-container" id="excelTabsContainer">
+                @foreach($availableMonths as $m)
+                    @php
+                        $isMonthActive = ($filterMonth === $m['key']);
+                    @endphp
+                    <a href="{{ route('expenses.index', ['branch_id' => $filterBranch, 'month' => $m['key']]) }}"
+                       class="excel-tab {{ $isMonthActive ? 'active' : '' }}"
+                       id="month-tab-{{ $m['key'] }}"
+                       title="{{ $m['name'] }}">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                        </svg>
+                        <span>{{ $m['name'] }}</span>
+                    </a>
+                @endforeach
+            </div>
         </div>
 
-        <div class="text-muted small">
-            <span>Cəmi Sətir: <strong id="rowCountLabel">{{ count($expenses) }}</strong></span>
+        {{-- Right Area: Pinned Summary Statistics --}}
+        <div class="excel-sheets-summary">
+            <span class="excel-stat-item">
+                <span class="text-muted">Sətir sayı:</span>
+                <strong id="rowCountDisplay">{{ count($expenses) }}</strong>
+            </span>
+            <span class="excel-stat-divider">|</span>
+            <span class="excel-stat-item">
+                <span class="text-muted">Yekun Xərc:</span>
+                <strong class="text-success font-size-13" id="bottomGrandTotalDisplay">{{ number_format($summary['grand_total'] ?? 0, 2) }} ₼</strong>
+            </span>
         </div>
     </div>
 </div>
@@ -609,17 +706,6 @@
     const CLASSIFICATIONS = @json($classifications);
 
     let hasUnsavedChanges = false;
-
-    function changeFilter(param, val) {
-        if (hasUnsavedChanges) {
-            if (!confirm('Yadda saxlanılmamış dəyişiklikləriniz var. Səhifəni dəyişmək istədiyinizdən əminsiniz?')) {
-                return;
-            }
-        }
-        const url = new URL(window.location.href);
-        url.searchParams.set(param, val);
-        window.location.href = url.toString();
-    }
 
     document.addEventListener('DOMContentLoaded', function () {
         const tableBody = document.getElementById('expensesTableBody');
@@ -660,14 +746,40 @@
         });
 
         // Yeni sətir əlavə et
-        addRowBtn.addEventListener('click', function () {
-            addNewRow();
-        });
+        if (addRowBtn) {
+            addRowBtn.addEventListener('click', function () {
+                addNewRow();
+            });
+        }
 
         // Yadda saxla
-        saveBtn.addEventListener('click', function () {
-            saveAllExpenses();
+        if (saveBtn) {
+            saveBtn.addEventListener('click', function () {
+                saveAllExpenses();
+            });
+        }
+
+        // Klaviatura qısayolu: Ctrl+S və ya Cmd+S
+        document.addEventListener('keydown', function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                saveAllExpenses();
+            }
         });
+
+        // Səhifə keçidləri zamanı yadda saxlanılmamış dəyişiklik xəbərdarlığı
+        document.querySelectorAll('.excel-tab, .branch-pill').forEach(link => {
+            link.addEventListener('click', function (e) {
+                if (hasUnsavedChanges) {
+                    if (!confirm('Dəyişiklikləriniz hələ yadda saxlanılmayıb! Başqa aya və ya filiala keçmək istədiyinizdən əminsiniz?')) {
+                        e.preventDefault();
+                    }
+                }
+            });
+        });
+
+        // Aktiv ay tabına avtomatik sürüşdür
+        initExcelTabs();
 
         function markDirty(el) {
             const td = el.closest('td');
@@ -679,10 +791,12 @@
             hasUnsavedChanges = pending;
             if (pending) {
                 saveBtn.classList.add('has-changes');
-                saveBtn.querySelector('span').textContent = 'Yadda Saxla *';
+                const btnText = document.getElementById('saveBtnText');
+                if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S) *';
             } else {
                 saveBtn.classList.remove('has-changes');
-                saveBtn.querySelector('span').textContent = 'Yadda Saxla';
+                const btnText = document.getElementById('saveBtnText');
+                if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S)';
                 document.querySelectorAll('td.is-dirty').forEach(td => td.classList.remove('is-dirty'));
             }
         }
@@ -729,8 +843,11 @@
             const formattedTotal = '₼ ' + grandTotal.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
             document.getElementById('bannerGrandTotal').textContent = formattedTotal;
 
-            const rowCountLabel = document.getElementById('rowCountLabel');
-            if (rowCountLabel) rowCountLabel.textContent = count;
+            const rowCountDisplay = document.getElementById('rowCountDisplay');
+            if (rowCountDisplay) rowCountDisplay.textContent = count;
+
+            const bottomGrandTotal = document.getElementById('bottomGrandTotalDisplay');
+            if (bottomGrandTotal) bottomGrandTotal.textContent = grandTotal.toFixed(2) + ' ₼';
         }
 
         function renumberRows() {
@@ -824,7 +941,8 @@
             });
 
             saveBtn.disabled = true;
-            saveBtn.querySelector('span').textContent = 'Saxlanılır...';
+            const btnText = document.getElementById('saveBtnText');
+            if (btnText) btnText.textContent = 'Saxlanılır...';
 
             fetch("{{ route('expenses.save') }}", {
                 method: 'POST',
@@ -844,18 +962,55 @@
                 saveBtn.disabled = false;
                 if (resData.success) {
                     setChangesPending(false);
-                    alert(resData.message || 'Xərclər uğurla yadda saxlanıldı.');
+                    showToast('Xərclər uğurla yadda saxlanıldı!');
                 } else {
-                    saveBtn.querySelector('span').textContent = 'Yadda Saxla';
-                    alert('Xəta baş verdi: ' + (resData.message || 'Məlumatları saxlamaq mümkün olmadı.'));
+                    if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S)';
+                    showToast('Xəta: ' + (resData.message || 'Məlumatları saxlamaq mümkün olmadı.'), true);
                 }
             })
             .catch(err => {
                 saveBtn.disabled = false;
-                saveBtn.querySelector('span').textContent = 'Yadda Saxla';
+                if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S)';
                 console.error('Save error:', err);
-                alert('Serverlə əlaqə xətası baş verdi.');
+                showToast('Serverlə əlaqə xətası baş verdi.', true);
             });
+        }
+
+        function showToast(msg, isError = false) {
+            const toast = document.getElementById('excelToast');
+            const icon = document.getElementById('toastIcon');
+            const message = document.getElementById('toastMessage');
+
+            if (!toast) return;
+
+            toast.style.background = isError ? '#ef4444' : '#107c41';
+            icon.textContent = isError ? '✕' : '✓';
+            message.textContent = msg;
+
+            toast.style.display = 'flex';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+
+        function initExcelTabs() {
+            const tabsContainer = document.getElementById('excelTabsContainer');
+            const activeTab = document.querySelector('.excel-tab.active');
+
+            if (activeTab && tabsContainer) {
+                setTimeout(() => {
+                    activeTab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+                }, 150);
+            }
+
+            if (tabsContainer) {
+                tabsContainer.addEventListener('wheel', function (e) {
+                    if (e.deltaY !== 0) {
+                        e.preventDefault();
+                        tabsContainer.scrollLeft += e.deltaY;
+                    }
+                }, { passive: false });
+            }
         }
 
         // Beforeunload xəbərdarlığı
