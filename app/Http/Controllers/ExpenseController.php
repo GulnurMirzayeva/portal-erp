@@ -120,39 +120,40 @@ class ExpenseController extends Controller
             $branchGames = $portalService->getBranchGames((int)$filterBranch);
         }
 
-        // Əvvəlcə yerli bazada yadda saxlanılmış redaktə varmı yoxlayırıq
-        $savedRecord = null;
-        try {
-            if ($filterBranch && $filterBranch !== 'all') {
-                $savedRecord = ExpenseRecord::where('branch_id', (string)$filterBranch)
-                    ->where('month', $filterMonth)
-                    ->first();
-            }
-        } catch (\Exception $e) {
-            $savedRecord = null;
-        }
+        // 1. Məlumatları ümumi bazadan (PortalWebsite) çəkirik
+        $report = $portalService->getExpensesReport([
+            'branch_id' => $filterBranch,
+            'month' => $filterMonth,
+        ]);
 
-        if ($savedRecord && !empty($savedRecord->expenses_data)) {
-            $expenses = $savedRecord->expenses_data;
-            $summary = $savedRecord->summary_data ?? $this->calculateSummary($expenses);
-            $connected = true;
-            $hasCustomEdits = true;
-            $lastSavedAt = $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
-        } else {
-            $report = $portalService->getExpensesReport([
-                'branch_id' => $filterBranch,
-                'month' => $filterMonth,
-            ]);
+        $connected = $report['connected'] ?? true;
 
-            $expenses = $report['expenses'] ?? [];
+        if ($connected && isset($report['expenses'])) {
+            $expenses = $report['expenses'];
             $summary = $report['summary'] ?? $this->calculateSummary($expenses);
-            $connected = $report['connected'] ?? true;
             $hasCustomEdits = false;
             $lastSavedAt = null;
 
             if (empty($branchGames) && !empty($report['games'])) {
                 $branchGames = $report['games'];
             }
+        } else {
+            // Əgər API və ya ümumi baza ilə əlaqə kəsilərsə, ehtiyat lokal snapshot-dan oxuyuruq
+            $savedRecord = null;
+            try {
+                if ($filterBranch && $filterBranch !== 'all') {
+                    $savedRecord = ExpenseRecord::where('branch_id', (string)$filterBranch)
+                        ->where('month', $filterMonth)
+                        ->first();
+                }
+            } catch (\Exception $e) {
+                $savedRecord = null;
+            }
+
+            $expenses = $savedRecord->expenses_data ?? [];
+            $summary = $savedRecord->summary_data ?? $this->calculateSummary($expenses);
+            $hasCustomEdits = !empty($savedRecord);
+            $lastSavedAt = $savedRecord && $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
         }
 
         return view('expenses.index', [
@@ -237,19 +238,20 @@ class ExpenseController extends Controller
             }
         }
 
-        // Məlumatları çəkirik
-        $savedRecord = ExpenseRecord::where('branch_id', (string)$filterBranch)
-            ->where('month', $filterMonth)
-            ->first();
+        // Məlumatları ümumi bazadan çəkirik
+        $report = $portalService->getExpensesReport([
+            'branch_id' => $filterBranch,
+            'month' => $filterMonth,
+        ]);
+        $expenses = $report['expenses'] ?? [];
 
-        if ($savedRecord && !empty($savedRecord->expenses_data)) {
-            $expenses = $savedRecord->expenses_data;
-        } else {
-            $report = $portalService->getExpensesReport([
-                'branch_id' => $filterBranch,
-                'month' => $filterMonth,
-            ]);
-            $expenses = $report['expenses'] ?? [];
+        if (empty($expenses) && !empty($filterBranch)) {
+            $savedRecord = ExpenseRecord::where('branch_id', (string)$filterBranch)
+                ->where('month', $filterMonth)
+                ->first();
+            if ($savedRecord && !empty($savedRecord->expenses_data)) {
+                $expenses = $savedRecord->expenses_data;
+            }
         }
 
         $summary = $this->calculateSummary($expenses);
