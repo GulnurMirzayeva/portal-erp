@@ -120,40 +120,36 @@ class ExpenseController extends Controller
             $branchGames = $portalService->getBranchGames((int)$filterBranch);
         }
 
-        // 1. Məlumatları ümumi bazadan (PortalWebsite) çəkirik
-        $report = $portalService->getExpensesReport([
-            'branch_id' => $filterBranch,
-            'month' => $filterMonth,
-        ]);
+        // 1. Əvvəlcə yerli bazada mühasibin redaktə edib yadda saxladığı qeyd varmı yoxlayırıq
+        $savedRecord = null;
+        if ($filterBranch && $filterBranch !== 'all') {
+            $savedRecord = ExpenseRecord::where('branch_id', (string)$filterBranch)
+                ->where('month', $filterMonth)
+                ->first();
+        }
 
-        $connected = $report['connected'] ?? true;
+        if ($savedRecord && is_array($savedRecord->expenses_data)) {
+            $expenses = $savedRecord->expenses_data;
+            $summary = $savedRecord->summary_data ?? $this->calculateSummary($expenses);
+            $connected = true;
+            $hasCustomEdits = true;
+            $lastSavedAt = $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
+        } else {
+            // Əgər yadda saxlanmış qeyd yoxdursa, birbaşa PortalWebsite-dan çəkirik
+            $report = $portalService->getExpensesReport([
+                'branch_id' => $filterBranch,
+                'month' => $filterMonth,
+            ]);
 
-        if ($connected && isset($report['expenses'])) {
-            $expenses = $report['expenses'];
+            $expenses = $report['expenses'] ?? [];
             $summary = $report['summary'] ?? $this->calculateSummary($expenses);
+            $connected = $report['connected'] ?? true;
             $hasCustomEdits = false;
             $lastSavedAt = null;
 
             if (empty($branchGames) && !empty($report['games'])) {
                 $branchGames = $report['games'];
             }
-        } else {
-            // Əgər API və ya ümumi baza ilə əlaqə kəsilərsə, ehtiyat lokal snapshot-dan oxuyuruq
-            $savedRecord = null;
-            try {
-                if ($filterBranch && $filterBranch !== 'all') {
-                    $savedRecord = ExpenseRecord::where('branch_id', (string)$filterBranch)
-                        ->where('month', $filterMonth)
-                        ->first();
-                }
-            } catch (\Exception $e) {
-                $savedRecord = null;
-            }
-
-            $expenses = $savedRecord->expenses_data ?? [];
-            $summary = $savedRecord->summary_data ?? $this->calculateSummary($expenses);
-            $hasCustomEdits = !empty($savedRecord);
-            $lastSavedAt = $savedRecord && $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
         }
 
         return view('expenses.index', [
@@ -184,40 +180,127 @@ class ExpenseController extends Controller
             'expenses' => 'present|array',
         ]);
 
-        $branchId = $request->input('branch_id');
+        $branchId = (string)$request->input('branch_id');
         $month = $request->input('month');
-        $expenses = $request->input('expenses');
+        $expenses = $request->input('expenses', []);
         $deletedIds = $request->input('deleted_ids', []);
         $summary = $this->calculateSummary($expenses);
 
-        // 1. PortalWebsite API / DB vasitəsilə ümumi bazada yeniləyirik və silirik
-        $result = $portalService->updateExpenses($expenses, $branchId, $month, $deletedIds);
-        $finalExpenses = $result['expenses'] ?? $expenses;
+        $updatedDbCount = 0;
+        $apiErrors = [];
+        $savedExpenses = [];
 
-        // 2. ERP-nin özündə də snapshot saxlayırıq
-        try {
-            ExpenseRecord::updateOrCreate(
-                [
-                    'branch_id' => (string)$branchId,
-                    'month' => $month,
-                ],
-                [
-                    'expenses_data' => $finalExpenses,
-                    'summary_data' => $summary,
-                    'updated_by' => auth()->id(),
-                ]
-            );
-        } catch (\Throwable $e) {
-            Log::warning("ExpenseRecord snapshot error: " . $e->getMessage());
+        // 1. Əvvəlcə əsas PortalWebsite API vasitəsilə əsas verilənlər bazasını yeniləyirik (Qaimələrdəki kimi)
+        $apiResult = $portalService->updateExpenses($expenses, $branchId, $month, $deletedIds);
+        if ($apiResult['success']) {
+            $updatedDbCount = $apiResult['saved_count'] ?? count($expenses);
+            $savedExpenses = $apiResult['expenses'] ?? $expenses;
+        } else {
+            $apiErrors[] = $apiResult['message'] ?? 'API ilə yeniləmə baş tutmadı';
         }
+
+        // 2. Əgər API ilə yenilənməyibsə və ya birbaşa DB fallback lazımdırsa
+        if (!$apiResult['success'] || empty($savedExpenses)) {
+            try {
+                if (!empty($deletedIds)) {
+                    DB::connection('portal_website')->table('expenses')
+                        ->whereIn('id', $deletedIds)
+                        ->delete();
+                }
+
+                $directSaved = [];
+                $directCount = 0;
+                foreach ($expenses as $row) {
+                    $id = !empty($row['id']) && is_numeric($row['id']) ? (int)$row['id'] : null;
+
+                    $rowDate = null;
+                    if (!empty($row['date'])) {
+                        try {
+                            $rawDate = trim($row['date']);
+                            if (preg_match('/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/', $rawDate, $m)) {
+                                $rowDate = sprintf('%04d-%02d-%02d', (int)$m[3], (int)$m[2], (int)$m[1]);
+                            } else {
+                                $rowDate = Carbon::parse($rawDate)->format('Y-m-d');
+                            }
+                        } catch (\Exception $e) {
+                            $rowDate = date('Y-m-d');
+                        }
+                    }
+
+                    $gameId = !empty($row['game_id']) && is_numeric($row['game_id']) ? (int)$row['game_id'] : null;
+                    if (!$gameId && !empty($row['game_name']) && $row['game_name'] !== 'Ümumi') {
+                        $g = DB::connection('portal_website')->table('games')
+                            ->where('branch_id', (int)$branchId)
+                            ->where('name', trim($row['game_name']))
+                            ->first();
+                        if ($g) $gameId = $g->id;
+                    }
+
+                    $cash = isset($row['amount_cash']) ? (float)$row['amount_cash'] : 0.0;
+                    $card = isset($row['amount_card']) ? (float)$row['amount_card'] : 0.0;
+
+                    $data = [
+                        'branch_id' => (int)$branchId,
+                        'game_id' => $gameId,
+                        'date' => $rowDate ?? date('Y-m-d'),
+                        'title' => trim($row['title'] ?? ''),
+                        'note' => !empty($row['note']) ? trim($row['note']) : null,
+                        'amount_cash' => $cash,
+                        'amount_card' => $card,
+                        'classification' => trim($row['classification'] ?? ''),
+                        'updated_at' => Carbon::now(),
+                    ];
+
+                    if ($id && $id > 0) {
+                        DB::connection('portal_website')->table('expenses')
+                            ->where('id', $id)
+                            ->update($data);
+                        $row['id'] = $id;
+                    } else {
+                        $data['created_at'] = Carbon::now();
+                        $newId = DB::connection('portal_website')->table('expenses')->insertGetId($data);
+                        $row['id'] = $newId;
+                    }
+                    $row['date'] = Carbon::parse($data['date'])->format('d.m.Y');
+                    $row['raw_date'] = $data['date'];
+                    $row['total_amount'] = $cash + $card;
+                    $directSaved[] = $row;
+                    $directCount++;
+                }
+
+                $savedExpenses = $directSaved;
+                $updatedDbCount = $directCount;
+            } catch (\Exception $e) {
+                Log::warning("Direct DB expense update fallback error: " . $e->getMessage());
+                if (empty($savedExpenses)) {
+                    $savedExpenses = $expenses;
+                }
+            }
+        }
+
+        // 3. ERP sisteminin özündə də ExpenseRecord modelini yeniləyirik (qaimələrdəki kimi)
+        $record = ExpenseRecord::updateOrCreate(
+            [
+                'branch_id' => $branchId,
+                'month' => $month,
+            ],
+            [
+                'expenses_data' => $savedExpenses,
+                'summary_data' => $summary,
+                'updated_by' => auth()->id(),
+            ]
+        );
 
         return response()->json([
             'success' => true,
-            'message' => $result['message'] ?? 'Xərclər uğurla yadda saxlanıldı.',
+            'message' => $updatedDbCount > 0
+                ? "Məlumatlar əsas Portal bazasında ({$updatedDbCount} xərc) və ERP sistemində uğurla yeniləndi!"
+                : "Məlumatlar ERP sistemində yadda saxlanıldı.",
+            'saved_at' => $record->updated_at->format('d.m.Y H:i'),
             'summary' => $summary,
-            'expenses' => $finalExpenses,
-            'deleted_count' => $result['deleted_count'] ?? count($deletedIds),
-            'saved_at' => Carbon::now()->format('d.m.Y H:i'),
+            'expenses' => $savedExpenses,
+            'deleted_count' => count($deletedIds),
+            'api_errors' => $apiErrors,
         ]);
     }
 

@@ -203,47 +203,34 @@
         background-color: #fafbfc;
     }
 
-    /* Inputs inside Excel cells */
-    .cell-input {
-        width: 100%;
-        border: 1px solid transparent;
-        background: transparent;
-        padding: 4px 6px;
-        font-size: 13px;
-        font-family: inherit;
-        color: #212529;
+    /* Excel Editable Cells */
+    td.excel-cell {
+        cursor: cell;
+        transition: background-color 0.1s ease;
         outline: none;
-        border-radius: 3px;
-        transition: all 0.12s ease;
     }
 
-    .cell-input:focus {
-        background: #ffffff;
-        border-color: #107c41;
-        box-shadow: 0 0 0 2px rgba(16, 124, 65, 0.2);
+    td.excel-cell:focus {
+        background-color: #ffffff !important;
+        box-shadow: inset 0 0 0 2px #107c41;
+        z-index: 3;
+        position: relative;
     }
 
-    .cell-select {
-        width: 100%;
-        border: 1px solid transparent;
-        background: transparent;
-        padding: 4px 6px;
-        font-size: 13px;
-        font-family: inherit;
-        color: #212529;
-        outline: none;
-        border-radius: 3px;
-        cursor: pointer;
-    }
-
-    .cell-select:focus {
-        background: #ffffff;
-        border-color: #107c41;
-        box-shadow: 0 0 0 2px rgba(16, 124, 65, 0.2);
-    }
-
+    td.excel-cell.is-dirty,
     td.is-dirty {
         background-color: #fff9db !important;
+    }
+
+    tr.col-letter-header th {
+        background: #f1f3f4;
+        color: #5f6368;
+        font-size: 11px;
+        font-weight: 600;
+        text-align: center;
+        padding: 3px 0;
+        border-bottom: 1px solid #d4d4d4;
+        border-right: 1px solid #e0e0e0;
     }
 
     .align-right { text-align: right; }
@@ -446,16 +433,20 @@
         </svg>
         <span>{{ $selectedBranchName }} — Xərclər ({{ $selectedMonthName ?? $filterMonth }})</span>
 
-        @if($hasCustomEdits)
-            <span class="badge bg-warning text-dark ms-2" title="ERP yerli yaddaşında xüsusi redaktələr mövcuddur">
-                <i class="mdi mdi-content-save-edit"></i> Yadda saxlanılıb ({{ $lastSavedAt }})
+        @if($hasCustomEdits && $lastSavedAt)
+            <span id="saveStatusIndicator" class="badge bg-success text-white ms-2">
+                Bazada yeniləndi ({{ $lastSavedAt }})
+            </span>
+        @else
+            <span id="saveStatusIndicator" class="badge bg-secondary text-white ms-2">
+                İlkin məlumatlar
             </span>
         @endif
     </div>
 
     <div class="excel-ribbon-actions">
         {{-- Yadda Saxla Button --}}
-        <button type="button" class="excel-btn excel-btn-save" id="saveBtn">
+        <button type="button" class="excel-btn excel-btn-save" id="saveBtn" onclick="saveAllExpenses()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -465,7 +456,7 @@
         </button>
 
         {{-- Sətir Əlavə Et Button --}}
-        <button type="button" class="excel-btn" id="addRowBtn" title="Yeni xərc sətri əlavə et">
+        <button type="button" class="excel-btn" id="addRowBtn" onclick="addNewRow()" title="Yeni xərc sətri əlavə et">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -488,7 +479,7 @@
 {{-- 3. Excel Sheet Container (CƏDVƏL) --}}
 <div class="excel-container">
 
-    {{-- Top Banner: Exact match to Screenshot (Lime Green Banner with Branch Name & Grand Total) --}}
+    {{-- Top Banner: Lime Green Banner with Branch Name & Grand Total --}}
     <div class="excel-banner-row">
         <div style="width: 140px;"></div>
         <div class="excel-banner-title">
@@ -512,10 +503,10 @@
                 <col style="width: 120px;"> {{-- Məbləğ nəğdsiz --}}
                 <col style="width: 160px;"> {{-- Təsnifat --}}
                 <col style="width: 130px;"> {{-- Cəmi Məbləğ --}}
-                <col style="width: 40px;">  {{-- Əməliyyat --}}
+                <col style="width: 44px;">  {{-- Əməliyyat --}}
             </colgroup>
             <thead>
-                {{-- Pink Mauve Header: Exact match to Screenshot --}}
+                {{-- Pink Mauve Header --}}
                 <tr class="pink-header">
                     <th>№</th>
                     <th>Tarix</th>
@@ -528,79 +519,51 @@
                     <th>Cəmi Məbləğ</th>
                     <th></th>
                 </tr>
+                {{-- Column Letter Headers (A, B, C, D...) --}}
+                <tr class="col-letter-header">
+                    <th>#</th>
+                    <th>A</th>
+                    <th>B</th>
+                    <th>C</th>
+                    <th>D</th>
+                    <th>E</th>
+                    <th>F</th>
+                    <th>G</th>
+                    <th>H</th>
+                    <th></th>
+                </tr>
             </thead>
             <tbody id="expensesTableBody">
                 @forelse($expenses as $idx => $row)
                     @php
                         $cash = (float)($row['amount_cash'] ?? 0);
                         $card = (float)($row['amount_card'] ?? 0);
-                        $total = $cash + $card;
+                        $total = (float)($row['total_amount'] ?? ($cash + $card));
+                        $rawDateVal = $row['raw_date'] ?? $row['date'] ?? '';
+                        try {
+                            if (preg_match('/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/', trim($rawDateVal), $dm)) {
+                                $displayDate = sprintf('%02d.%02d.%04d', (int)$dm[1], (int)$dm[2], (int)$dm[3]);
+                            } elseif (!empty($rawDateVal)) {
+                                $displayDate = \Carbon\Carbon::parse($rawDateVal)->format('d.m.Y');
+                            } else {
+                                $displayDate = '';
+                            }
+                        } catch (\Exception $e) {
+                            $displayDate = $rawDateVal;
+                        }
                     @endphp
-                    <tr data-id="{{ $row['id'] ?? '' }}">
-                        <td class="row-idx">{{ $idx + 1 }}</td>
-
-                        {{-- 2. Tarix --}}
-                        <td class="align-center">
-                            <input type="date" class="cell-input text-center date-input"
-                                   value="{{ !empty($row['raw_date']) ? \Carbon\Carbon::parse($row['raw_date'])->format('Y-m-d') : (!empty($row['date']) ? \Carbon\Carbon::parse($row['date'])->format('Y-m-d') : '') }}">
-                        </td>
-
-                        {{-- 3. Oyun --}}
-                        <td>
-                            <select class="cell-select game-select">
-                                <option value="general" {{ empty($row['game_id']) || $row['game_id'] === 'general' ? 'selected' : '' }}>
-                                    Ümumi
-                                </option>
-                                @foreach($branchGames as $game)
-                                    <option value="{{ $game['id'] }}" {{ isset($row['game_id']) && $row['game_id'] == $game['id'] ? 'selected' : '' }}>
-                                        {{ $game['name'] }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </td>
-
-                        {{-- 4. Xərclər (Yazıla bilsin, select yox) --}}
-                        <td>
-                            <input type="text" class="cell-input title-input" value="{{ $row['title'] ?? '' }}" placeholder="Xərc adı...">
-                        </td>
-
-                        {{-- 5. Qeyd --}}
-                        <td>
-                            <input type="text" class="cell-input note-input" value="{{ $row['note'] ?? '' }}" placeholder="Qeyd...">
-                        </td>
-
-                        {{-- 6. Məbləğ nəğd --}}
-                        <td class="align-right">
-                            <input type="number" step="0.01" min="0" class="cell-input text-end amount-cash-input"
-                                   value="{{ $cash > 0 ? number_format($cash, 2, '.', '') : '' }}" placeholder="0.00">
-                        </td>
-
-                        {{-- 7. Məbləğ nəğdsiz --}}
-                        <td class="align-right">
-                            <input type="number" step="0.01" min="0" class="cell-input text-end amount-card-input"
-                                   value="{{ $card > 0 ? number_format($card, 2, '.', '') : '' }}" placeholder="0.00">
-                        </td>
-
-                        {{-- 8. Təsnifat (Dropdown) --}}
-                        <td>
-                            <select class="cell-select classification-select">
-                                <option value="">-- Seçin --</option>
-                                @foreach($classifications as $c)
-                                    <option value="{{ $c }}" {{ ($row['classification'] ?? '') === $c ? 'selected' : '' }}>
-                                        {{ $c }}
-                                    </option>
-                                @endforeach
-                            </select>
-                        </td>
-
-                        {{-- 9. Cəmi Məbləğ (Avtomatik hesablanır) --}}
-                        <td class="align-right fw-bold row-total-cell" style="background-color: #fafbfc;">
-                            {{ number_format($total, 2, '.', '') }}
-                        </td>
-
-                        {{-- 10. Əməliyyat (Sətir silmə) --}}
+                    <tr data-row-id="{{ $row['id'] ?? '' }}">
+                        <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600;">{{ $idx + 1 }}</td>
+                        <td class="excel-cell align-center" contenteditable="true" data-field="date" data-col="A">{{ $displayDate }}</td>
+                        <td class="excel-cell align-left font-weight-600 text-primary" contenteditable="true" data-field="game_name" data-col="B">{{ $row['game_name'] ?? 'Ümumi' }}</td>
+                        <td class="excel-cell align-left font-weight-500" contenteditable="true" data-field="title" data-col="C">{{ $row['title'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="true" data-field="note" data-col="D">{{ $row['note'] ?? '' }}</td>
+                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="true" data-field="amount_cash" data-col="E" oninput="recalcRow(this)">{{ $cash > 0 ? number_format($cash, 2, '.', '') : '0.00' }}</td>
+                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="true" data-field="amount_card" data-col="F" oninput="recalcRow(this)">{{ $card > 0 ? number_format($card, 2, '.', '') : '0.00' }}</td>
+                        <td class="excel-cell align-left" contenteditable="true" data-field="classification" data-col="G">{{ $row['classification'] ?? '' }}</td>
+                        <td class="align-right fw-bold row-total-cell" style="background-color: #fafbfc;">{{ number_format($total, 2, '.', '') }}</td>
                         <td class="text-center">
-                            <button type="button" class="del-row-btn" title="Sətri sil">
+                            <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Sətri sil">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                     <polyline points="3 6 5 6 21 6"></polyline>
                                     <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -617,7 +580,10 @@
                                     <line x1="12" y1="8" x2="12" y2="12"></line>
                                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                                 </svg>
-                                Bu filial və ay üçün heç bir xərc qeydi tapılmadı.
+                                <p class="font-size-14 mb-1">Bu filial və ay üçün heç bir xərc qeydi tapılmadı.</p>
+                                <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addNewRow()">
+                                    ➕ İlk Sətri Əlavə Et
+                                </button>
                             </div>
                         </td>
                     </tr>
@@ -674,91 +640,39 @@
     </div>
 </div>
 
-@push('js')
 <script>
     const BRANCH_ID = "{{ $filterBranch }}";
     const MONTH = "{{ $filterMonth }}";
     const BRANCH_GAMES = @json($branchGames);
     const CLASSIFICATIONS = @json($classifications);
 
-    let hasUnsavedChanges = false;
+    let isDirty = false;
     let deletedIds = [];
+    let activeCell = null;
 
     document.addEventListener('DOMContentLoaded', function () {
+        initCellEvents();
+        initExcelTabs();
+
+        // Sətir silmə (event delegation)
         const tableBody = document.getElementById('expensesTableBody');
-        const saveBtn = document.getElementById('saveBtn');
-        const addRowBtn = document.getElementById('addRowBtn');
-
-        // Hadisələri dinlə (input dəyişdikdə)
-        tableBody.addEventListener('input', function (e) {
-            const tr = e.target.closest('tr');
-            if (!tr) return;
-
-            markDirty(e.target);
-            recalcRow(tr);
-            recalcTotals();
-        });
-
-        tableBody.addEventListener('change', function (e) {
-            const tr = e.target.closest('tr');
-            if (!tr) return;
-
-            markDirty(e.target);
-            recalcRow(tr);
-            recalcTotals();
-        });
-
-        // Sətir silmə
-        tableBody.addEventListener('click', function (e) {
-            const btn = e.target.closest('.del-row-btn');
-            if (!btn) return;
-
-            const tr = btn.closest('tr');
-            if (confirm('Bu sətri silmək istədiyinizdən əminsiniz?')) {
-                const rowId = tr.getAttribute('data-id');
-                if (rowId && !isNaN(rowId) && parseInt(rowId) > 0) {
-                    deletedIds.push(parseInt(rowId));
-                }
-
-                tr.remove();
-
-                const remainingRows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
-                if (remainingRows.length === 0) {
-                    tableBody.innerHTML = `
-                        <tr id="emptyRowPlaceholder">
-                            <td colspan="10" class="text-center py-5 text-muted" style="background: #ffffff; font-size: 13px;">
-                                <div class="py-2">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="d-block mx-auto mb-2 text-muted">
-                                        <circle cx="12" cy="12" r="10"></circle>
-                                        <line x1="12" y1="8" x2="12" y2="12"></line>
-                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                    </svg>
-                                    Bu filial və ay üçün heç bir xərc qeydi tapılmadı.
-                                </div>
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    renumberRows();
-                }
-
-                recalcTotals();
-                setChangesPending(true);
-            }
-        });
-
-        // Yeni sətir əlavə et
-        if (addRowBtn) {
-            addRowBtn.addEventListener('click', function () {
-                addNewRow();
+        if (tableBody) {
+            tableBody.addEventListener('click', function (e) {
+                const btn = e.target.closest('.del-row-btn');
+                if (btn) deleteRow(btn);
             });
         }
 
-        // Yadda saxla
+        // Add Row Button
+        const addRowBtn = document.getElementById('addRowBtn');
+        if (addRowBtn) {
+            addRowBtn.addEventListener('click', addNewRow);
+        }
+
+        // Save Button
+        const saveBtn = document.getElementById('saveBtn');
         if (saveBtn) {
-            saveBtn.addEventListener('click', function () {
-                saveAllExpenses();
-            });
+            saveBtn.addEventListener('click', saveAllExpenses);
         }
 
         // Klaviatura qısayolu: Ctrl+S və ya Cmd+S
@@ -772,7 +686,7 @@
         // Səhifə keçidləri zamanı yadda saxlanılmamış dəyişiklik xəbərdarlığı
         document.querySelectorAll('.excel-tab, .branch-pill').forEach(link => {
             link.addEventListener('click', function (e) {
-                if (hasUnsavedChanges) {
+                if (isDirty) {
                     if (!confirm('Dəyişiklikləriniz hələ yadda saxlanılmayıb! Başqa aya və ya filiala keçmək istədiyinizdən əminsiniz?')) {
                         e.preventDefault();
                     }
@@ -780,267 +694,348 @@
             });
         });
 
-        // Aktiv ay tabına avtomatik sürüşdür
-        initExcelTabs();
-
-        function markDirty(el) {
-            const td = el.closest('td');
-            if (td) td.classList.add('is-dirty');
-            setChangesPending(true);
-        }
-
-        function setChangesPending(pending) {
-            hasUnsavedChanges = pending;
-            if (pending) {
-                saveBtn.classList.add('has-changes');
-                const btnText = document.getElementById('saveBtnText');
-                if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S) *';
-            } else {
-                saveBtn.classList.remove('has-changes');
-                const btnText = document.getElementById('saveBtnText');
-                if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S)';
-                document.querySelectorAll('td.is-dirty').forEach(td => td.classList.remove('is-dirty'));
-            }
-        }
-
-        function recalcRow(tr) {
-            const cashInput = tr.querySelector('.amount-cash-input');
-            const cardInput = tr.querySelector('.amount-card-input');
-            const totalCell = tr.querySelector('.row-total-cell');
-
-            const cash = parseFloat(cashInput ? cashInput.value : 0) || 0;
-            const card = parseFloat(cardInput ? cardInput.value : 0) || 0;
-            const total = cash + card;
-
-            if (totalCell) {
-                totalCell.textContent = total.toFixed(2);
-            }
-        }
-
-        function recalcTotals() {
-            let totalCash = 0;
-            let totalCard = 0;
-            let count = 0;
-
-            const rows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
-            rows.forEach(tr => {
-                const cashInput = tr.querySelector('.amount-cash-input');
-                const cardInput = tr.querySelector('.amount-card-input');
-
-                const cash = parseFloat(cashInput ? cashInput.value : 0) || 0;
-                const card = parseFloat(cardInput ? cardInput.value : 0) || 0;
-
-                totalCash += cash;
-                totalCard += card;
-                count++;
-            });
-
-            const grandTotal = totalCash + totalCard;
-
-            document.getElementById('footerTotalCash').textContent = totalCash.toFixed(2);
-            document.getElementById('footerTotalCard').textContent = totalCard.toFixed(2);
-            document.getElementById('footerGrandTotal').textContent = grandTotal.toFixed(2);
-
-            // Banner grand total format: ₼ 17 535,33
-            const formattedTotal = '₼ ' + grandTotal.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-            document.getElementById('bannerGrandTotal').textContent = formattedTotal;
-
-            const rowCountDisplay = document.getElementById('rowCountDisplay');
-            if (rowCountDisplay) rowCountDisplay.textContent = count;
-
-            const bottomGrandTotal = document.getElementById('bottomGrandTotalDisplay');
-            if (bottomGrandTotal) bottomGrandTotal.textContent = grandTotal.toFixed(2) + ' ₼';
-        }
-
-        function renumberRows() {
-            const rows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
-            rows.forEach((tr, idx) => {
-                const idxCell = tr.querySelector('.row-idx');
-                if (idxCell) idxCell.textContent = idx + 1;
-            });
-        }
-
-        function addNewRow() {
-            const placeholder = document.getElementById('emptyRowPlaceholder');
-            if (placeholder) {
-                placeholder.remove();
-            }
-
-            const count = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)').length + 1;
-            const today = new Date().toISOString().split('T')[0];
-
-            let gamesOptions = '<option value="general" selected>Ümumi</option>';
-            BRANCH_GAMES.forEach(g => {
-                gamesOptions += `<option value="${g.id}">${g.name}</option>`;
-            });
-
-            let classOptions = '<option value="">-- Seçin --</option>';
-            CLASSIFICATIONS.forEach(c => {
-                classOptions += `<option value="${c}">${c}</option>`;
-            });
-
-            const tr = document.createElement('tr');
-            tr.setAttribute('data-id', '');
-            tr.innerHTML = `
-                <td class="row-idx">${count}</td>
-                <td class="align-center"><input type="date" class="cell-input text-center date-input" value="${today}"></td>
-                <td><select class="cell-select game-select">${gamesOptions}</select></td>
-                <td><input type="text" class="cell-input title-input" placeholder="Xərc adı..."></td>
-                <td><input type="text" class="cell-input note-input" placeholder="Qeyd..."></td>
-                <td class="align-right"><input type="number" step="0.01" min="0" class="cell-input text-end amount-cash-input" placeholder="0.00"></td>
-                <td class="align-right"><input type="number" step="0.01" min="0" class="cell-input text-end amount-card-input" placeholder="0.00"></td>
-                <td><select class="cell-select classification-select">${classOptions}</select></td>
-                <td class="align-right fw-bold row-total-cell" style="background-color: #fafbfc;">0.00</td>
-                <td class="text-center">
-                    <button type="button" class="del-row-btn" title="Sətri sil">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                            <polyline points="3 6 5 6 21 6"></polyline>
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                    </button>
-                </td>
-            `;
-
-            tableBody.appendChild(tr);
-            tr.querySelectorAll('td').forEach(td => td.classList.add('is-dirty'));
-            setChangesPending(true);
-            recalcTotals();
-
-            // Scroll to bottom
-            const wrapper = document.getElementById('excelTableWrapper');
-            if (wrapper) wrapper.scrollTop = wrapper.scrollHeight;
-        }
-
-        function saveAllExpenses() {
-            const rows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
-            const data = [];
-
-            rows.forEach((tr, idx) => {
-                const id = tr.getAttribute('data-id');
-                const date = tr.querySelector('.date-input')?.value || '';
-                const gameSelect = tr.querySelector('.game-select');
-                const gameId = gameSelect ? gameSelect.value : 'general';
-                const gameName = gameSelect ? gameSelect.options[gameSelect.selectedIndex]?.text : 'Ümumi';
-                const title = tr.querySelector('.title-input')?.value || '';
-                const note = tr.querySelector('.note-input')?.value || '';
-                const cash = parseFloat(tr.querySelector('.amount-cash-input')?.value || 0) || 0;
-                const card = parseFloat(tr.querySelector('.amount-card-input')?.value || 0) || 0;
-                const classification = tr.querySelector('.classification-select')?.value || '';
-
-                // Əgər tamamilə boş sətirdirsə nəzərə almırıq
-                if (!title && !note && cash === 0 && card === 0 && !classification) {
-                    return;
-                }
-
-                data.push({
-                    id: id ? id : null,
-                    row_num: idx + 1,
-                    date: date,
-                    raw_date: date,
-                    game_id: gameId,
-                    game_name: gameName,
-                    title: title,
-                    note: note,
-                    amount_cash: cash,
-                    amount_card: card,
-                    classification: classification,
-                });
-            });
-
-            saveBtn.disabled = true;
-            const btnText = document.getElementById('saveBtnText');
-            if (btnText) btnText.textContent = 'Saxlanılır...';
-
-            fetch("{{ route('expenses.save') }}", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Accept': 'application/json',
-                },
-                body: JSON.stringify({
-                    branch_id: BRANCH_ID,
-                    month: MONTH,
-                    expenses: data,
-                    deleted_ids: deletedIds,
-                }),
-            })
-            .then(res => res.json())
-            .then(resData => {
-                saveBtn.disabled = false;
-                if (resData.success) {
-                    deletedIds = [];
-                    setChangesPending(false);
-
-                    // Əgər yeni sətirlər əlavə edilibsə, onların data-id atributlarını yenilənmiş ID-lərlə təyin edirik
-                    if (Array.isArray(resData.expenses) && resData.expenses.length > 0) {
-                        const activeRows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
-                        activeRows.forEach((tr, i) => {
-                            if (resData.expenses[i] && resData.expenses[i].id) {
-                                tr.setAttribute('data-id', resData.expenses[i].id);
-                            }
-                        });
-                    }
-
-                    showToast(resData.message || 'Xərclər uğurla yadda saxlanıldı!');
-                } else {
-                    if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S)';
-                    showToast('Xəta: ' + (resData.message || 'Məlumatları saxlamaq mümkün olmadı.'), true);
-                }
-            })
-            .catch(err => {
-                saveBtn.disabled = false;
-                if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S)';
-                console.error('Save error:', err);
-                showToast('Serverlə əlaqə xətası baş verdi.', true);
-            });
-        }
-
-        function showToast(msg, isError = false) {
-            const toast = document.getElementById('excelToast');
-            const icon = document.getElementById('toastIcon');
-            const message = document.getElementById('toastMessage');
-
-            if (!toast) return;
-
-            toast.style.background = isError ? '#ef4444' : '#107c41';
-            icon.textContent = isError ? '✕' : '✓';
-            message.textContent = msg;
-
-            toast.style.display = 'flex';
-            setTimeout(() => {
-                toast.style.display = 'none';
-            }, 3000);
-        }
-
-        function initExcelTabs() {
-            const tabsContainer = document.getElementById('excelTabsContainer');
-            const activeTab = document.querySelector('.excel-tab.active');
-
-            if (activeTab && tabsContainer) {
-                setTimeout(() => {
-                    activeTab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
-                }, 150);
-            }
-
-            if (tabsContainer) {
-                tabsContainer.addEventListener('wheel', function (e) {
-                    if (e.deltaY !== 0) {
-                        e.preventDefault();
-                        tabsContainer.scrollLeft += e.deltaY;
-                    }
-                }, { passive: false });
-            }
-        }
-
         // Beforeunload xəbərdarlığı
         window.addEventListener('beforeunload', function (e) {
-            if (hasUnsavedChanges) {
+            if (isDirty) {
                 e.preventDefault();
                 e.returnValue = '';
             }
         });
     });
+
+    function initCellEvents() {
+        const cells = document.querySelectorAll('td.excel-cell');
+        cells.forEach(cell => {
+            cell.addEventListener('focus', function () {
+                activeCell = this;
+            });
+
+            cell.addEventListener('input', function () {
+                this.classList.add('is-dirty');
+                markDirty();
+            });
+
+            // Enter moves down, Tab moves right
+            cell.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    const tr = this.closest('tr');
+                    const nextTr = tr.nextElementSibling;
+                    if (nextTr && !nextTr.id) {
+                        const cellIdx = Array.from(tr.children).indexOf(this);
+                        if (nextTr.children[cellIdx]) {
+                            nextTr.children[cellIdx].focus();
+                        }
+                    }
+                }
+            });
+        });
+    }
+
+    function markDirty() {
+        isDirty = true;
+        const btn = document.getElementById('saveBtn');
+        if (btn) btn.classList.add('has-changes');
+        const btnText = document.getElementById('saveBtnText');
+        if (btnText) btnText.textContent = '💾 Yadda Saxla (Ctrl+S) *';
+
+        const statusInd = document.getElementById('saveStatusIndicator');
+        if (statusInd) {
+            statusInd.className = 'badge bg-warning text-dark border ms-2';
+            statusInd.innerText = 'Yadda saxlanılmamış dəyişikliklər var';
+        }
+    }
+
+    function recalcRow(cell) {
+        const tr = cell.closest('tr');
+        const cashCell = tr.querySelector('[data-field="amount_cash"]');
+        const cardCell = tr.querySelector('[data-field="amount_card"]');
+        const totalCell = tr.querySelector('.row-total-cell');
+
+        const cash = parseFloat(cashCell ? cashCell.innerText.replace(/[^0-9.-]/g, '') : 0) || 0;
+        const card = parseFloat(cardCell ? cardCell.innerText.replace(/[^0-9.-]/g, '') : 0) || 0;
+        const total = cash + card;
+
+        if (totalCell) {
+            totalCell.textContent = total.toFixed(2);
+            totalCell.classList.add('is-dirty');
+        }
+
+        recalcTotals();
+    }
+
+    function recalcTotals() {
+        let totalCash = 0;
+        let totalCard = 0;
+        let count = 0;
+
+        const rows = document.querySelectorAll('#expensesTableBody tr:not(#emptyRowPlaceholder)');
+        rows.forEach(tr => {
+            const cashCell = tr.querySelector('[data-field="amount_cash"]');
+            const cardCell = tr.querySelector('[data-field="amount_card"]');
+
+            const cash = parseFloat(cashCell ? cashCell.innerText.replace(/[^0-9.-]/g, '') : 0) || 0;
+            const card = parseFloat(cardCell ? cardCell.innerText.replace(/[^0-9.-]/g, '') : 0) || 0;
+
+            totalCash += cash;
+            totalCard += card;
+            count++;
+        });
+
+        const grandTotal = totalCash + totalCard;
+
+        const footerCash = document.getElementById('footerTotalCash');
+        if (footerCash) footerCash.textContent = totalCash.toFixed(2);
+
+        const footerCard = document.getElementById('footerTotalCard');
+        if (footerCard) footerCard.textContent = totalCard.toFixed(2);
+
+        const footerGrand = document.getElementById('footerGrandTotal');
+        if (footerGrand) footerGrand.textContent = grandTotal.toFixed(2);
+
+        const bannerTotal = document.getElementById('bannerGrandTotal');
+        if (bannerTotal) {
+            bannerTotal.textContent = '₼ ' + grandTotal.toLocaleString('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        const rowCountDisplay = document.getElementById('rowCountDisplay');
+        if (rowCountDisplay) rowCountDisplay.textContent = count;
+
+        const bottomGrandTotal = document.getElementById('bottomGrandTotalDisplay');
+        if (bottomGrandTotal) bottomGrandTotal.textContent = grandTotal.toFixed(2) + ' ₼';
+    }
+
+    function renumberRows() {
+        const rows = document.querySelectorAll('#expensesTableBody tr:not(#emptyRowPlaceholder)');
+        rows.forEach((tr, idx) => {
+            const idxCell = tr.querySelector('.row-idx');
+            if (idxCell) idxCell.textContent = idx + 1;
+        });
+    }
+
+    function addNewRow() {
+        const tableBody = document.getElementById('expensesTableBody');
+        const placeholder = document.getElementById('emptyRowPlaceholder');
+        if (placeholder) placeholder.remove();
+
+        const count = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)').length + 1;
+        const today = new Date();
+        const dd = String(today.getDate()).padStart(2, '0');
+        const mm = String(today.getMonth() + 1).padStart(2, '0');
+        const yyyy = today.getFullYear();
+        const todayFormatted = `${dd}.${mm}.${yyyy}`;
+
+        const tr = document.createElement('tr');
+        tr.setAttribute('data-row-id', '');
+        tr.innerHTML = `
+            <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600;">${count}</td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="date" data-col="A">${todayFormatted}</td>
+            <td class="excel-cell align-left font-weight-600 text-primary is-dirty" contenteditable="true" data-field="game_name" data-col="B">Ümumi</td>
+            <td class="excel-cell align-left font-weight-500 is-dirty" contenteditable="true" data-field="title" data-col="C"></td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="note" data-col="D"></td>
+            <td class="excel-cell align-right font-weight-600 is-dirty" contenteditable="true" data-field="amount_cash" data-col="E" oninput="recalcRow(this)">0.00</td>
+            <td class="excel-cell align-right font-weight-600 is-dirty" contenteditable="true" data-field="amount_card" data-col="F" oninput="recalcRow(this)">0.00</td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="classification" data-col="G"></td>
+            <td class="align-right fw-bold row-total-cell is-dirty" style="background-color: #fafbfc;">0.00</td>
+            <td class="text-center">
+                <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Sətri sil">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polyline points="3 6 5 6 21 6"></polyline>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    </svg>
+                </button>
+            </td>
+        `;
+
+        tableBody.appendChild(tr);
+        initCellEvents();
+        markDirty();
+        recalcTotals();
+
+        const titleCell = tr.querySelector('[data-field="title"]');
+        if (titleCell) titleCell.focus();
+    }
+
+    function deleteRow(btn) {
+        const tr = btn.closest('tr');
+        if (!tr) return;
+
+        if (confirm('Bu xərc sətrini silmək istədiyinizdən əminsiniz?')) {
+            const rowId = tr.getAttribute('data-row-id');
+            if (rowId && !isNaN(rowId) && parseInt(rowId) > 0) {
+                deletedIds.push(parseInt(rowId));
+            }
+
+            tr.remove();
+
+            const tableBody = document.getElementById('expensesTableBody');
+            const remainingRows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
+            if (remainingRows.length === 0) {
+                tableBody.innerHTML = `
+                    <tr id="emptyRowPlaceholder">
+                        <td colspan="10" class="text-center py-5 text-muted" style="background: #ffffff; font-size: 13px;">
+                            <div class="py-2">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="d-block mx-auto mb-2 text-muted">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                <p class="font-size-14 mb-1">Bu filial və ay üçün heç bir xərc qeydi tapılmadı.</p>
+                                <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addNewRow()">
+                                    ➕ İlk Sətri Əlavə Et
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                renumberRows();
+            }
+
+            recalcTotals();
+            markDirty();
+        }
+    }
+
+    function saveAllExpenses() {
+        const rowsData = [];
+        const rows = document.querySelectorAll('#expensesTableBody tr:not(#emptyRowPlaceholder)');
+
+        rows.forEach((tr, idx) => {
+            const rowObj = {};
+            rowObj['id'] = tr.getAttribute('data-row-id') || '';
+            tr.querySelectorAll('td.excel-cell').forEach(c => {
+                const field = c.dataset.field;
+                if (field) {
+                    let val = c.innerText.trim();
+                    if (field === 'amount_cash' || field === 'amount_card') {
+                        val = parseFloat(val.replace(/[^0-9.-]/g, '')) || 0;
+                    }
+                    rowObj[field] = val;
+                }
+            });
+            rowObj['row_num'] = idx + 1;
+            rowsData.push(rowObj);
+        });
+
+        const saveBtn = document.getElementById('saveBtn');
+        saveBtn.disabled = true;
+        const btnText = document.getElementById('saveBtnText');
+        if (btnText) btnText.textContent = 'Bazada yenilənir...';
+
+        fetch("{{ route('expenses.save') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({
+                branch_id: BRANCH_ID,
+                month: MONTH,
+                expenses: rowsData,
+                deleted_ids: deletedIds,
+            }),
+        })
+        .then(res => res.json())
+        .then(data => {
+            saveBtn.disabled = false;
+            if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S)';
+
+            if (data.success) {
+                isDirty = false;
+                deletedIds = [];
+                saveBtn.classList.remove('has-changes');
+
+                const statusInd = document.getElementById('saveStatusIndicator');
+                if (statusInd) {
+                    statusInd.className = 'badge bg-success text-white ms-2';
+                    statusInd.innerText = 'Bazada yeniləndi (' + data.saved_at + ')';
+                }
+
+                // Remove dirty classes
+                document.querySelectorAll('.is-dirty').forEach(c => c.classList.remove('is-dirty'));
+
+                // Əgər yeni sətirlər əlavə edilibsə, data-row-id atributlarını təyin edirik
+                if (Array.isArray(data.expenses)) {
+                    const activeRows = document.querySelectorAll('#expensesTableBody tr:not(#emptyRowPlaceholder)');
+                    activeRows.forEach((tr, i) => {
+                        if (data.expenses[i] && data.expenses[i].id) {
+                            tr.setAttribute('data-row-id', data.expenses[i].id);
+                        }
+                    });
+                }
+
+                showToast('✓ ' + data.message, '#107c41');
+            } else {
+                showToast('Xəta: ' + (data.message || 'Məlumatları saxlamaq mümkün olmadı.'), '#dc3545');
+            }
+        })
+        .catch(err => {
+            saveBtn.disabled = false;
+            if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S)';
+            console.error('Save error:', err);
+            showToast('Serverlə əlaqə xətası baş verdi.', '#dc3545');
+        });
+    }
+
+    function showToast(msg, bg = '#107c41') {
+        const toast = document.getElementById('excelToast');
+        if (!toast) return;
+        toast.style.background = bg;
+        const msgEl = document.getElementById('toastMessage');
+        if (msgEl) msgEl.innerText = msg;
+        const iconEl = document.getElementById('toastIcon');
+        if (iconEl) iconEl.textContent = (bg === '#dc3545') ? '✕' : '✓';
+        toast.style.display = 'flex';
+        setTimeout(() => {
+            toast.style.display = 'none';
+        }, 3000);
+    }
+
+    function initExcelTabs() {
+        const tabsContainer = document.getElementById('excelTabsContainer');
+        const activeTab = document.querySelector('.excel-tab.active');
+
+        if (activeTab && tabsContainer) {
+            setTimeout(() => {
+                activeTab.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' });
+            }, 150);
+        }
+
+        if (tabsContainer) {
+            tabsContainer.addEventListener('wheel', function (e) {
+                if (e.deltaY !== 0) {
+                    e.preventDefault();
+                    tabsContainer.scrollLeft += e.deltaY;
+                }
+            }, { passive: false });
+
+            let isDown = false;
+            let startX = 0;
+            let scrollLeft = 0;
+
+            tabsContainer.addEventListener('mousedown', function (e) {
+                if (e.button !== 0) return;
+                isDown = true;
+                tabsContainer.style.cursor = 'grabbing';
+                startX = e.pageX - tabsContainer.offsetLeft;
+                scrollLeft = tabsContainer.scrollLeft;
+            });
+
+            window.addEventListener('mouseup', function () {
+                isDown = false;
+                if (tabsContainer) tabsContainer.style.cursor = 'default';
+            });
+
+            tabsContainer.addEventListener('mousemove', function (e) {
+                if (!isDown) return;
+                e.preventDefault();
+                const x = e.pageX - tabsContainer.offsetLeft;
+                const walk = (x - startX) * 1.5;
+                tabsContainer.scrollLeft = scrollLeft - walk;
+            });
+        }
+    }
 </script>
-@endpush
 @endsection
