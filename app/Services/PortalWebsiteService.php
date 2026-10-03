@@ -299,7 +299,7 @@ class PortalWebsiteService
     /**
      * Xərcləri PortalWebsite-da yeniləyir və ya yaradır (API + Direct DB fallback).
      */
-    public function updateExpenses(array $expenses, $branchId, $month): array
+    public function updateExpenses(array $expenses, $branchId, $month, array $deletedIds = []): array
     {
         // 1. API cəhdi
         try {
@@ -313,12 +313,15 @@ class PortalWebsiteService
                     'expenses' => $expenses,
                     'branch_id' => $branchId,
                     'month' => $month,
+                    'deleted_ids' => $deletedIds,
                 ]);
 
             if ($response->successful()) {
                 return [
                     'success' => true,
                     'message' => $response->json('message', 'Xərclər uğurla yadda saxlanıldı.'),
+                    'expenses' => $response->json('expenses', $expenses),
+                    'deleted_count' => $response->json('deleted_count', count($deletedIds)),
                 ];
             }
         } catch (Exception $e) {
@@ -327,9 +330,45 @@ class PortalWebsiteService
 
         // 2. Direct DB fallback
         try {
+            $deletedCount = 0;
+
+            // Silinmiş qeydləri silirik
+            if (!empty($deletedIds)) {
+                $deletedCount += DB::connection('portal_website')->table('expenses')
+                    ->whereIn('id', $deletedIds)
+                    ->delete();
+            }
+
+            // Həmçinin bu filial və ay üçün bazada olan, amma cədvəldən silinmiş qeydləri silirik
+            if (!empty($branchId) && !empty($month)) {
+                try {
+                    $start = Carbon::parse($month . '-01')->startOfMonth()->toDateString();
+                    $end = Carbon::parse($month . '-01')->endOfMonth()->toDateString();
+
+                    $submittedIds = array_filter(array_map(function ($r) {
+                        return !empty($r['id']) && is_numeric($r['id']) ? (int)$r['id'] : null;
+                    }, $expenses));
+
+                    $delQuery = DB::connection('portal_website')->table('expenses')
+                        ->where('branch_id', $branchId)
+                        ->whereBetween('date', [$start, $end]);
+
+                    if (!empty($submittedIds)) {
+                        $delQuery->whereNotIn('id', $submittedIds);
+                        $deletedCount += $delQuery->delete();
+                    } elseif (empty($expenses) && !empty($deletedIds)) {
+                        $deletedCount += $delQuery->delete();
+                    }
+                } catch (Exception $e) {
+                    // ignore
+                }
+            }
+
             $savedCount = 0;
+            $savedExpenses = [];
+
             foreach ($expenses as $item) {
-                $id = $item['id'] ?? null;
+                $id = !empty($item['id']) && is_numeric($item['id']) ? (int)$item['id'] : null;
                 $rowDate = null;
                 if (!empty($item['date'])) {
                     try {
@@ -343,29 +382,40 @@ class PortalWebsiteService
                     'branch_id' => $branchId,
                     'game_id' => !empty($item['game_id']) && $item['game_id'] !== 'general' ? (int)$item['game_id'] : null,
                     'date' => $rowDate ?? date('Y-m-d'),
-                    'title' => $item['title'] ?? '',
-                    'note' => $item['note'] ?? null,
+                    'title' => trim($item['title'] ?? ''),
+                    'note' => !empty($item['note']) ? trim($item['note']) : null,
                     'amount_cash' => (float)($item['amount_cash'] ?? 0),
                     'amount_card' => (float)($item['amount_card'] ?? 0),
                     'classification' => $item['classification'] ?? '',
                     'updated_at' => Carbon::now(),
                 ];
 
-                if ($id && is_numeric($id) && (int)$id > 0) {
+                if ($id && $id > 0) {
                     DB::connection('portal_website')->table('expenses')
                         ->where('id', $id)
                         ->update($data);
+                    $item['id'] = $id;
+                    $savedExpenses[] = $item;
                     $savedCount++;
                 } else {
                     $data['created_at'] = Carbon::now();
-                    DB::connection('portal_website')->table('expenses')->insert($data);
+                    $newId = DB::connection('portal_website')->table('expenses')->insertGetId($data);
+                    $item['id'] = $newId;
+                    $savedExpenses[] = $item;
                     $savedCount++;
                 }
             }
 
+            $msg = "{$savedCount} xərc məlumatı ümumi bazada yadda saxlanıldı.";
+            if ($deletedCount > 0) {
+                $msg .= " ({$deletedCount} silinmiş qeyd bazadan silindi)";
+            }
+
             return [
                 'success' => true,
-                'message' => "{$savedCount} xərc məlumatı birbaşa verilənlər bazasında yadda saxlanıldı.",
+                'message' => $msg,
+                'expenses' => $savedExpenses,
+                'deleted_count' => $deletedCount,
             ];
         } catch (Exception $e) {
             Log::error("Direct DB update expenses failed: " . $e->getMessage());
@@ -373,6 +423,7 @@ class PortalWebsiteService
             return [
                 'success' => false,
                 'message' => 'Yadda saxlama xətası: ' . $e->getMessage(),
+                'expenses' => $expenses,
             ];
         }
     }

@@ -180,34 +180,42 @@ class ExpenseController extends Controller
         $request->validate([
             'branch_id' => 'required',
             'month' => 'required|string',
-            'expenses' => 'required|array',
+            'expenses' => 'present|array',
         ]);
 
         $branchId = $request->input('branch_id');
         $month = $request->input('month');
         $expenses = $request->input('expenses');
+        $deletedIds = $request->input('deleted_ids', []);
         $summary = $this->calculateSummary($expenses);
 
-        // 1. PortalWebsite API / DB vasitəsilə yeniləyirik
-        $result = $portalService->updateExpenses($expenses, $branchId, $month);
+        // 1. PortalWebsite API / DB vasitəsilə ümumi bazada yeniləyirik və silirik
+        $result = $portalService->updateExpenses($expenses, $branchId, $month, $deletedIds);
+        $finalExpenses = $result['expenses'] ?? $expenses;
 
         // 2. ERP-nin özündə də snapshot saxlayırıq
-        ExpenseRecord::updateOrCreate(
-            [
-                'branch_id' => (string)$branchId,
-                'month' => $month,
-            ],
-            [
-                'expenses_data' => $expenses,
-                'summary_data' => $summary,
-                'updated_by' => auth()->id(),
-            ]
-        );
+        try {
+            ExpenseRecord::updateOrCreate(
+                [
+                    'branch_id' => (string)$branchId,
+                    'month' => $month,
+                ],
+                [
+                    'expenses_data' => $finalExpenses,
+                    'summary_data' => $summary,
+                    'updated_by' => auth()->id(),
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::warning("ExpenseRecord snapshot error: " . $e->getMessage());
+        }
 
         return response()->json([
             'success' => true,
             'message' => $result['message'] ?? 'Xərclər uğurla yadda saxlanıldı.',
             'summary' => $summary,
+            'expenses' => $finalExpenses,
+            'deleted_count' => $result['deleted_count'] ?? count($deletedIds),
             'saved_at' => Carbon::now()->format('d.m.Y H:i'),
         ]);
     }

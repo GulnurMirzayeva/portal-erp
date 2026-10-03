@@ -682,6 +682,7 @@
     const CLASSIFICATIONS = @json($classifications);
 
     let hasUnsavedChanges = false;
+    let deletedIds = [];
 
     document.addEventListener('DOMContentLoaded', function () {
         const tableBody = document.getElementById('expensesTableBody');
@@ -714,6 +715,11 @@
 
             const tr = btn.closest('tr');
             if (confirm('Bu sətri silmək istədiyinizdən əminsiniz?')) {
+                const rowId = tr.getAttribute('data-id');
+                if (rowId && !isNaN(rowId) && parseInt(rowId) > 0) {
+                    deletedIds.push(parseInt(rowId));
+                }
+
                 tr.remove();
 
                 const remainingRows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
@@ -956,14 +962,27 @@
                     branch_id: BRANCH_ID,
                     month: MONTH,
                     expenses: data,
+                    deleted_ids: deletedIds,
                 }),
             })
             .then(res => res.json())
             .then(resData => {
                 saveBtn.disabled = false;
                 if (resData.success) {
+                    deletedIds = [];
                     setChangesPending(false);
-                    showToast('Xərclər uğurla yadda saxlanıldı!');
+
+                    // Əgər yeni sətirlər əlavə edilibsə, onların data-id atributlarını yenilənmiş ID-lərlə təyin edirik
+                    if (Array.isArray(resData.expenses) && resData.expenses.length > 0) {
+                        const activeRows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
+                        activeRows.forEach((tr, i) => {
+                            if (resData.expenses[i] && resData.expenses[i].id) {
+                                tr.setAttribute('data-id', resData.expenses[i].id);
+                            }
+                        });
+                    }
+
+                    showToast(resData.message || 'Xərclər uğurla yadda saxlanıldı!');
                 } else {
                     if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S)';
                     showToast('Xəta: ' + (resData.message || 'Məlumatları saxlamaq mümkün olmadı.'), true);
