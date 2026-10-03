@@ -109,8 +109,8 @@ function initSubmenus() {
 
             const isShown = target.classList.contains('show');
 
-            // Close other sibling submenus
-            const siblingSubmenus = btn.closest('ul').querySelectorAll('.sub-menu.show');
+            // Close other sibling submenus at the same level
+            const siblingSubmenus = btn.closest('ul').querySelectorAll(':scope > li > .sub-menu.show');
             siblingSubmenus.forEach((sub) => {
                 if (sub !== target) {
                     sub.classList.remove('show');

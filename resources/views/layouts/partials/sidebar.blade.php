@@ -45,8 +45,12 @@
             <li class="menu-title">ERP MODULLARI</li>
 
             {{-- Mühasibatlıq --}}
-            <li class="{{ request()->routeIs('accounting.*') ? 'mm-active' : '' }}">
-                <a href="javascript:void(0);" class="waves-effect has-arrow {{ request()->routeIs('accounting.*') ? 'active' : '' }}" data-toggle="sub-menu" data-target="#menuAccounting" title="Mühasibatlıq">
+            @php
+                $isAccountingActive = request()->routeIs('accounting.*') || request()->routeIs('expenses.*') || request()->routeIs('expense-classifications.*');
+                $isExpensesActive = request()->routeIs('expenses.*') || request()->routeIs('expense-classifications.*');
+            @endphp
+            <li class="{{ $isAccountingActive ? 'mm-active' : '' }}">
+                <a href="javascript:void(0);" class="waves-effect has-arrow {{ $isAccountingActive ? 'active' : '' }}" data-toggle="sub-menu" data-target="#menuAccounting" title="Mühasibatlıq">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="menu-icon">
                         <rect width="16" height="20" x="4" y="2" rx="2"></rect>
                         <line x1="8" x2="16" y1="6" y2="6"></line>
@@ -64,8 +68,35 @@
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                     </span>
                 </a>
-                <ul class="sub-menu {{ request()->routeIs('accounting.*') ? 'show' : '' }}" id="menuAccounting">
-                    <li><a href="{{ route('accounting.index') }}" class="{{ request()->routeIs('accounting.index') ? 'active' : '' }}"><span class="sub-bullet"></span> Elektron Qaimələr</a></li>
+                <ul class="sub-menu {{ $isAccountingActive ? 'show' : '' }}" id="menuAccounting">
+                    <li>
+                        <a href="{{ route('accounting.index') }}" class="{{ request()->routeIs('accounting.*') ? 'active' : '' }}">
+                            <span class="sub-bullet"></span> Elektron Qaimələr
+                        </a>
+                    </li>
+
+                    {{-- Xərclər alt bölməsi --}}
+                    <li class="has-nested {{ $isExpensesActive ? 'mm-active' : '' }}">
+                        <a href="javascript:void(0);" class="waves-effect has-arrow {{ $isExpensesActive ? 'active' : '' }}" data-toggle="sub-menu" data-target="#menuExpenses">
+                            <span class="sub-bullet"></span>
+                            <span class="menu-text">Xərclər</span>
+                            <span class="menu-arrow">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </span>
+                        </a>
+                        <ul class="sub-menu sub-menu-nested {{ $isExpensesActive ? 'show' : '' }}" id="menuExpenses">
+                            <li>
+                                <a href="{{ route('expense-classifications.index') }}" class="{{ request()->routeIs('expense-classifications.*') ? 'active' : '' }}">
+                                    <span class="sub-bullet"></span> Təsnifatlar
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{{ route('expenses.index') }}" class="{{ request()->routeIs('expenses.*') ? 'active' : '' }}">
+                                    <span class="sub-bullet"></span> Xərclərin siyahısı
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
                 </ul>
             </li>
         </ul>

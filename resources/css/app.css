@@ -580,7 +580,37 @@ body {
     box-shadow: 0 0 6px var(--erp-primary);
 }
 
+.sub-menu .sub-menu-nested {
+    background-color: rgba(0, 0, 0, 0.15);
+    padding: 2px 0;
+}
+
+.sub-menu .sub-menu-nested li a {
+    padding: 7px 20px 7px 60px;
+    font-size: 12.5px;
+}
+
+.sub-menu .sub-menu-nested li a .sub-bullet {
+    left: 46px;
+    width: 4px;
+    height: 4px;
+}
+
+.sub-menu li.has-nested > a .menu-arrow {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    transition: transform 0.25s ease;
+    color: #6a7187;
+}
+
+.sub-menu li.has-nested.mm-active > a .menu-arrow {
+    transform: rotate(180deg);
+    color: #ffffff;
+}
+
 .disabled-link {
+
     opacity: 0.5;
     cursor: not-allowed !important;
     pointer-events: none;
