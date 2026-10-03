@@ -161,8 +161,7 @@
     /* Table Grid Styling */
     .excel-table-wrapper {
         overflow-x: auto;
-        max-height: calc(100vh - 340px);
-        min-height: 380px;
+        max-height: calc(100vh - 280px);
         background: #ffffff;
     }
 
@@ -173,6 +172,7 @@
         font-size: 13px;
         color: #212529;
         table-layout: fixed;
+        margin-bottom: 0;
     }
 
     table.excel-table th,
@@ -609,42 +609,18 @@
                         </td>
                     </tr>
                 @empty
-                    {{-- Boş cədvəl üçün ilkin 3 boş sətir göstəririk --}}
-                    @for($i = 1; $i <= 3; $i++)
-                        <tr data-id="">
-                            <td class="row-idx">{{ $i }}</td>
-                            <td class="align-center"><input type="date" class="cell-input text-center date-input" value="{{ date('Y-m-d') }}"></td>
-                            <td>
-                                <select class="cell-select game-select">
-                                    <option value="general" selected>Ümumi</option>
-                                    @foreach($branchGames as $game)
-                                        <option value="{{ $game['id'] }}">{{ $game['name'] }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td><input type="text" class="cell-input title-input" placeholder="Xərc adı..."></td>
-                            <td><input type="text" class="cell-input note-input" placeholder="Qeyd..."></td>
-                            <td class="align-right"><input type="number" step="0.01" min="0" class="cell-input text-end amount-cash-input" placeholder="0.00"></td>
-                            <td class="align-right"><input type="number" step="0.01" min="0" class="cell-input text-end amount-card-input" placeholder="0.00"></td>
-                            <td>
-                                <select class="cell-select classification-select">
-                                    <option value="">-- Seçin --</option>
-                                    @foreach($classifications as $c)
-                                        <option value="{{ $c }}">{{ $c }}</option>
-                                    @endforeach
-                                </select>
-                            </td>
-                            <td class="align-right fw-bold row-total-cell" style="background-color: #fafbfc;">0.00</td>
-                            <td class="text-center">
-                                <button type="button" class="del-row-btn" title="Sətri sil">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <polyline points="3 6 5 6 21 6"></polyline>
-                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                    </svg>
-                                </button>
-                            </td>
-                        </tr>
-                    @endfor
+                    <tr id="emptyRowPlaceholder">
+                        <td colspan="10" class="text-center py-5 text-muted" style="background: #ffffff; font-size: 13px;">
+                            <div class="py-2">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="d-block mx-auto mb-2 text-muted">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                                Bu filial və ay üçün heç bir xərc qeydi tapılmadı.
+                            </div>
+                        </td>
+                    </tr>
                 @endforelse
             </tbody>
             <tfoot>
@@ -739,7 +715,27 @@
             const tr = btn.closest('tr');
             if (confirm('Bu sətri silmək istədiyinizdən əminsiniz?')) {
                 tr.remove();
-                renumberRows();
+
+                const remainingRows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
+                if (remainingRows.length === 0) {
+                    tableBody.innerHTML = `
+                        <tr id="emptyRowPlaceholder">
+                            <td colspan="10" class="text-center py-5 text-muted" style="background: #ffffff; font-size: 13px;">
+                                <div class="py-2">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="d-block mx-auto mb-2 text-muted">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <line x1="12" y1="8" x2="12" y2="12"></line>
+                                        <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                    </svg>
+                                    Bu filial və ay üçün heç bir xərc qeydi tapılmadı.
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                } else {
+                    renumberRows();
+                }
+
                 recalcTotals();
                 setChangesPending(true);
             }
@@ -820,7 +816,7 @@
             let totalCard = 0;
             let count = 0;
 
-            const rows = tableBody.querySelectorAll('tr');
+            const rows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
             rows.forEach(tr => {
                 const cashInput = tr.querySelector('.amount-cash-input');
                 const cardInput = tr.querySelector('.amount-card-input');
@@ -851,7 +847,7 @@
         }
 
         function renumberRows() {
-            const rows = tableBody.querySelectorAll('tr');
+            const rows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
             rows.forEach((tr, idx) => {
                 const idxCell = tr.querySelector('.row-idx');
                 if (idxCell) idxCell.textContent = idx + 1;
@@ -859,7 +855,12 @@
         }
 
         function addNewRow() {
-            const count = tableBody.querySelectorAll('tr').length + 1;
+            const placeholder = document.getElementById('emptyRowPlaceholder');
+            if (placeholder) {
+                placeholder.remove();
+            }
+
+            const count = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)').length + 1;
             const today = new Date().toISOString().split('T')[0];
 
             let gamesOptions = '<option value="general" selected>Ümumi</option>';
@@ -905,7 +906,7 @@
         }
 
         function saveAllExpenses() {
-            const rows = tableBody.querySelectorAll('tr');
+            const rows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
             const data = [];
 
             rows.forEach((tr, idx) => {

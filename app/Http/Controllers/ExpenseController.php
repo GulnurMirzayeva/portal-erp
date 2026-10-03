@@ -33,14 +33,6 @@ class ExpenseController extends Controller
             ]));
         }
 
-        $availableMonths = $this->getAvailableMonths();
-
-        // Cari ay default
-        $filterMonth = $request->query('month');
-        if (empty($filterMonth) || !preg_match('/^\d{4}-\d{2}$/', $filterMonth)) {
-            $filterMonth = Carbon::now()->format('Y-m');
-        }
-
         $filterBranch = $request->query('branch_id');
 
         // Bütün filialları əldə edirik ("Ofis" filialını çıxmaqla)
@@ -52,6 +44,19 @@ class ExpenseController extends Controller
 
         if (($filterBranch === null || $filterBranch == 3) && !empty($branches)) {
             $filterBranch = $branches[0]['id'];
+        }
+
+        // Yalnız bazada xərcləri olan ayları çəkirik (və cari ayı)
+        $availableMonths = $this->getAvailableMonths($filterBranch);
+        $monthKeys = array_column($availableMonths, 'key');
+
+        // Cari ay default
+        $filterMonth = $request->query('month');
+        if (empty($filterMonth) || !preg_match('/^\d{4}-\d{2}$/', $filterMonth)) {
+            $filterMonth = Carbon::now()->format('Y-m');
+            if (!in_array($filterMonth, $monthKeys) && !empty($monthKeys)) {
+                $filterMonth = end($monthKeys);
+            }
         }
 
         $selectedBranchName = 'Bütün Filiallar';
@@ -428,28 +433,61 @@ class ExpenseController extends Controller
     }
 
     /**
-     * Əlçatan ayların siyahısı
+     * Əlçatan ayların siyahısı (yalnız bazada xərcləri olan aylar + cari ay)
      */
-    private function getAvailableMonths(): array
+    private function getAvailableMonths($branchId = null): array
     {
-        $months = [];
         $monthNamesAz = [
             '01' => 'Yanvar', '02' => 'Fevral', '03' => 'Mart', '04' => 'Aprel',
             '05' => 'May', '06' => 'İyun', '07' => 'İyul', '08' => 'Avqust',
             '09' => 'Sentyabr', '10' => 'Oktyabr', '11' => 'Noyabr', '12' => 'Dekabr',
         ];
 
-        $now = Carbon::now();
-        for ($i = -6; $i <= 6; $i++) {
-            $dt = $now->copy()->addMonths($i);
-            $key = $dt->format('Y-m');
-            $months[] = [
-                'key' => $key,
-                'name' => ($monthNamesAz[$dt->format('m')] ?? $dt->format('m')) . ' ' . $dt->format('Y'),
-                'is_current' => $dt->isSameMonth($now),
-            ];
+        $currentYm = Carbon::now()->format('Y-m');
+        $existingMonths = collect([$currentYm]);
+
+        // 1. Portal Website expenses cədvəlindən bazada olan ayları çəkirik
+        try {
+            $pwQuery = DB::connection('portal_website')->table('expenses')->whereNotNull('date');
+            if ($branchId && $branchId !== 'all') {
+                $pwQuery->where('branch_id', $branchId);
+            }
+            $pwMonths = $pwQuery->select(DB::raw("DISTINCT DATE_FORMAT(date, '%Y-%m') as m"))->pluck('m');
+            $existingMonths = $existingMonths->merge($pwMonths);
+        } catch (\Throwable $e) {}
+
+        // 2. ERP yerli ExpenseRecord cədvəlindən çəkirik
+        try {
+            $erQuery = ExpenseRecord::query()->whereNotNull('month');
+            if ($branchId && $branchId !== 'all') {
+                $erQuery->where('branch_id', (string)$branchId);
+            }
+            $erMonths = $erQuery->distinct()->pluck('month');
+            $existingMonths = $existingMonths->merge($erMonths);
+        } catch (\Throwable $e) {}
+
+        // 3. Əgər istifadəçi URL-də xüsusi bir ay seçibsə, onu da siyahıya daxil edirik
+        $reqMonth = request()->query('month');
+        if ($reqMonth && preg_match('/^\d{4}-\d{2}$/', $reqMonth)) {
+            $existingMonths->push($reqMonth);
         }
 
-        return $months;
+        // Təmizləyirik və xronoloji ardıcıllıqla sıralayırıq
+        $sorted = $existingMonths
+            ->filter(fn($m) => is_string($m) && preg_match('/^\d{4}-\d{2}$/', $m))
+            ->unique()
+            ->sort()
+            ->values();
+
+        return $sorted->map(function ($ym) use ($monthNamesAz, $currentYm) {
+            [$y, $m] = explode('-', $ym);
+            return [
+                'key' => $ym,
+                'name' => ($monthNamesAz[$m] ?? $m) . ' ' . $y,
+                'is_current' => ($ym === $currentYm),
+                'year' => $y,
+                'month' => $m,
+            ];
+        })->all();
     }
 }
