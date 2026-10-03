@@ -86,15 +86,33 @@
         transition: transform 0.4s ease;
     }
 
-    /* ---------------- Soft 4 KPI Cards ---------------- */
+    /* ---------------- Responsive 4 KPI Cards Grid ---------------- */
+    .kpi-cards-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 18px;
+        margin-bottom: 24px;
+    }
+    @media (max-width: 1040px) {
+        .kpi-cards-grid {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 22px; /* Generous gap when wrapping to 2 rows */
+        }
+    }
+    @media (max-width: 576px) {
+        .kpi-cards-grid {
+            grid-template-columns: 1fr;
+            gap: 18px;
+        }
+    }
+
     .kpi-soft-card {
         background: var(--dash-card-bg);
         border: 1px solid var(--dash-border);
         border-radius: var(--dash-radius);
-        padding: 22px 24px;
+        padding: 20px 22px;
         box-shadow: var(--dash-shadow);
         transition: all 0.25s ease;
-        height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
@@ -135,7 +153,7 @@
     }
 
     .kpi-soft-val {
-        font-size: 26px;
+        font-size: 25px;
         font-weight: 800;
         letter-spacing: -0.5px;
         line-height: 1.2;
@@ -187,7 +205,6 @@
         border-radius: var(--dash-radius);
         box-shadow: var(--dash-shadow);
         margin-bottom: 24px;
-        overflow: hidden;
     }
 
     .soft-box-header {
@@ -197,6 +214,8 @@
         align-items: center;
         justify-content: space-between;
         background: #fafbfc;
+        border-top-left-radius: var(--dash-radius);
+        border-top-right-radius: var(--dash-radius);
     }
 
     .soft-box-title {
@@ -210,7 +229,7 @@
     }
 
     .soft-box-body {
-        padding: 22px 24px;
+        padding: 20px 22px;
     }
 
     /* ---------------- Branch Table ---------------- */
@@ -252,7 +271,7 @@
         flex-shrink: 0;
     }
     .branch-name-title {
-        font-size: 13px;
+        font-size: 13.5px;
         font-weight: 700;
         color: #1e293b;
     }
@@ -288,92 +307,147 @@
         border-radius: 999px;
     }
 
-    /* ---------------- Payment Method Cards (Under Donut) ---------------- */
-    .pm-pill-card {
-        border-radius: 14px;
-        padding: 14px 16px;
-        transition: transform 0.2s ease;
-    }
-    .pm-pill-card:hover {
-        transform: translateY(-2px);
-    }
-    .pm-pill-card.card-terminal {
-        background: #f0f9ff;
-        border: 1px solid #e0f2fe;
-    }
-    .pm-pill-card.card-cash {
-        background: #fffbeb;
-        border: 1px solid #fef3c7;
-    }
-    .pm-pill-card .pm-label {
+    /* User-friendly soft table 100% pill */
+    .soft-table-percent {
+        background: #e6f4ea;
+        color: #137333;
+        border: 1px solid #ceead6;
+        font-weight: 700;
         font-size: 12px;
-        font-weight: 600;
-        color: #475569;
-    }
-    .pm-pill-card .pm-val {
-        font-size: 17px;
-        font-weight: 800;
-        margin-top: 4px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        display: inline-block;
     }
 
-    /* ---------------- Top Games Ranking List ---------------- */
-    .top-game-item {
+    /* ---------------- Payment Method Cards (Under Donut) ---------------- */
+    .pm-soft-badge-card {
+        border-radius: 14px;
+        padding: 13px 16px;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }
+    .pm-soft-badge-card:hover {
+        transform: translateY(-2px);
+    }
+    .pm-theme-terminal {
+        background: #f0f9ff;
+        border-color: #e0f2fe;
+    }
+    .pm-theme-cash {
+        background: #fffbeb;
+        border-color: #fef3c7;
+    }
+    .pm-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+    .pm-dot-blue { background: #0284c7; }
+    .pm-dot-amber { background: #d97706; }
+
+    .pm-type-name {
+        font-size: 13px;
+        font-weight: 700;
+        color: #334155;
+        white-space: nowrap;
+    }
+    .pm-rate-pill {
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        white-space: nowrap;
+    }
+    .pm-pill-blue {
+        background: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+    }
+    .pm-pill-amber {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #fde68a;
+    }
+    .pm-type-val {
+        font-size: 17px;
+        font-weight: 800;
+        letter-spacing: -0.3px;
+    }
+
+    /* ---------------- Top 5 Games Sleek Leaderboard ---------------- */
+    .top-games-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .top-game-row {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 13px 18px;
-        border-radius: 14px;
-        margin-bottom: 8px;
+        padding: 10px 14px;
+        border-radius: 12px;
         background: #fafbfc;
         border: 1px solid #f1f5f9;
         transition: all 0.2s ease;
     }
-    .top-game-item:last-child {
-        margin-bottom: 0;
-    }
-    .top-game-item:hover {
+    .top-game-row:hover {
         background: #ffffff;
         border-color: #d1fae5;
-        box-shadow: 0 4px 14px rgba(16, 124, 65, 0.06);
-        transform: translateX(3px);
+        box-shadow: 0 3px 10px rgba(16, 124, 65, 0.05);
+        transform: translateX(2px);
     }
 
-    .game-rank-badge {
-        width: 30px;
-        height: 30px;
-        border-radius: 10px;
-        display: flex;
+    .game-medal-pill {
+        font-size: 11px;
+        font-weight: 800;
+        padding: 3px 8px;
+        border-radius: 8px;
+        display: inline-flex;
         align-items: center;
         justify-content: center;
-        font-size: 13px;
-        font-weight: 800;
+        min-width: 44px;
         flex-shrink: 0;
     }
-    .game-rank-1 { background: #fef3c7; color: #b45309; }
-    .game-rank-2 { background: #f1f5f9; color: #475569; }
-    .game-rank-3 { background: #ffedd5; color: #c2410c; }
-    .game-rank-sub { background: #f8fafc; color: #94a3b8; border: 1px solid #e2e8f0; }
+    .medal-1 { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .medal-2 { background: #f1f5f9; color: #334155; border: 1px solid #e2e8f0; }
+    .medal-3 { background: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+    .medal-sub { background: #f8fafc; color: #64748b; border: 1px solid #edf2ee; }
 
-    .game-title {
-        font-size: 14px;
+    .game-clean-name {
+        font-size: 13.5px;
         font-weight: 700;
         color: #1e293b;
         margin: 0 0 2px 0;
     }
-    .game-meta {
+    .game-clean-sub {
         font-size: 12px;
         color: #64748b;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
     }
-    .game-revenue {
-        font-size: 15px;
+    .game-dot {
+        margin: 0 4px;
+        opacity: 0.6;
+    }
+    .game-clean-price {
+        font-size: 14.5px;
         font-weight: 800;
         color: #107c41;
-        text-align: right;
         white-space: nowrap;
+    }
+
+    .game-mini-bar-track {
+        width: 85px;
+        height: 4px;
+        border-radius: 999px;
+        background: #e2e8f0;
+        overflow: hidden;
+        margin-left: auto;
+    }
+    .game-mini-bar-fill {
+        height: 100%;
+        background: #107c41;
+        border-radius: 999px;
     }
 
     /* Live pulse animation */
@@ -469,101 +543,95 @@
         </form>
     </div>
 
-    {{-- TOP 4 EXECUTIVE KPI CARDS (CLEAN & BALANCED) --}}
-    <div class="row row-cols-1 row-cols-sm-2 row-cols-xl-4 g-3 mb-4">
+    {{-- TOP 4 EXECUTIVE KPI CARDS (ALL 4 SIDE-BY-SIDE ON DESKTOP, BALANCED GAP WHEN WRAPPED) --}}
+    <div class="kpi-cards-grid">
         {{-- Card 1: Total Revenue (Ümumi Dövriyyə) --}}
-        <div class="col">
-            <div class="kpi-soft-card">
-                <div>
-                    <div class="kpi-soft-header">
-                        <p class="kpi-soft-label">Ümumi Dövriyyə</p>
-                        <div class="kpi-soft-icon" style="background: #f0fdf4; color: #16a34a;">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                <line x1="12" x2="12" y1="2" y2="22"></line>
-                                <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="kpi-soft-val text-success">
-                        {{ number_format($kpi['total_revenue'], 2) }} <span class="font-size-18 font-weight-600">₼</span>
+        <div class="kpi-soft-card">
+            <div>
+                <div class="kpi-soft-header">
+                    <p class="kpi-soft-label">Ümumi Dövriyyə</p>
+                    <div class="kpi-soft-icon" style="background: #f0fdf4; color: #16a34a;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <line x1="12" x2="12" y1="2" y2="22"></line>
+                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                        </svg>
                     </div>
                 </div>
-                <div class="kpi-soft-footer">
-                    @if($growth['has_prev'])
-                        <span class="soft-pill {{ $growth['is_positive'] ? 'soft-pill-success' : 'soft-pill-danger' }}">
-                            {{ $growth['is_positive'] ? '▲ +' : '▼ ' }}{{ $growth['percent'] }}%
-                        </span>
-                        <span>ötən aya nəzərən ({{ number_format($growth['prev_revenue'], 0) }} ₼)</span>
-                    @else
-                        <span class="text-muted">Seçilmiş dövrün ümumi məbləği</span>
-                    @endif
+                <div class="kpi-soft-val text-success">
+                    {{ number_format($kpi['total_revenue'], 2) }} <span class="font-size-18 font-weight-600">₼</span>
                 </div>
+            </div>
+            <div class="kpi-soft-footer">
+                @if($growth['has_prev'])
+                    <span class="soft-pill {{ $growth['is_positive'] ? 'soft-pill-success' : 'soft-pill-danger' }}">
+                        {{ $growth['is_positive'] ? '▲ +' : '▼ ' }}{{ $growth['percent'] }}%
+                    </span>
+                    <span>ötən aya nəzərən ({{ number_format($growth['prev_revenue'], 0) }} ₼)</span>
+                @else
+                    <span class="text-muted">Seçilmiş dövrün ümumi məbləği</span>
+                @endif
             </div>
         </div>
 
-        {{-- Card 2: Cash vs Terminal Breakdown (Clean & Spacious) --}}
-        <div class="col">
-            <div class="kpi-soft-card">
-                <div>
-                    <div class="kpi-soft-header">
-                        <p class="kpi-soft-label">Ödəniş Balansı</p>
-                        <div class="kpi-soft-icon" style="background: #f0f9ff; color: #0284c7;">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-                                <line x1="2" x2="22" y1="10" y2="10"></line>
-                            </svg>
-                        </div>
-                    </div>
-
-                    <div class="d-flex align-items-center justify-content-between mb-1">
-                        <div>
-                            <span class="font-size-11 text-muted d-block font-weight-600">KART ({{ $kpi['card_percent'] }}%)</span>
-                            <span class="font-size-15 font-weight-800 text-info">{{ number_format($kpi['total_card'], 2) }} ₼</span>
-                        </div>
-                        <div class="text-end">
-                            <span class="font-size-11 text-muted d-block font-weight-600">NAĞD ({{ $kpi['cash_percent'] }}%)</span>
-                            <span class="font-size-15 font-weight-800 text-warning">{{ number_format($kpi['total_cash'], 2) }} ₼</span>
-                        </div>
-                    </div>
-
-                    <div class="soft-ratio-wrap">
-                        <div class="soft-ratio-bar">
-                            <div class="soft-ratio-card" style="width: {{ $kpi['card_percent'] }}%;" title="Terminal: {{ $kpi['card_percent'] }}%"></div>
-                            <div class="soft-ratio-cash" style="width: {{ $kpi['cash_percent'] }}%;" title="Nağd: {{ $kpi['cash_percent'] }}%"></div>
-                        </div>
+        {{-- Card 2: Cash vs Terminal Breakdown (Clean & Spacious, No Duplicated Text) --}}
+        <div class="kpi-soft-card">
+            <div>
+                <div class="kpi-soft-header">
+                    <p class="kpi-soft-label">Ödəniş Balansı</p>
+                    <div class="kpi-soft-icon" style="background: #f0f9ff; color: #0284c7;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
+                            <line x1="2" x2="22" y1="10" y2="10"></line>
+                        </svg>
                     </div>
                 </div>
 
-                <div class="kpi-soft-footer justify-content-between">
-                    <span class="text-muted">Terminal: {{ number_format($kpi['total_card'], 0) }} ₼</span>
-                    <span class="text-muted">Nağd: {{ number_format($kpi['total_cash'], 0) }} ₼</span>
+                <div class="d-flex align-items-center justify-content-between mb-1">
+                    <div>
+                        <span class="font-size-11 text-muted d-block font-weight-600">KART ({{ $kpi['card_percent'] }}%)</span>
+                        <span class="font-size-15 font-weight-800 text-info">{{ number_format($kpi['total_card'], 2) }} ₼</span>
+                    </div>
+                    <div class="text-end">
+                        <span class="font-size-11 text-muted d-block font-weight-600">NAĞD ({{ $kpi['cash_percent'] }}%)</span>
+                        <span class="font-size-15 font-weight-800 text-warning">{{ number_format($kpi['total_cash'], 2) }} ₼</span>
+                    </div>
                 </div>
+
+                <div class="soft-ratio-wrap">
+                    <div class="soft-ratio-bar">
+                        <div class="soft-ratio-card" style="width: {{ $kpi['card_percent'] }}%;" title="Terminal: {{ $kpi['card_percent'] }}%"></div>
+                        <div class="soft-ratio-cash" style="width: {{ $kpi['cash_percent'] }}%;" title="Nağd: {{ $kpi['cash_percent'] }}%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="kpi-soft-footer justify-content-between">
+                <span class="soft-pill" style="background: #f0f9ff; color: #0284c7;">Terminal: {{ number_format($kpi['total_card'], 0) }} ₼</span>
+                <span class="soft-pill" style="background: #fffbeb; color: #d97706;">Nağd: {{ number_format($kpi['total_cash'], 0) }} ₼</span>
             </div>
         </div>
 
         {{-- Card 3: Total Reservations --}}
-        <div class="col">
-            <div class="kpi-soft-card">
-                <div>
-                    <div class="kpi-soft-header">
-                        <p class="kpi-soft-label">Rezervasiyalar</p>
-                        <div class="kpi-soft-icon" style="background: #f5f3ff; color: #7c3aed;">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
-                                <line x1="16" x2="16" y1="2" y2="6"></line>
-                                <line x1="8" x2="8" y1="2" y2="6"></line>
-                                <line x1="3" x2="21" y1="10" y2="10"></line>
-                            </svg>
-                        </div>
-                    </div>
-                    <div class="kpi-soft-val text-dark">
-                        {{ number_format($kpi['total_sales']) }} <span class="font-size-16 font-weight-600 text-muted">rezervasiya</span>
+        <div class="kpi-soft-card">
+            <div>
+                <div class="kpi-soft-header">
+                    <p class="kpi-soft-label">Rezervasiyalar</p>
+                    <div class="kpi-soft-icon" style="background: #f5f3ff; color: #7c3aed;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
+                            <line x1="16" x2="16" y1="2" y2="6"></line>
+                            <line x1="8" x2="8" y1="2" y2="6"></line>
+                            <line x1="3" x2="21" y1="10" y2="10"></line>
+                        </svg>
                     </div>
                 </div>
-                <div class="kpi-soft-footer">
-                    <span class="badge bg-light text-dark border font-size-11">Orta Rezervasiya: {{ number_format($kpi['avg_ticket'], 2) }} ₼</span>
-                    <span>bir oyun üzrə</span>
+                <div class="kpi-soft-val text-dark">
+                    {{ number_format($kpi['total_sales']) }} <span class="font-size-16 font-weight-600 text-muted">rezervasiya</span>
                 </div>
+            </div>
+            <div class="kpi-soft-footer">
+                <span class="badge bg-light text-dark border font-size-11">Orta Rezervasiya: {{ number_format($kpi['avg_ticket'], 2) }} ₼</span>
+                <span>bir oyun üzrə</span>
             </div>
         </div>
 
@@ -571,36 +639,34 @@
         @php
             $topBranch = $branchStats[0] ?? null;
         @endphp
-        <div class="col">
-            <div class="kpi-soft-card">
-                <div>
-                    <div class="kpi-soft-header">
-                        <p class="kpi-soft-label">Lider Filial 🏆</p>
-                        <div class="kpi-soft-icon" style="background: #fffbeb; color: #d97706;">
-                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
-                            </svg>
-                        </div>
+        <div class="kpi-soft-card">
+            <div>
+                <div class="kpi-soft-header">
+                    <p class="kpi-soft-label">Lider Filial 🏆</p>
+                    <div class="kpi-soft-icon" style="background: #fffbeb; color: #d97706;">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+                        </svg>
                     </div>
-                    @if($topBranch && $topBranch['revenue'] > 0)
-                        <div class="kpi-soft-val font-size-20 text-truncate text-dark" title="{{ $topBranch['name'] }}">
-                            {{ $topBranch['name'] }}
-                        </div>
-                        <div class="font-size-13 font-weight-700 text-success">
-                            {{ number_format($topBranch['revenue'], 2) }} ₼
-                            <span class="font-size-11 text-muted font-weight-500">({{ $topBranch['share_percent'] }}% gəlir payı)</span>
-                        </div>
-                    @else
-                        <div class="kpi-soft-val font-size-18 text-muted">Məlumat yoxdur</div>
-                    @endif
                 </div>
-                <div class="kpi-soft-footer">
-                    @if($topBranch && $topBranch['sales_count'] > 0)
-                        <span>{{ $topBranch['sales_count'] }} rezervasiya &bull; {{ number_format($topBranch['players']) }} oyunçu</span>
-                    @else
-                        <span>Dövr üzrə rezervasiya yoxdur</span>
-                    @endif
-                </div>
+                @if($topBranch && $topBranch['revenue'] > 0)
+                    <div class="kpi-soft-val font-size-20 text-truncate text-dark" title="{{ $topBranch['name'] }}">
+                        {{ $topBranch['name'] }}
+                    </div>
+                    <div class="font-size-13 font-weight-700 text-success">
+                        {{ number_format($topBranch['revenue'], 2) }} ₼
+                        <span class="font-size-11 text-muted font-weight-500">({{ $topBranch['share_percent'] }}% gəlir payı)</span>
+                    </div>
+                @else
+                    <div class="kpi-soft-val font-size-18 text-muted">Məlumat yoxdur</div>
+                @endif
+            </div>
+            <div class="kpi-soft-footer">
+                @if($topBranch && $topBranch['sales_count'] > 0)
+                    <span>{{ $topBranch['sales_count'] }} rezervasiya &bull; {{ number_format($topBranch['players']) }} oyunçu</span>
+                @else
+                    <span>Dövr üzrə rezervasiya yoxdur</span>
+                @endif
             </div>
         </div>
     </div>
@@ -792,7 +858,7 @@
                         </tbody>
                         @if(!empty($branchStats))
                             <tfoot class="border-top-2">
-                                <tr style="background: #f0fdf4; font-weight: 700;">
+                                <tr style="background: #f8fafc; font-weight: 700; border-top: 2px solid #edf2ee;">
                                     <td colspan="2" class="text-end text-dark font-size-13 py-3">CƏMİ ŞƏBƏKƏ:</td>
                                     <td class="text-center text-dark font-weight-800">{{ number_format($kpi['total_sales']) }}</td>
                                     <td class="text-center text-dark font-weight-800">{{ number_format($kpi['total_players']) }}</td>
@@ -800,7 +866,7 @@
                                     <td class="text-end text-info font-weight-800">{{ number_format($kpi['total_card'], 2) }} ₼</td>
                                     <td class="text-end text-success font-size-15 font-weight-800">{{ number_format($kpi['total_revenue'], 2) }} ₼</td>
                                     <td>
-                                        <span class="badge bg-success font-size-11">100.0%</span>
+                                        <span class="soft-table-percent">100.0%</span>
                                     </td>
                                     <td class="text-end text-dark">{{ number_format($kpi['avg_ticket'], 2) }} ₼</td>
                                     <td></td>
@@ -813,44 +879,56 @@
         </div>
     </div>
 
-    {{-- LOWER ROW: PAYMENT DONUT + TOP GAMES (COMPLETELY REDESIGNED & POLISHED) --}}
+    {{-- LOWER ROW: PAYMENT DONUT + TOP GAMES (SPACIOUS, USER-FRIENDLY & NO CLIPPING) --}}
     <div class="row g-3">
         {{-- Left: Payment Method Donut Chart --}}
         <div class="col-xl-5 col-lg-6">
-            <div class="soft-box h-100 mb-0">
+            <div class="soft-box mb-0">
                 <div class="soft-box-header">
-                    <h4 class="soft-box-title">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M12 2a10 10 0 0 1 10 10h-10z"></path>
-                        </svg>
-                        Ödəniş Növləri Balansı
-                    </h4>
-                    <span class="font-size-12 text-muted">Nağd vs Terminal</span>
+                    <div>
+                        <h4 class="soft-box-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <path d="M12 2a10 10 0 0 1 10 10h-10z"></path>
+                            </svg>
+                            Ödəniş Növləri Balansı
+                        </h4>
+                        <p class="text-muted font-size-12 mb-0 mt-1">Kart və nağd daxilolmaların nisbəti</p>
+                    </div>
                 </div>
-                <div class="soft-box-body d-flex flex-column justify-content-between">
+                <div class="soft-box-body">
                     {{-- Donut Chart with clean center --}}
-                    <div id="paymentDonutChart" style="min-height: 230px;"></div>
+                    <div id="paymentDonutChart" style="min-height: 210px;"></div>
 
-                    {{-- 2 Balanced Stat Pill Cards (No awkward blank space) --}}
-                    <div class="row g-2 mt-3 pt-2">
+                    {{-- 2 Balanced Stat Pill Cards (No Colliding Text) --}}
+                    <div class="row g-2 mt-2 pt-2">
                         <div class="col-6">
-                            <div class="pm-pill-card card-terminal">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span class="pm-label">💳 Terminal</span>
-                                    <span class="badge bg-info text-white font-size-11">{{ $kpi['card_percent'] }}%</span>
+                            <div class="pm-soft-badge-card pm-theme-terminal">
+                                <div class="d-flex align-items-center justify-content-between mb-2 gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="pm-dot pm-dot-blue"></span>
+                                        <span class="pm-type-name">Terminal</span>
+                                    </div>
+                                    <span class="pm-rate-pill pm-pill-blue">{{ $kpi['card_percent'] }}%</span>
                                 </div>
-                                <div class="pm-val text-info">{{ number_format($kpi['total_card'], 2) }} ₼</div>
+                                <div class="pm-type-val text-info">
+                                    {{ number_format($kpi['total_card'], 2) }} <span class="font-size-13 font-weight-600">₼</span>
+                                </div>
                             </div>
                         </div>
 
                         <div class="col-6">
-                            <div class="pm-pill-card card-cash">
-                                <div class="d-flex align-items-center justify-content-between">
-                                    <span class="pm-label">💵 Nağd</span>
-                                    <span class="badge bg-warning text-dark font-size-11">{{ $kpi['cash_percent'] }}%</span>
+                            <div class="pm-soft-badge-card pm-theme-cash">
+                                <div class="d-flex align-items-center justify-content-between mb-2 gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="pm-dot pm-dot-amber"></span>
+                                        <span class="pm-type-name">Nağd</span>
+                                    </div>
+                                    <span class="pm-rate-pill pm-pill-amber">{{ $kpi['cash_percent'] }}%</span>
                                 </div>
-                                <div class="pm-val text-warning">{{ number_format($kpi['total_cash'], 2) }} ₼</div>
+                                <div class="pm-type-val text-warning">
+                                    {{ number_format($kpi['total_cash'], 2) }} <span class="font-size-13 font-weight-600">₼</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -858,9 +936,9 @@
             </div>
         </div>
 
-        {{-- Right: Top 5 Games (Modern Leaderboard Component) --}}
+        {{-- Right: Top 5 Games (Clean Compact Leaderboard - ALL 5 GAMES FULLY VISIBLE) --}}
         <div class="col-xl-7 col-lg-6">
-            <div class="soft-box h-100 mb-0">
+            <div class="soft-box mb-0">
                 <div class="soft-box-header d-flex align-items-center justify-content-between">
                     <div>
                         <h4 class="soft-box-title">
@@ -870,40 +948,48 @@
                             </svg>
                             Ən Çox Gəlir Gətirən TOP 5 Oyun
                         </h4>
-                        <p class="text-muted font-size-12 mb-0 mt-1">Seçilmiş dövrdə ən populyar və gəlirli oyunlar</p>
+                        <p class="text-muted font-size-12 mb-0 mt-1">Gəlir və rezervasiya sayına görə ən aktiv oyunlar</p>
                     </div>
-                    <span class="badge bg-light text-dark border font-size-11 px-2 py-1">Lider Oyunlar</span>
                 </div>
                 <div class="soft-box-body">
-                    <div class="top-games-list">
+                    <div class="top-games-wrapper">
+                        @php
+                            $maxGameRev = !empty($topGames[0]['revenue']) ? (float)$topGames[0]['revenue'] : 1.0;
+                        @endphp
                         @forelse($topGames as $idx => $game)
-                            <div class="top-game-item">
+                            @php
+                                $gameRev = (float)($game['revenue'] ?? 0);
+                                $gameBarPct = $maxGameRev > 0 ? min(100, max(15, round(($gameRev / $maxGameRev) * 100))) : 0;
+                            @endphp
+                            <div class="top-game-row">
+                                {{-- Left: Rank & Details --}}
                                 <div class="d-flex align-items-center gap-3">
-                                    {{-- Rank Medal Badge --}}
                                     @if($idx === 0)
-                                        <div class="game-rank-badge game-rank-1" title="1-ci yer">🥇</div>
+                                        <div class="game-medal-pill medal-1" title="1-ci yer">🥇 #1</div>
                                     @elseif($idx === 1)
-                                        <div class="game-rank-badge game-rank-2" title="2-ci yer">🥈</div>
+                                        <div class="game-medal-pill medal-2" title="2-ci yer">🥈 #2</div>
                                     @elseif($idx === 2)
-                                        <div class="game-rank-badge game-rank-3" title="3-cü yer">🥉</div>
+                                        <div class="game-medal-pill medal-3" title="3-cü yer">🥉 #3</div>
                                     @else
-                                        <div class="game-rank-badge game-rank-sub">#{{ $idx + 1 }}</div>
+                                        <div class="game-medal-pill medal-sub">#{{ $idx + 1 }}</div>
                                     @endif
 
-                                    {{-- Game Info --}}
                                     <div>
-                                        <h5 class="game-title">{{ $game['name'] }}</h5>
-                                        <p class="game-meta">
-                                            <span>📅 {{ number_format($game['sales_count']) }} rezervasiya</span>
-                                            <span>&bull;</span>
-                                            <span>👥 {{ number_format($game['players']) }} oyunçu</span>
-                                        </p>
+                                        <h6 class="game-clean-name">{{ $game['name'] }}</h6>
+                                        <div class="game-clean-sub">
+                                            <span>{{ number_format($game['sales_count']) }} rezervasiya</span>
+                                            <span class="game-dot">&bull;</span>
+                                            <span>{{ number_format($game['players']) }} oyunçu</span>
+                                        </div>
                                     </div>
                                 </div>
 
-                                {{-- Revenue Amount --}}
-                                <div class="game-revenue">
-                                    {{ number_format($game['revenue'], 2) }} ₼
+                                {{-- Right: Revenue & Mini Progress Track --}}
+                                <div class="text-end">
+                                    <div class="game-clean-price">{{ number_format($game['revenue'], 2) }} ₼</div>
+                                    <div class="game-mini-bar-track mt-1">
+                                        <div class="game-mini-bar-fill" style="width: {{ $gameBarPct }}%;"></div>
+                                    </div>
                                 </div>
                             </div>
                         @empty
@@ -1100,7 +1186,7 @@ document.addEventListener('DOMContentLoaded', () => {
         branchChart.render();
     }
 
-    // 3. Ödəniş Metodu Donut Chart (Clean, no overflowing labels, centered total)
+    // 3. Ödəniş Metodu Donut Chart (Clean, centered total)
     const cashVal = {{ round($kpi['total_cash'], 2) }};
     const cardVal = {{ round($kpi['total_card'], 2) }};
 
@@ -1109,15 +1195,15 @@ document.addEventListener('DOMContentLoaded', () => {
         labels: (cashVal === 0 && cardVal === 0) ? ['Məlumat yoxdur'] : ['Terminal (Kart)', 'Nağd'],
         chart: {
             type: 'donut',
-            height: 230,
+            height: 210,
             fontFamily: 'Inter, sans-serif'
         },
         colors: (cashVal === 0 && cardVal === 0) ? ['#e2e8f0'] : ['#0284c7', '#f59e0b'],
         dataLabels: {
-            enabled: false // cleaner without awkward overflowing labels
+            enabled: false
         },
         legend: {
-            show: false // covered by the beautiful pill cards below
+            show: false
         },
         plotOptions: {
             pie: {
