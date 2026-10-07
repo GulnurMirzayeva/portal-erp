@@ -372,23 +372,368 @@
         font-weight: 300;
     }
 
+    .row-actions-group {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .history-row-btn {
+        opacity: 0.35;
+        color: #107c41;
+        cursor: pointer;
+        padding: 3px 4px;
+        border-radius: 4px;
+        transition: all 0.15s ease;
+        border: none;
+        background: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    tr:hover .history-row-btn {
+        opacity: 0.85;
+    }
+
+    .history-row-btn:hover {
+        opacity: 1 !important;
+        background: #eaf5ea;
+        color: #0b5e30;
+        transform: scale(1.15);
+    }
+
     .del-row-btn {
         opacity: 0.3;
         color: #dc3545;
         cursor: pointer;
-        padding: 2px 4px;
-        border-radius: 3px;
-        transition: opacity 0.15s;
+        padding: 3px 4px;
+        border-radius: 4px;
+        transition: all 0.15s ease;
         border: none;
         background: transparent;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     tr:hover .del-row-btn {
-        opacity: 1;
+        opacity: 0.85;
     }
 
     .del-row-btn:hover {
+        opacity: 1 !important;
         background: #ffe3e3;
+        transform: scale(1.15);
+    }
+
+    /* Tarix xanası və created_at saat indikatoru */
+    .date-cell {
+        position: relative;
+        padding-right: 22px !important;
+    }
+
+    .cell-created-indicator {
+        position: absolute;
+        right: 4px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 17px;
+        height: 17px;
+        border-radius: 4px;
+        border: none;
+        background: transparent;
+        color: #94a3b8;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        padding: 0;
+        transition: all 0.15s ease;
+        opacity: 0.45;
+        user-select: none;
+    }
+
+    .date-cell:hover .cell-created-indicator,
+    tr:hover .cell-created-indicator {
+        opacity: 1;
+        color: #107c41;
+    }
+
+    .cell-created-indicator:hover {
+        background: #eaf5ea;
+        color: #0b5e30 !important;
+        transform: translateY(-50%) scale(1.15);
+    }
+
+    /* Modal Backdrop & Dialog (Balaca Modal) */
+    .expense-modal-backdrop {
+        position: fixed;
+        inset: 0;
+        z-index: 10050;
+        background: rgba(15, 23, 42, 0.55);
+        backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+        animation: modalFadeIn 0.18s ease-out;
+    }
+
+    @keyframes modalFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+
+    .expense-modal-dialog {
+        background: #ffffff;
+        border-radius: 14px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.04);
+        width: 100%;
+        max-width: 480px;
+        overflow: hidden;
+        animation: modalSlideUp 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        display: flex;
+        flex-direction: column;
+    }
+
+    @keyframes modalSlideUp {
+        from { opacity: 0; transform: scale(0.95) translateY(10px); }
+        to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .expense-modal-header {
+        padding: 14px 18px;
+        border-bottom: 1px solid #eef2f6;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        background: #fafbfc;
+    }
+
+    .expense-modal-header-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 9px;
+        background: #eaf5ea;
+        color: #107c41;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .expense-modal-header-text {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .expense-modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+        line-height: 1.25;
+    }
+
+    .expense-modal-subtitle {
+        font-size: 11px;
+        color: #64748b;
+        margin: 2px 0 0 0;
+        font-weight: 500;
+    }
+
+    .expense-modal-close {
+        background: transparent;
+        border: none;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 6px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+    }
+
+    .expense-modal-close:hover {
+        background: #f1f5f9;
+        color: #334155;
+    }
+
+    .expense-modal-body {
+        padding: 16px 18px;
+    }
+
+    /* Created At Highlight Card */
+    .created-at-card {
+        background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+        border: 1px solid #bbf7d0;
+        border-radius: 10px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(16, 124, 65, 0.08);
+    }
+
+    .created-at-icon-wrap {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        background: #107c41;
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 10px rgba(16, 124, 65, 0.25);
+    }
+
+    .created-at-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .created-at-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 700;
+        color: #0b5e30;
+        display: block;
+        margin-bottom: 2px;
+    }
+
+    .created-at-value-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+    }
+
+    .created-at-val {
+        font-size: 18px;
+        font-weight: 800;
+        color: #064e3b;
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        letter-spacing: -0.2px;
+    }
+
+    .btn-copy-timestamp {
+        background: #ffffff;
+        border: 1px solid #86efac;
+        color: #0b5e30;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 3px 8px;
+        border-radius: 5px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.15s ease;
+        flex-shrink: 0;
+    }
+
+    .btn-copy-timestamp:hover {
+        background: #0b5e30;
+        color: #ffffff;
+        border-color: #0b5e30;
+    }
+
+    .created-at-relative {
+        font-size: 11px;
+        color: #166534;
+        display: block;
+        margin-top: 3px;
+        font-weight: 500;
+    }
+
+    /* Unsaved notification */
+    .unsaved-row-card {
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        margin-bottom: 12px;
+    }
+
+    /* Updated at info */
+    .updated-at-card {
+        background: #f0f9ff;
+        border: 1px solid #bae6fd;
+        border-radius: 8px;
+        padding: 8px 12px;
+        margin-bottom: 12px;
+    }
+
+    /* Meta Grid */
+    .expense-meta-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px;
+    }
+
+    .meta-item {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .meta-item-full {
+        grid-column: span 2;
+    }
+
+    .meta-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        font-weight: 600;
+        color: #64748b;
+        letter-spacing: 0.3px;
+    }
+
+    .meta-value {
+        font-size: 12px;
+        font-weight: 600;
+        color: #1e293b;
+        word-break: break-word;
+    }
+
+    .expense-modal-footer {
+        padding: 10px 18px;
+        background: #fafbfc;
+        border-top: 1px solid #eef2f6;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .expense-modal-btn-close {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        color: #334155;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+
+    .expense-modal-btn-close:hover {
+        background: #f1f5f9;
+        border-color: #94a3b8;
     }
 </style>
 
@@ -495,7 +840,7 @@
         <table class="excel-table" id="expensesTable">
             <colgroup>
                 <col style="width: 44px;">  {{-- № --}}
-                <col style="width: 110px;"> {{-- Tarix --}}
+                <col style="width: 115px;"> {{-- Tarix --}}
                 <col style="width: 160px;"> {{-- Oyun --}}
                 <col style="width: 180px;"> {{-- Xərclər --}}
                 <col style="width: 200px;"> {{-- Qeyd --}}
@@ -503,7 +848,7 @@
                 <col style="width: 120px;"> {{-- Məbləğ nəğdsiz --}}
                 <col style="width: 160px;"> {{-- Təsnifat --}}
                 <col style="width: 130px;"> {{-- Cəmi Məbləğ --}}
-                <col style="width: 44px;">  {{-- Əməliyyat --}}
+                <col style="width: 60px;">  {{-- Əməliyyat --}}
             </colgroup>
             <thead>
                 {{-- Pink Mauve Header --}}
@@ -552,9 +897,20 @@
                             $displayDate = $rawDateVal;
                         }
                     @endphp
-                    <tr data-row-id="{{ $row['id'] ?? '' }}">
-                        <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600;">{{ $idx + 1 }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="date" data-col="A">{{ $displayDate }}</td>
+                    <tr data-row-id="{{ $row['id'] ?? '' }}"
+                        data-created-at="{{ $row['created_at'] ?? '' }}"
+                        data-updated-at="{{ $row['updated_at'] ?? '' }}"
+                        data-raw-created-at="{{ $row['raw_created_at'] ?? '' }}">
+                        <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600; cursor: pointer;" onclick="openExpenseDetails(this, event)" title="Sətir detalları və yaradılma vaxtına bax (created_at)">{{ $idx + 1 }}</td>
+                        <td class="excel-cell align-center date-cell" contenteditable="true" data-field="date" data-col="A" title="Tarixi dəyişmək üçün klikləyin. Yaradılma vaxtına baxmaq üçün saat ikonuna klikləyin.">
+                            {{ $displayDate }}
+                            <button type="button" class="cell-created-indicator" contenteditable="false" onclick="openExpenseDetails(this, event)" title="Yaradılma vaxtına bax (created_at)">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </button>
+                        </td>
                         <td class="excel-cell align-left font-weight-600 text-primary" contenteditable="true" data-field="game_name" data-col="B">{{ $row['game_name'] ?? 'Ümumi' }}</td>
                         <td class="excel-cell align-left font-weight-500" contenteditable="true" data-field="title" data-col="C">{{ $row['title'] ?? '' }}</td>
                         <td class="excel-cell align-left" contenteditable="true" data-field="note" data-col="D">{{ $row['note'] ?? '' }}</td>
@@ -563,12 +919,20 @@
                         <td class="excel-cell align-left" contenteditable="true" data-field="classification" data-col="G">{{ $row['classification'] ?? '' }}</td>
                         <td class="align-right fw-bold row-total-cell" style="background-color: #fafbfc;">{{ number_format($total, 2, '.', '') }}</td>
                         <td class="text-center">
-                            <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Sətri sil">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                </svg>
-                            </button>
+                            <div class="row-actions-group">
+                                <button type="button" class="history-row-btn" onclick="openExpenseDetails(this, event)" title="Yaradılma vaxtına bax (created_at)">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <polyline points="12 6 12 12 16 14"></polyline>
+                                    </svg>
+                                </button>
+                                <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Sətri sil">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polyline points="3 6 5 6 21 6"></polyline>
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                    </svg>
+                                </button>
+                            </div>
                         </td>
                     </tr>
                 @empty
@@ -640,6 +1004,114 @@
     </div>
 </div>
 
+{{-- Expense Details & Created At Modal (Balaca Modal) --}}
+<div id="expenseDetailsModal" class="expense-modal-backdrop" style="display: none;" onclick="closeModalOnBackdrop(event)">
+    <div class="expense-modal-dialog" role="dialog" aria-modal="true">
+        {{-- Modal Header --}}
+        <div class="expense-modal-header">
+            <div class="expense-modal-header-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                </svg>
+            </div>
+            <div class="expense-modal-header-text">
+                <h3 class="expense-modal-title">Xərc Qeydiyyatı və Tarixçə</h3>
+                <p class="expense-modal-subtitle" id="modalRowSubtitle">Sətir № 1 • Qeyd ID: #2</p>
+            </div>
+            <button type="button" class="expense-modal-close" onclick="closeExpenseModal()" title="Bağla (Esc)">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+        </div>
+
+        {{-- Modal Body --}}
+        <div class="expense-modal-body">
+            {{-- Highlight: Created At (Yaradılma Tarixi) --}}
+            <div class="created-at-card" id="modalCreatedAtCard">
+                <div class="created-at-icon-wrap">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </div>
+                <div class="created-at-content">
+                    <span class="created-at-label">Yaradılma Tarixi və Vaxtı (created_at)</span>
+                    <div class="created-at-value-row">
+                        <span class="created-at-val" id="modalCreatedAtVal">—</span>
+                        <button type="button" class="btn-copy-timestamp" onclick="copyModalTimestamp()" title="Vaxtı kopyala">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect width="14" height="14" x="8" y="8" rx="2" ry="2"></rect>
+                                <path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"></path>
+                            </svg>
+                            <span id="copyTimestampText">Kopyala</span>
+                        </button>
+                    </div>
+                    <span class="created-at-relative" id="modalCreatedAtRelative">Sistemdə ilkin qeydiyyat anı</span>
+                </div>
+            </div>
+
+            {{-- Unsaved Row Notice --}}
+            <div class="unsaved-row-card" id="modalUnsavedNotice" style="display: none;">
+                <div class="font-size-20">⚠️</div>
+                <div>
+                    <div class="fw-bold text-dark font-size-13 mb-1">Hələ Yadda Saxlanılmayıb</div>
+                    <div class="text-muted font-size-12">Bu xərc sətri yenicə əlavə edilib. Yuxarıdakı "Yadda Saxla (Ctrl+S)" düyməsini sıxdıqdan sonra serverdə qeydə alınacaq və `created_at` vaxtı təyin ediləcək.</div>
+                </div>
+            </div>
+
+            {{-- Updated At info card (if present) --}}
+            <div class="updated-at-card" id="modalUpdatedAtCard" style="display: none;">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0284c7" stroke-width="2">
+                            <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+                        </svg>
+                        <span class="font-size-12 text-muted fw-semibold">Son redaktə (updated_at):</span>
+                    </div>
+                    <span class="font-size-12 fw-bold text-dark font-monospace" id="modalUpdatedAtVal">—</span>
+                </div>
+            </div>
+
+            {{-- Context Grid --}}
+            <div class="expense-meta-grid">
+                <div class="meta-item">
+                    <span class="meta-label">Sənəd Tarixi</span>
+                    <span class="meta-value font-monospace" id="modalMetaDate">—</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Cəmi Məbləğ</span>
+                    <span class="meta-value text-success font-monospace" id="modalMetaTotal">—</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Oyun / Filial</span>
+                    <span class="meta-value" id="modalMetaGame">—</span>
+                </div>
+                <div class="meta-item">
+                    <span class="meta-label">Təsnifat</span>
+                    <span class="meta-value" id="modalMetaClassification">—</span>
+                </div>
+                <div class="meta-item meta-item-full">
+                    <span class="meta-label">Xərcin Başlığı</span>
+                    <span class="meta-value" id="modalMetaTitle">—</span>
+                </div>
+                <div class="meta-item meta-item-full" id="modalMetaNoteWrapper" style="display: none;">
+                    <span class="meta-label">Qeyd</span>
+                    <span class="meta-value text-muted" id="modalMetaNote">—</span>
+                </div>
+            </div>
+        </div>
+
+        {{-- Modal Footer --}}
+        <div class="expense-modal-footer">
+            <span class="font-size-11 text-muted">Bağlamaq üçün <kbd class="px-1 py-0.5 rounded bg-light border text-dark font-size-10">ESC</kbd> basın</span>
+            <button type="button" class="expense-modal-btn-close" onclick="closeExpenseModal()">Bağla</button>
+        </div>
+    </div>
+</div>
+
 <script>
     const BRANCH_ID = "{{ $filterBranch }}";
     const MONTH = "{{ $filterMonth }}";
@@ -654,12 +1126,20 @@
         initCellEvents();
         initExcelTabs();
 
-        // Sətir silmə (event delegation)
+        // Sətir silmə və sətirə ikiqat klik (event delegation)
         const tableBody = document.getElementById('expensesTableBody');
         if (tableBody) {
             tableBody.addEventListener('click', function (e) {
                 const btn = e.target.closest('.del-row-btn');
                 if (btn) deleteRow(btn);
+            });
+
+            // Cədvəl sətrinə ikiqat klik etdikdə yaradılma tarixini aç
+            tableBody.addEventListener('dblclick', function (e) {
+                const tr = e.target.closest('tr:not(#emptyRowPlaceholder)');
+                if (tr && !e.target.closest('.del-row-btn')) {
+                    openExpenseDetails(tr, e);
+                }
             });
         }
 
@@ -675,11 +1155,13 @@
             saveBtn.addEventListener('click', saveAllExpenses);
         }
 
-        // Klaviatura qısayolu: Ctrl+S və ya Cmd+S
+        // Klaviatura qısayolları: Ctrl+S (Yadda Saxla) və Escape (Modalı bağla)
         document.addEventListener('keydown', function (e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
                 e.preventDefault();
                 saveAllExpenses();
+            } else if (e.key === 'Escape') {
+                closeExpenseModal();
             }
         });
 
@@ -827,9 +1309,19 @@
 
         const tr = document.createElement('tr');
         tr.setAttribute('data-row-id', '');
+        tr.setAttribute('data-created-at', '');
+        tr.setAttribute('data-updated-at', '');
         tr.innerHTML = `
-            <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600;">${count}</td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="date" data-col="A">${todayFormatted}</td>
+            <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600; cursor: pointer;" onclick="openExpenseDetails(this, event)" title="Sətir detalları və yaradılma vaxtına bax (created_at)">${count}</td>
+            <td class="excel-cell align-center date-cell is-dirty" contenteditable="true" data-field="date" data-col="A" title="Tarixi dəyişmək üçün klikləyin. Yaradılma vaxtına baxmaq üçün saat ikonuna klikləyin.">
+                ${todayFormatted}
+                <button type="button" class="cell-created-indicator" contenteditable="false" onclick="openExpenseDetails(this, event)" title="Yaradılma vaxtına bax (created_at)">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                </button>
+            </td>
             <td class="excel-cell align-left font-weight-600 text-primary is-dirty" contenteditable="true" data-field="game_name" data-col="B">Ümumi</td>
             <td class="excel-cell align-left font-weight-500 is-dirty" contenteditable="true" data-field="title" data-col="C"></td>
             <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="note" data-col="D"></td>
@@ -838,12 +1330,20 @@
             <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="classification" data-col="G"></td>
             <td class="align-right fw-bold row-total-cell is-dirty" style="background-color: #fafbfc;">0.00</td>
             <td class="text-center">
-                <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Sətri sil">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    </svg>
-                </button>
+                <div class="row-actions-group">
+                    <button type="button" class="history-row-btn" onclick="openExpenseDetails(this, event)" title="Yaradılma vaxtına bax (created_at)">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <polyline points="12 6 12 12 16 14"></polyline>
+                        </svg>
+                    </button>
+                    <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Sətri sil">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
             </td>
         `;
 
@@ -908,7 +1408,10 @@
                 const field = c.dataset.field;
                 if (field) {
                     let val = c.innerText.trim();
-                    if (field === 'amount_cash' || field === 'amount_card') {
+                    if (field === 'date') {
+                        const m = val.match(/\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}/);
+                        if (m) val = m[0];
+                    } else if (field === 'amount_cash' || field === 'amount_card') {
                         val = parseFloat(val.replace(/[^0-9.-]/g, '')) || 0;
                     }
                     rowObj[field] = val;
@@ -956,12 +1459,15 @@
                 // Remove dirty classes
                 document.querySelectorAll('.is-dirty').forEach(c => c.classList.remove('is-dirty'));
 
-                // Əgər yeni sətirlər əlavə edilibsə, data-row-id atributlarını təyin edirik
+                // Əgər yeni sətirlər əlavə edilibsə və ya qeydlər yenilənibsə, data atributlarını yeniləyirik
                 if (Array.isArray(data.expenses)) {
                     const activeRows = document.querySelectorAll('#expensesTableBody tr:not(#emptyRowPlaceholder)');
                     activeRows.forEach((tr, i) => {
-                        if (data.expenses[i] && data.expenses[i].id) {
-                            tr.setAttribute('data-row-id', data.expenses[i].id);
+                        const savedExp = data.expenses[i];
+                        if (savedExp) {
+                            if (savedExp.id) tr.setAttribute('data-row-id', savedExp.id);
+                            if (savedExp.created_at) tr.setAttribute('data-created-at', savedExp.created_at);
+                            if (savedExp.updated_at) tr.setAttribute('data-updated-at', savedExp.updated_at);
                         }
                     });
                 }
@@ -1036,6 +1542,197 @@
                 tabsContainer.scrollLeft = scrollLeft - walk;
             });
         }
+    }
+
+    /**
+     * Xərc qeydiyyatı və created_at detalları modalını aç
+     */
+    function openExpenseDetails(el, event) {
+        if (event) {
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        const tr = el.closest('tr');
+        if (!tr) return;
+
+        const rowId = tr.getAttribute('data-row-id') || '';
+        const createdAt = tr.getAttribute('data-created-at') || '';
+        const updatedAt = tr.getAttribute('data-updated-at') || '';
+        const idx = tr.querySelector('.row-idx') ? tr.querySelector('.row-idx').innerText.trim() : '';
+
+        // Xanaların dəyərlərini oxuyuruq
+        const dateCell = tr.querySelector('[data-field="date"]');
+        let dateVal = '';
+        if (dateCell) {
+            const m = dateCell.innerText.match(/\d{1,2}[.\/-]\d{1,2}[.\/-]\d{4}/);
+            dateVal = m ? m[0] : dateCell.innerText.trim();
+        }
+
+        const gameCell = tr.querySelector('[data-field="game_name"]');
+        const gameVal = gameCell ? gameCell.innerText.trim() : 'Ümumi';
+
+        const titleCell = tr.querySelector('[data-field="title"]');
+        const titleVal = titleCell ? titleCell.innerText.trim() : '';
+
+        const noteCell = tr.querySelector('[data-field="note"]');
+        const noteVal = noteCell ? noteCell.innerText.trim() : '';
+
+        const cashCell = tr.querySelector('[data-field="amount_cash"]');
+        const cashVal = parseFloat(cashCell ? cashCell.innerText.replace(/[^0-9.-]/g, '') : 0) || 0;
+
+        const cardCell = tr.querySelector('[data-field="amount_card"]');
+        const cardVal = parseFloat(cardCell ? cardCell.innerText.replace(/[^0-9.-]/g, '') : 0) || 0;
+        const totalVal = (cashVal + cardVal).toFixed(2);
+
+        const classCell = tr.querySelector('[data-field="classification"]');
+        const classVal = classCell ? classCell.innerText.trim() : '';
+
+        // Modala məlumatları yerləşdiririk
+        const subtitleEl = document.getElementById('modalRowSubtitle');
+        if (subtitleEl) {
+            subtitleEl.innerText = `Sətir № ${idx || 1}` + (rowId ? ` • Qeyd ID: #${rowId}` : ' • Yeni sətir (Saxlanılmayıb)');
+        }
+
+        const createdAtCard = document.getElementById('modalCreatedAtCard');
+        const createdAtValEl = document.getElementById('modalCreatedAtVal');
+        const createdAtRelEl = document.getElementById('modalCreatedAtRelative');
+        const unsavedNotice = document.getElementById('modalUnsavedNotice');
+
+        if (createdAt) {
+            if (createdAtCard) createdAtCard.style.display = 'flex';
+            if (unsavedNotice) unsavedNotice.style.display = 'none';
+            if (createdAtValEl) createdAtValEl.innerText = createdAt;
+            if (createdAtRelEl) {
+                createdAtRelEl.innerText = formatRelativeTime(createdAt);
+            }
+        } else if (!rowId) {
+            // Hələ yadda saxlanılmamış yeni sətir
+            if (createdAtCard) createdAtCard.style.display = 'none';
+            if (unsavedNotice) unsavedNotice.style.display = 'flex';
+        } else {
+            // ID var, amma created_at boşdur
+            if (createdAtCard) createdAtCard.style.display = 'flex';
+            if (unsavedNotice) unsavedNotice.style.display = 'none';
+            if (createdAtValEl) createdAtValEl.innerText = 'Qeyd olunmayıb';
+            if (createdAtRelEl) createdAtRelEl.innerText = 'İlkin köhnə qeyd';
+        }
+
+        const updatedAtCard = document.getElementById('modalUpdatedAtCard');
+        const updatedAtValEl = document.getElementById('modalUpdatedAtVal');
+        if (updatedAt && updatedAt !== createdAt) {
+            if (updatedAtCard) updatedAtCard.style.display = 'block';
+            if (updatedAtValEl) updatedAtValEl.innerText = updatedAt;
+        } else {
+            if (updatedAtCard) updatedAtCard.style.display = 'none';
+        }
+
+        // Meta məlumatlar
+        const metaDate = document.getElementById('modalMetaDate');
+        if (metaDate) metaDate.innerText = dateVal || '—';
+
+        const metaTotal = document.getElementById('modalMetaTotal');
+        if (metaTotal) metaTotal.innerText = `${totalVal} ₼ (Nəğd: ${cashVal.toFixed(2)} | Kart: ${cardVal.toFixed(2)})`;
+
+        const metaGame = document.getElementById('modalMetaGame');
+        if (metaGame) metaGame.innerText = gameVal || 'Ümumi';
+
+        const metaClass = document.getElementById('modalMetaClassification');
+        if (metaClass) metaClass.innerText = classVal || '—';
+
+        const metaTitle = document.getElementById('modalMetaTitle');
+        if (metaTitle) metaTitle.innerText = titleVal || '—';
+
+        const metaNoteWrap = document.getElementById('modalMetaNoteWrapper');
+        const metaNote = document.getElementById('modalMetaNote');
+        if (noteVal) {
+            if (metaNoteWrap) metaNoteWrap.style.display = 'block';
+            if (metaNote) metaNote.innerText = noteVal;
+        } else {
+            if (metaNoteWrap) metaNoteWrap.style.display = 'none';
+        }
+
+        // Kopyalama düyməsini sıfırla
+        const copyBtnText = document.getElementById('copyTimestampText');
+        if (copyBtnText) copyBtnText.innerText = 'Kopyala';
+
+        // Modalı göstər
+        const modal = document.getElementById('expenseDetailsModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    /**
+     * Modalı bağla
+     */
+    function closeExpenseModal() {
+        const modal = document.getElementById('expenseDetailsModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
+    /**
+     * Arxa fona klik edildikdə bağla
+     */
+    function closeModalOnBackdrop(e) {
+        if (e.target && e.target.id === 'expenseDetailsModal') {
+            closeExpenseModal();
+        }
+    }
+
+    /**
+     * created_at vaxtını oxunaqlı nisbi vaxta çevir
+     */
+    function formatRelativeTime(dateStr) {
+        try {
+            const parts = dateStr.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+            if (!parts) return 'Sistemdə ilkin qeydiyyat anı';
+            const d = new Date(parts[3], parts[2] - 1, parts[1], parts[4], parts[5], parts[6] || 0);
+            const now = new Date();
+            const diffMs = now - d;
+            const diffSec = Math.floor(diffMs / 1000);
+            const diffMin = Math.floor(diffSec / 60);
+            const diffHour = Math.floor(diffMin / 60);
+            const diffDays = Math.floor(diffHour / 24);
+
+            if (diffDays > 30) {
+                return `${Math.floor(diffDays / 30)} ay əvvəl daxil edilib`;
+            } else if (diffDays > 0) {
+                return `${diffDays} gün əvvəl daxil edilib`;
+            } else if (diffHour > 0) {
+                return `${diffHour} saat əvvəl daxil edilib`;
+            } else if (diffMin > 0) {
+                return `${diffMin} dəqiqə əvvəl daxil edilib`;
+            } else {
+                return 'Bir az əvvəl daxil edilib';
+            }
+        } catch (e) {
+            return 'Sistemdə ilkin qeydiyyat anı';
+        }
+    }
+
+    /**
+     * Yaradılma vaxtını kopyala
+     */
+    function copyModalTimestamp() {
+        const valEl = document.getElementById('modalCreatedAtVal');
+        if (!valEl) return;
+        const text = valEl.innerText.trim();
+        if (!text || text === '—') return;
+
+        navigator.clipboard.writeText(text).then(() => {
+            const btnText = document.getElementById('copyTimestampText');
+            if (btnText) {
+                btnText.innerText = '✓ Kopyalandı';
+                setTimeout(() => { btnText.innerText = 'Kopyala'; }, 2000);
+            }
+        }).catch(() => {
+            showToast('Vaxt kopyalandı: ' + text);
+        });
     }
 </script>
 @endsection

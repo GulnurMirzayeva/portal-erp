@@ -152,6 +152,9 @@ class ExpenseController extends Controller
             }
         }
 
+        // created_at və updated_at vaxtlarını əsas bazadan zənginləşdiririk
+        $expenses = $this->enrichExpensesWithTimestamps($expenses);
+
         return view('expenses.index', [
             'expenses' => $expenses,
             'summary' => $summary,
@@ -260,6 +263,8 @@ class ExpenseController extends Controller
                         $data['created_at'] = Carbon::now();
                         $newId = DB::connection('portal_website')->table('expenses')->insertGetId($data);
                         $row['id'] = $newId;
+                        $row['created_at'] = $data['created_at']->format('d.m.Y H:i:s');
+                        $row['updated_at'] = $data['created_at']->format('d.m.Y H:i:s');
                     }
                     $row['date'] = Carbon::parse($data['date'])->format('d.m.Y');
                     $row['raw_date'] = $data['date'];
@@ -278,7 +283,10 @@ class ExpenseController extends Controller
             }
         }
 
-        // 3. ERP sisteminin özündə də ExpenseRecord modelini yeniləyirik (qaimələrdəki kimi)
+        // 3. Əgər bəzi qeydlərdə created_at çatışmırsa, bazadan tamamlayırıq
+        $savedExpenses = $this->enrichExpensesWithTimestamps($savedExpenses);
+
+        // 4. ERP sisteminin özündə də ExpenseRecord modelini yeniləyirik (qaimələrdəki kimi)
         $record = ExpenseRecord::updateOrCreate(
             [
                 'branch_id' => $branchId,
@@ -582,5 +590,47 @@ class ExpenseController extends Controller
                 'month' => $m,
             ];
         })->all();
+    }
+
+    /**
+     * Xərclərin siyahısına əsas Portal Website bazasından created_at və updated_at vaxtlarını əlavə edir
+     */
+    protected function enrichExpensesWithTimestamps(array $expenses): array
+    {
+        $ids = array_filter(array_map(function ($item) {
+            return !empty($item['id']) && is_numeric($item['id']) ? (int)$item['id'] : null;
+        }, $expenses));
+
+        if (empty($ids)) {
+            return $expenses;
+        }
+
+        try {
+            $records = DB::connection('portal_website')->table('expenses')
+                ->whereIn('id', $ids)
+                ->select('id', 'created_at', 'updated_at')
+                ->get()
+                ->keyBy('id');
+
+            foreach ($expenses as &$item) {
+                $id = !empty($item['id']) && is_numeric($item['id']) ? (int)$item['id'] : null;
+                if ($id && isset($records[$id])) {
+                    $row = $records[$id];
+                    if (!empty($row->created_at)) {
+                        $item['created_at'] = Carbon::parse($row->created_at)->format('d.m.Y H:i:s');
+                        $item['raw_created_at'] = (string)$row->created_at;
+                    }
+                    if (!empty($row->updated_at)) {
+                        $item['updated_at'] = Carbon::parse($row->updated_at)->format('d.m.Y H:i:s');
+                        $item['raw_updated_at'] = (string)$row->updated_at;
+                    }
+                }
+            }
+            unset($item);
+        } catch (\Exception $e) {
+            Log::warning("Expense timestamps enrich failed: " . $e->getMessage());
+        }
+
+        return $expenses;
     }
 }

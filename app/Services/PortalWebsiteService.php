@@ -229,6 +229,7 @@ class PortalWebsiteService
                     'expenses.amount_card',
                     'expenses.classification',
                     'expenses.created_at',
+                    'expenses.updated_at',
                     DB::raw('COALESCE(game_translations.name, games.slug) as game_name')
                 );
 
@@ -269,6 +270,10 @@ class PortalWebsiteService
                     'amount_card' => $card > 0 ? $card : null,
                     'total_amount' => $rowTotal,
                     'classification' => $row->classification ?? '',
+                    'created_at' => !empty($row->created_at) ? Carbon::parse($row->created_at)->format('d.m.Y H:i:s') : null,
+                    'raw_created_at' => $row->created_at ?? null,
+                    'updated_at' => !empty($row->updated_at) ? Carbon::parse($row->updated_at)->format('d.m.Y H:i:s') : null,
+                    'raw_updated_at' => $row->updated_at ?? null,
                 ];
             }
 
@@ -395,12 +400,15 @@ class PortalWebsiteService
                         ->where('id', $id)
                         ->update($data);
                     $item['id'] = $id;
+                    $item['updated_at'] = Carbon::now()->format('d.m.Y H:i:s');
                     $savedExpenses[] = $item;
                     $savedCount++;
                 } else {
                     $data['created_at'] = Carbon::now();
                     $newId = DB::connection('portal_website')->table('expenses')->insertGetId($data);
                     $item['id'] = $newId;
+                    $item['created_at'] = Carbon::now()->format('d.m.Y H:i:s');
+                    $item['updated_at'] = Carbon::now()->format('d.m.Y H:i:s');
                     $savedExpenses[] = $item;
                     $savedCount++;
                 }
