@@ -347,12 +347,30 @@ class PortalWebsiteService
                 ]);
 
             if ($response->successful()) {
-                return [
-                    'success' => true,
-                    'message' => $response->json('message', 'Xərclər uğurla yadda saxlanıldı.'),
-                    'expenses' => $response->json('expenses', $expenses),
-                    'deleted_count' => $response->json('deleted_count', count($deletedIds)),
-                ];
+                $respData = $response->json();
+                $errors = $respData['errors'] ?? [];
+                $savedCount = $respData['saved_count'] ?? 0;
+
+                // Əgər göndərilən xərclər var idisə amma xətalar səbəbilə heç biri saxlanılmadısa:
+                if (!empty($expenses) && $savedCount === 0 && !empty($errors)) {
+                    Log::warning("PortalWebsite API save returned errors: " . implode('; ', $errors));
+                    return [
+                        'success' => false,
+                        'message' => 'Əsas bazada yadda saxlamaq mümkün olmadı: ' . implode('; ', $errors),
+                        'errors' => $errors,
+                        'expenses' => [],
+                    ];
+                }
+
+                if (!empty($respData['success'])) {
+                    return [
+                        'success' => true,
+                        'message' => $respData['message'] ?? 'Xərclər uğurla yadda saxlanıldı.',
+                        'expenses' => $respData['expenses'] ?? $expenses,
+                        'deleted_count' => $respData['deleted_count'] ?? count($deletedIds),
+                        'saved_count' => $savedCount,
+                    ];
+                }
             }
         } catch (Exception $e) {
             Log::warning("PortalWebsite API updateExpenses error: " . $e->getMessage());

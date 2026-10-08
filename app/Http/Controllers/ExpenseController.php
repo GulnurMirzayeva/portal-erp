@@ -134,7 +134,22 @@ class ExpenseController extends Controller
         }
 
         $connected = $report['connected'] ?? true;
-        if (!empty($report['expenses']) || $connected) {
+        if (!empty($report['expenses'])) {
+            $expenses = $report['expenses'];
+            $summary = $report['summary'] ?? $this->calculateSummary($expenses);
+            $hasCustomEdits = (bool)$savedRecord;
+            $lastSavedAt = $savedRecord && $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
+
+            if (empty($branchGames) && !empty($report['games'])) {
+                $branchGames = $report['games'];
+            }
+        } elseif ($savedRecord && is_array($savedRecord->expenses_data) && !empty($savedRecord->expenses_data)) {
+            // Əsas serverdə bu ay üçün xərc tapılmadıqda və ya hələ sinxronlaşmadıqda, yerli nüsxəni göstəririk
+            $expenses = $savedRecord->expenses_data;
+            $summary = $savedRecord->summary_data ?? $this->calculateSummary($expenses);
+            $hasCustomEdits = true;
+            $lastSavedAt = $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
+        } elseif ($connected) {
             $expenses = $report['expenses'] ?? [];
             $summary = $report['summary'] ?? $this->calculateSummary($expenses);
             $hasCustomEdits = (bool)$savedRecord;
@@ -143,12 +158,6 @@ class ExpenseController extends Controller
             if (empty($branchGames) && !empty($report['games'])) {
                 $branchGames = $report['games'];
             }
-        } elseif ($savedRecord && is_array($savedRecord->expenses_data)) {
-            // Yalnız əsas serverlə əlaqə kəsildikdə yerli bazadakı nüsxədən ehtiyat kimi oxuyuruq
-            $expenses = $savedRecord->expenses_data;
-            $summary = $savedRecord->summary_data ?? $this->calculateSummary($expenses);
-            $hasCustomEdits = true;
-            $lastSavedAt = $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
         } else {
             $expenses = [];
             $summary = $this->calculateSummary($expenses);
@@ -192,20 +201,27 @@ class ExpenseController extends Controller
         $expenses = $request->input('expenses', []);
         $deletedIds = $request->input('deleted_ids', []);
 
-        // Şəkillərin mütləq olmasını yoxlayırıq (Required!)
-        foreach ($expenses as $idx => $row) {
+        // Şəkilləri və sahələri normallaşdırırıq
+        foreach ($expenses as $idx => &$row) {
             $rowImgs = $row['images'] ?? [];
             if (is_string($rowImgs)) {
                 $rowImgs = json_decode($rowImgs, true) ?: [];
             }
-            if (empty($rowImgs) || !is_array($rowImgs) || count($rowImgs) === 0) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Sətir #' . ($idx + 1) . ' üçün ən azı bir şəkil (çek/qəbz) əlavə edilməlidir!',
-                    'error_row_idx' => $idx + 1,
-                ], 422);
+            $row['images'] = is_array($rowImgs) ? array_values(array_filter($rowImgs)) : [];
+
+            $title = trim($row['title'] ?? '');
+            if (empty($title)) {
+                $title = !empty(trim($row['note'] ?? '')) ? trim($row['note']) : 'Xərc';
             }
+            $row['title'] = $title;
+
+            $classification = trim($row['classification'] ?? '');
+            if (empty($classification)) {
+                $classification = 'Digər';
+            }
+            $row['classification'] = $classification;
         }
+        unset($row);
 
         $summary = $this->calculateSummary($expenses);
 
@@ -223,7 +239,7 @@ class ExpenseController extends Controller
         }
 
         // 2. Əgər API ilə yenilənməyibsə və ya birbaşa DB fallback lazımdırsa
-        if (!$apiResult['success'] || empty($savedExpenses)) {
+        if (!$apiResult['success'] || (!empty($expenses) && empty($savedExpenses))) {
             try {
                 if (!empty($deletedIds)) {
                     DB::connection('portal_website')->table('expenses')
@@ -240,7 +256,7 @@ class ExpenseController extends Controller
                     if (!empty($row['date'])) {
                         try {
                             $rawDate = trim($row['date']);
-                            if (preg_match('/^(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})$/', $rawDate, $m)) {
+                            if (preg_match('/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{4})/', $rawDate, $m)) {
                                 $rowDate = sprintf('%04d-%02d-%02d', (int)$m[3], (int)$m[2], (int)$m[1]);
                             } else {
                                 $rowDate = Carbon::parse($rawDate)->format('Y-m-d');
@@ -268,15 +284,24 @@ class ExpenseController extends Controller
                     }
                     $cleanRowImgs = is_array($rowImgs) ? array_values(array_filter($rowImgs)) : [];
 
+                    $rowTitle = trim($row['title'] ?? '');
+                    if (empty($rowTitle)) {
+                        $rowTitle = !empty(trim($row['note'] ?? '')) ? trim($row['note']) : 'Xərc';
+                    }
+                    $rowClassification = trim($row['classification'] ?? '');
+                    if (empty($rowClassification)) {
+                        $rowClassification = 'Digər';
+                    }
+
                     $data = [
                         'branch_id' => (int)$branchId,
                         'game_id' => $gameId,
                         'date' => $rowDate ?? date('Y-m-d'),
-                        'title' => trim($row['title'] ?? ''),
+                        'title' => $rowTitle,
                         'note' => !empty($row['note']) ? trim($row['note']) : null,
                         'amount_cash' => $cash,
                         'amount_card' => $card,
-                        'classification' => trim($row['classification'] ?? ''),
+                        'classification' => $rowClassification,
                         'updated_at' => Carbon::now(),
                     ];
 

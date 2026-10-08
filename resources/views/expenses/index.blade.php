@@ -1631,16 +1631,6 @@
             if (!Array.isArray(rowImgs)) rowImgs = [];
             rowObj['images'] = rowImgs;
 
-            if (rowImgs.length === 0) {
-                if (!hasImageError) {
-                    hasImageError = true;
-                    firstMissingRow = idx + 1;
-                    firstMissingTr = tr;
-                }
-                const badge = tr.querySelector('.badge-images');
-                if (badge) badge.classList.add('error-pulse');
-            }
-
             tr.querySelectorAll('td.excel-cell').forEach(c => {
                 const field = c.dataset.field;
                 if (field) {
@@ -1657,16 +1647,6 @@
             rowObj['row_num'] = idx + 1;
             rowsData.push(rowObj);
         });
-
-        if (hasImageError) {
-            alert(`⚠️ Xəta: Sətir #${firstMissingRow} üçün xərc şəkli (çek/qəbz) əlavə edilməyib!\n\nHər bir xərc üçün ən azı 1 şəkil əlavə edilməsi mütləqdir.`);
-            if (firstMissingTr) {
-                firstMissingTr.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                const cell = firstMissingTr.querySelector('.images-cell');
-                if (cell) openRowImagesModal(cell, null);
-            }
-            return;
-        }
 
         const saveBtn = document.getElementById('saveBtn');
         saveBtn.disabled = true;
