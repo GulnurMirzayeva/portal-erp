@@ -217,21 +217,32 @@ class PortalWebsiteService
                 ->leftJoin('game_translations', function ($join) {
                     $join->on('games.id', '=', 'game_translations.game_id')
                          ->where('game_translations.locale', '=', 'az');
-                })
-                ->select(
-                    'expenses.id',
-                    'expenses.branch_id',
-                    'expenses.game_id',
-                    'expenses.date',
-                    'expenses.title',
-                    'expenses.note',
-                    'expenses.amount_cash',
-                    'expenses.amount_card',
-                    'expenses.classification',
-                    'expenses.created_at',
-                    'expenses.updated_at',
-                    DB::raw('COALESCE(game_translations.name, games.slug) as game_name')
-                );
+                });
+
+            $selectCols = [
+                'expenses.id',
+                'expenses.branch_id',
+                'expenses.game_id',
+                'expenses.date',
+                'expenses.title',
+                'expenses.note',
+                'expenses.amount_cash',
+                'expenses.amount_card',
+                'expenses.classification',
+                'expenses.created_at',
+                'expenses.updated_at',
+                DB::raw('COALESCE(game_translations.name, games.slug) as game_name'),
+            ];
+
+            try {
+                if (\Illuminate\Support\Facades\Schema::connection('portal_website')->hasColumn('expenses', 'images')) {
+                    $selectCols[] = 'expenses.images';
+                }
+            } catch (Exception $e) {
+                // ignore
+            }
+
+            $query->select($selectCols);
 
             if (!empty($branchId) && $branchId !== 'all') {
                 $query->where('expenses.branch_id', $branchId);
@@ -257,6 +268,18 @@ class PortalWebsiteService
                 $totalCash += $cash;
                 $totalCard += $card;
 
+                $rawImgs = $row->images ?? [];
+                if (is_string($rawImgs)) {
+                    $rawImgs = json_decode($rawImgs, true) ?: [];
+                }
+                $cleanImgs = is_array($rawImgs) ? array_values(array_filter($rawImgs)) : [];
+                $imageUrls = array_map(function ($img) {
+                    if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
+                        return $img;
+                    }
+                    return rtrim(config('services.portal_website.url', 'https://portal.land'), '/') . '/storage/' . ltrim($img, '/');
+                }, $cleanImgs);
+
                 $formattedExpenses[] = [
                     'id' => $row->id,
                     'row_num' => $idx + 1,
@@ -270,6 +293,8 @@ class PortalWebsiteService
                     'amount_card' => $card > 0 ? $card : null,
                     'total_amount' => $rowTotal,
                     'classification' => $row->classification ?? '',
+                    'images' => $cleanImgs,
+                    'image_urls' => $imageUrls,
                     'created_at' => !empty($row->created_at) ? Carbon::parse($row->created_at)->format('d.m.Y H:i:s') : null,
                     'raw_created_at' => $row->created_at ?? null,
                     'updated_at' => !empty($row->updated_at) ? Carbon::parse($row->updated_at)->format('d.m.Y H:i:s') : null,
@@ -383,6 +408,12 @@ class PortalWebsiteService
                     }
                 }
 
+                $rowImgs = $item['images'] ?? [];
+                if (is_string($rowImgs)) {
+                    $rowImgs = json_decode($rowImgs, true) ?: [];
+                }
+                $cleanRowImgs = is_array($rowImgs) ? array_values(array_filter($rowImgs)) : [];
+
                 $data = [
                     'branch_id' => $branchId,
                     'game_id' => !empty($item['game_id']) && $item['game_id'] !== 'general' ? (int)$item['game_id'] : null,
@@ -394,6 +425,14 @@ class PortalWebsiteService
                     'classification' => $item['classification'] ?? '',
                     'updated_at' => Carbon::now(),
                 ];
+
+                try {
+                    if (\Illuminate\Support\Facades\Schema::connection('portal_website')->hasColumn('expenses', 'images')) {
+                        $data['images'] = !empty($cleanRowImgs) ? json_encode($cleanRowImgs) : null;
+                    }
+                } catch (Exception $e) {
+                    // ignore
+                }
 
                 if ($id && $id > 0) {
                     DB::connection('portal_website')->table('expenses')
@@ -474,6 +513,61 @@ class PortalWebsiteService
                 'updated_count' => 0,
                 'message' => 'Server ilə əlaqə xətası: ' . $e->getMessage(),
             ];
+        }
+    }
+
+    /**
+     * Xərc şəkillərini PortalWebsite API vasitəsilə yükləyir (və ya fallback).
+     */
+    public function uploadExpenseImages(array $files): array
+    {
+        try {
+            $req = Http::timeout(30)->withHeaders([
+                'X-ERP-API-KEY' => $this->apiToken,
+                'Accept' => 'application/json',
+            ]);
+
+            foreach ($files as $idx => $file) {
+                $req->attach("images[{$idx}]", file_get_contents($file->getRealPath()), $file->getClientOriginalName());
+            }
+
+            $response = $req->post("{$this->baseUrl}/api/erp/expenses/upload-images");
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'paths' => $response->json('paths', []),
+                    'urls' => $response->json('urls', []),
+                ];
+            }
+
+            return [
+                'success' => false,
+                'message' => 'API Xətası (' . $response->status() . '): ' . ($response->json('message') ?? 'Şəkilləri yükləmək mümkün olmadı.'),
+            ];
+        } catch (Exception $e) {
+            Log::warning("PortalWebsite API uploadExpenseImages error: " . $e->getMessage());
+
+            // Local fallback
+            try {
+                $paths = [];
+                $urls = [];
+                foreach ($files as $file) {
+                    $stored = $file->store('expenses', 'public');
+                    $paths[] = $stored;
+                    $urls[] = asset('storage/' . $stored);
+                }
+                return [
+                    'success' => true,
+                    'paths' => $paths,
+                    'urls' => $urls,
+                ];
+            } catch (Exception $fallbackEx) {
+                return [
+                    'success' => false,
+                    'message' => 'Şəkilləri yükləmək mümkün olmadı: ' . $e->getMessage(),
+                ];
+            }
         }
     }
 }

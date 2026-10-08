@@ -187,6 +187,22 @@ class ExpenseController extends Controller
         $month = $request->input('month');
         $expenses = $request->input('expenses', []);
         $deletedIds = $request->input('deleted_ids', []);
+
+        // Şəkillərin mütləq olmasını yoxlayırıq (Required!)
+        foreach ($expenses as $idx => $row) {
+            $rowImgs = $row['images'] ?? [];
+            if (is_string($rowImgs)) {
+                $rowImgs = json_decode($rowImgs, true) ?: [];
+            }
+            if (empty($rowImgs) || !is_array($rowImgs) || count($rowImgs) === 0) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Sətir #' . ($idx + 1) . ' üçün ən azı bir şəkil (çek/qəbz) əlavə edilməlidir!',
+                    'error_row_idx' => $idx + 1,
+                ], 422);
+            }
+        }
+
         $summary = $this->calculateSummary($expenses);
 
         $updatedDbCount = 0;
@@ -242,6 +258,12 @@ class ExpenseController extends Controller
                     $cash = isset($row['amount_cash']) ? (float)$row['amount_cash'] : 0.0;
                     $card = isset($row['amount_card']) ? (float)$row['amount_card'] : 0.0;
 
+                    $rowImgs = $row['images'] ?? [];
+                    if (is_string($rowImgs)) {
+                        $rowImgs = json_decode($rowImgs, true) ?: [];
+                    }
+                    $cleanRowImgs = is_array($rowImgs) ? array_values(array_filter($rowImgs)) : [];
+
                     $data = [
                         'branch_id' => (int)$branchId,
                         'game_id' => $gameId,
@@ -253,6 +275,14 @@ class ExpenseController extends Controller
                         'classification' => trim($row['classification'] ?? ''),
                         'updated_at' => Carbon::now(),
                     ];
+
+                    try {
+                        if (\Illuminate\Support\Facades\Schema::connection('portal_website')->hasColumn('expenses', 'images')) {
+                            $data['images'] = !empty($cleanRowImgs) ? json_encode($cleanRowImgs) : null;
+                        }
+                    } catch (\Exception $e) {
+                        // ignore
+                    }
 
                     if ($id && $id > 0) {
                         DB::connection('portal_website')->table('expenses')
@@ -310,6 +340,37 @@ class ExpenseController extends Controller
             'deleted_count' => count($deletedIds),
             'api_errors' => $apiErrors,
         ]);
+    }
+
+    /**
+     * Xərc şəkillərini AJAX ilə yükləyir
+     */
+    public function uploadImages(Request $request, PortalWebsiteService $portalService)
+    {
+        $request->validate([
+            'images' => 'required|array|min:1',
+            'images.*' => 'required|file|image|max:10240',
+        ], [
+            'images.required' => 'Ən azı 1 şəkil seçilməlidir.',
+            'images.*.image' => 'Yalnız şəkil faylları qəbul olunur.',
+            'images.*.max' => 'Hər bir şəklin həcmi maksimum 10MB ola bilər.',
+        ]);
+
+        $files = $request->file('images');
+        $result = $portalService->uploadExpenseImages($files);
+
+        if ($result['success']) {
+            return response()->json([
+                'success' => true,
+                'paths' => $result['paths'],
+                'urls' => $result['urls'],
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => $result['message'] ?? 'Şəkilləri yükləmək mümkün olmadı.',
+        ], 500);
     }
 
     /**

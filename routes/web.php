@@ -37,6 +37,7 @@ Route::middleware('auth')->group(function () {
     // Mühasibatlıq: Xərclər Cədvəli
     Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
     Route::post('/expenses/save', [ExpenseController::class, 'save'])->name('expenses.save');
+    Route::post('/expenses/upload-images', [ExpenseController::class, 'uploadImages'])->name('expenses.uploadImages');
     Route::get('/expenses/export', [ExpenseController::class, 'export'])->name('expenses.export');
 
     // Mühasibatlıq: Xərc Təsnifatları (CRUD)

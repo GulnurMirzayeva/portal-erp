@@ -7,6 +7,277 @@
     <li class="breadcrumb-item"><a href="{{ route('dashboard') }}">ERP</a></li>
     <li class="breadcrumb-item"><a href="javascript:void(0);">Mühasibatlıq</a></li>
     <li class="breadcrumb-item active">Xərclər</li>
+
+{{-- Sətir Şəkilləri İdarəetmə Modalı --}}
+<div id="rowImagesModal" class="expense-modal-backdrop" style="display: none;" onclick="closeRowImagesModalOnBackdrop(event)">
+    <div class="expense-modal-dialog images-modal-dialog" role="dialog" aria-modal="true">
+        <div class="expense-modal-header">
+            <h4 class="expense-modal-title">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#107c41" stroke-width="2.5">
+                    <rect width="18" height="18" x="3" y="3" rx="2"></rect>
+                    <circle cx="9" cy="9" r="2"></circle>
+                    <path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path>
+                </svg>
+                <span id="rowImagesModalTitle">Xərc Şəkilləri (Çek / Qəbz)</span>
+            </h4>
+            <button type="button" class="expense-modal-close" onclick="closeRowImagesModal()" title="Bağla (Esc)">&times;</button>
+        </div>
+        <div class="expense-modal-body" style="padding: 16px; text-align: left;">
+            {{-- Yükləmə Ziyası --}}
+            <div class="upload-drop-zone mb-3" id="dropZone" onclick="document.getElementById('rowImageFileInput').click()">
+                <input type="file" id="rowImageFileInput" multiple accept="image/*" style="display: none;" onchange="handleModalFiles(this.files)">
+                <div class="d-flex flex-column align-items-center justify-content-center gap-1">
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#107c41" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <span style="font-size: 13px; font-weight: 600; color: #1e293b;">+ Şəkil əlavə etmək üçün klikləyin və ya faylları bura atın</span>
+                    <span style="font-size: 11px; color: #64748b;">Birdən çox şəkil seçə bilərsiniz (JPG, PNG, WEBP). Ən azı 1 şəkil mütləqdir.</span>
+                </div>
+            </div>
+
+            {{-- Yüklənir İndikatoru --}}
+            <div id="uploadLoadingSpinner" style="display: none; text-align: center; padding: 10px; font-size: 12px; font-weight: 600; color: #107c41;">
+                ⏳ Şəkillər yüklənir, zəhmət olmasa gözləyin...
+            </div>
+
+            {{-- Mövcud Şəkillər Qutusu --}}
+            <div>
+                <div class="d-flex align-items-center justify-content-between mb-2">
+                    <span style="font-size: 12px; font-weight: 700; color: #334155;">Əlavə edilmiş şəkillər:</span>
+                    <span id="modalImageCountText" style="font-size: 11px; font-weight: 600; color: #64748b;">0 şəkil</span>
+                </div>
+                <div class="thumb-grid" id="modalThumbsGrid"></div>
+                <p id="noImagesWarningNotice" class="text-danger small mt-2 mb-0" style="display: none;">
+                    ⚠️ Diqqət: Bu xərc üçün ən azı 1 şəkil əlavə edilməlidir!
+                </p>
+            </div>
+        </div>
+        <div class="expense-modal-footer d-flex justify-content-between align-items-center">
+            <span style="font-size: 11px; color: #64748b;">Şəkillər dərhal yaddaşa yazılır</span>
+            <button type="button" class="expense-modal-btn-close" onclick="closeRowImagesModal()">Tamam</button>
+        </div>
+    </div>
+</div>
+
+{{-- Böyük Ölçülü Şəkil Baxış Lightbox --}}
+<div id="fullImageViewerModal" class="expense-modal-backdrop" style="display: none; z-index: 10060;" onclick="closeFullImageViewer()">
+    <div style="max-width: 90vw; max-height: 90vh; position: relative;">
+        <img id="fullImageViewerImg" src="" style="max-width: 90vw; max-height: 90vh; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain;">
+        <button type="button" style="position: absolute; top: -12px; right: -12px; background: white; border: none; border-radius: 50%; width: 30px; height: 30px; font-size: 18px; font-weight: bold; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.3);" onclick="closeFullImageViewer()">&times;</button>
+    </div>
+</div>
+
+<script>
+    let activeImagesTr = null;
+
+    function openRowImagesModal(cell, event) {
+        if (event) event.stopPropagation();
+        const tr = cell.closest('tr');
+        if (!tr) return;
+        activeImagesTr = tr;
+
+        const rowNum = tr.querySelector('.row-idx') ? tr.querySelector('.row-idx').textContent.trim() : '';
+        const titleEl = document.getElementById('rowImagesModalTitle');
+        if (titleEl) titleEl.textContent = `Sətir #${rowNum} — Xərc Şəkilləri (Çek / Qəbz)`;
+
+        renderModalImages();
+
+        const modal = document.getElementById('rowImagesModal');
+        if (modal) {
+            modal.style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+        }
+    }
+
+    function closeRowImagesModal() {
+        const modal = document.getElementById('rowImagesModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+        if (activeImagesTr) {
+            updateRowImageBadge(activeImagesTr);
+        }
+        activeImagesTr = null;
+    }
+
+    function closeRowImagesModalOnBackdrop(e) {
+        if (e.target && e.target.id === 'rowImagesModal') {
+            closeRowImagesModal();
+        }
+    }
+
+    function renderModalImages() {
+        if (!activeImagesTr) return;
+        let images = [];
+        try {
+            images = JSON.parse(activeImagesTr.getAttribute('data-images') || '[]');
+        } catch(e) {
+            images = [];
+        }
+        if (!Array.isArray(images)) images = [];
+
+        const grid = document.getElementById('modalThumbsGrid');
+        const countText = document.getElementById('modalImageCountText');
+        const warning = document.getElementById('noImagesWarningNotice');
+
+        if (countText) countText.textContent = `${images.length} şəkil`;
+        if (warning) warning.style.display = (images.length === 0) ? 'block' : 'none';
+
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        if (images.length === 0) {
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: #94a3b8; font-size: 12px; padding: 15px;">Hələ heç bir şəkil əlavə edilməyib. Yuxarıdakı sahəyə klikləyərək şəkil seçin.</div>';
+            return;
+        }
+
+        images.forEach((img, idx) => {
+            const card = document.createElement('div');
+            card.className = 'thumb-card';
+            const imgUrl = (img.startsWith('http://') || img.startsWith('https://')) ? img : ('https://portal.land/storage/' + img.replace(/^\/+/, ''));
+            card.innerHTML = `
+                <img src="${imgUrl}" alt="Çek #${idx+1}" onclick="viewFullImage('${imgUrl}')" title="Böyütmək üçün klikləyin">
+                <button type="button" class="thumb-del" onclick="deleteModalImage(${idx})" title="Sil">&times;</button>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    function handleModalFiles(files) {
+        if (!files || files.length === 0 || !activeImagesTr) return;
+
+        const formData = new FormData();
+        for (let i = 0; i < files.length; i++) {
+            formData.append(`images[${i}]`, files[i]);
+        }
+
+        const spinner = document.getElementById('uploadLoadingSpinner');
+        if (spinner) spinner.style.display = 'block';
+
+        fetch("{{ route('expenses.uploadImages') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+            },
+            body: formData,
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (spinner) spinner.style.display = 'none';
+            if (data.success && Array.isArray(data.paths)) {
+                let currentImgs = [];
+                try {
+                    currentImgs = JSON.parse(activeImagesTr.getAttribute('data-images') || '[]');
+                } catch(e) {
+                    currentImgs = [];
+                }
+                const newImgs = currentImgs.concat(data.paths);
+                activeImagesTr.setAttribute('data-images', JSON.stringify(newImgs));
+                markDirty();
+                renderModalImages();
+                updateRowImageBadge(activeImagesTr);
+            } else {
+                alert('Şəkil yüklənmə xətası: ' + (data.message || 'Gözlənilməz xəta baş verdi.'));
+            }
+        })
+        .catch(err => {
+            if (spinner) spinner.style.display = 'none';
+            alert('Şəkil yüklənərkən xəta baş verdi: ' + err.message);
+        });
+
+        document.getElementById('rowImageFileInput').value = '';
+    }
+
+    function deleteModalImage(index) {
+        if (!activeImagesTr) return;
+        let images = [];
+        try {
+            images = JSON.parse(activeImagesTr.getAttribute('data-images') || '[]');
+        } catch(e) {
+            images = [];
+        }
+        if (index >= 0 && index < images.length) {
+            images.splice(index, 1);
+            activeImagesTr.setAttribute('data-images', JSON.stringify(images));
+            markDirty();
+            renderModalImages();
+            updateRowImageBadge(activeImagesTr);
+        }
+    }
+
+    function updateRowImageBadge(tr) {
+        if (!tr) return;
+        let images = [];
+        try {
+            images = JSON.parse(tr.getAttribute('data-images') || '[]');
+        } catch(e) {
+            images = [];
+        }
+        const cell = tr.querySelector('.images-cell');
+        if (!cell) return;
+
+        if (images.length > 0) {
+            cell.innerHTML = `
+                <span class="badge-images has-images" title="${images.length} şəkil əlavə edilib. Klikləyərək bax və ya yenisini əlavə et.">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
+                    <span class="badge-images-text">${images.length} şəkil</span>
+                </span>
+            `;
+        } else {
+            cell.innerHTML = `
+                <span class="badge-images no-images" title="Xərc üçün ən azı 1 şəkil əlavə edilməlidir!">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span class="badge-images-text">Şəkil yoxdur ⚠️</span>
+                </span>
+            `;
+        }
+    }
+
+    function viewFullImage(url) {
+        const modal = document.getElementById('fullImageViewerModal');
+        const img = document.getElementById('fullImageViewerImg');
+        if (img && modal) {
+            img.src = url;
+            modal.style.display = 'flex';
+        }
+    }
+
+    function closeFullImageViewer() {
+        const modal = document.getElementById('fullImageViewerModal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    // Drag and drop for upload drop zone
+    document.addEventListener('DOMContentLoaded', function() {
+        const dropZone = document.getElementById('dropZone');
+        if (dropZone) {
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.add('dragover');
+                }, false);
+            });
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dropZone.classList.remove('dragover');
+                }, false);
+            });
+            dropZone.addEventListener('drop', (e) => {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleModalFiles(files);
+            }, false);
+        }
+    });
+</script>
+
 @endsection
 
 @section('content')
@@ -596,6 +867,103 @@
         background: #f1f5f9;
         border-color: #94a3b8;
     }
+
+    /* Expense Image Badges & Modal */
+    .badge-images {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 3px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        text-decoration: none;
+        user-select: none;
+        line-height: 1.3;
+    }
+    .badge-images.has-images {
+        background: #e6f4ea;
+        color: #137333;
+        border: 1px solid #ceead6;
+    }
+    .badge-images.has-images:hover {
+        background: #ceead6;
+        color: #0d5423;
+        transform: scale(1.05);
+    }
+    .badge-images.no-images {
+        background: #fce8e6;
+        color: #c5221f;
+        border: 1px solid #fad2cf;
+        animation: pulse-border 2s infinite;
+    }
+    .badge-images.no-images:hover {
+        background: #fad2cf;
+        color: #a51d1a;
+        transform: scale(1.05);
+    }
+    @keyframes pulse-border {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.4); }
+        70% { box-shadow: 0 0 0 4px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    .images-modal-dialog {
+        max-width: 580px !important;
+    }
+    .upload-drop-zone {
+        border: 2px dashed #cbd5e1;
+        border-radius: 10px;
+        padding: 16px;
+        text-align: center;
+        background: #f8fafc;
+        cursor: pointer;
+        transition: all 0.15s ease;
+    }
+    .upload-drop-zone:hover, .upload-drop-zone.dragover {
+        border-color: #107c41;
+        background: #f0fdf4;
+    }
+    .thumb-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 8px;
+        max-height: 220px;
+        overflow-y: auto;
+        padding: 4px;
+    }
+    .thumb-card {
+        position: relative;
+        aspect-ratio: 1;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        background: #000;
+    }
+    .thumb-card img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        cursor: zoom-in;
+    }
+    .thumb-card .thumb-del {
+        position: absolute;
+        top: 2px;
+        right: 2px;
+        background: rgba(220, 38, 38, 0.9);
+        color: white;
+        border: none;
+        border-radius: 50%;
+        width: 18px;
+        height: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        cursor: pointer;
+    }
+
 </style>
 
 {{-- Toast Notification Box --}}
@@ -708,7 +1076,8 @@
                 <col style="width: 120px;"> {{-- Məbləğ nəğd --}}
                 <col style="width: 120px;"> {{-- Məbləğ nəğdsiz --}}
                 <col style="width: 160px;"> {{-- Təsnifat --}}
-                <col style="width: 130px;"> {{-- Cəmi Məbləğ --}}
+                <col style="width: 120px;"> {{-- Cəmi Məbləğ --}}
+                <col style="width: 130px;"> {{-- Şəkillər --}}
                 <col style="width: 60px;">  {{-- Əməliyyat --}}
             </colgroup>
             <thead>
@@ -723,6 +1092,7 @@
                     <th>Məbləğ nəğdsiz</th>
                     <th>Təsnifat</th>
                     <th>Cəmi Məbləğ</th>
+                    <th>Şəkillər (Çek)</th>
                     <th></th>
                 </tr>
                 {{-- Column Letter Headers (A, B, C, D...) --}}
@@ -736,6 +1106,7 @@
                     <th>F</th>
                     <th>G</th>
                     <th>H</th>
+                    <th>I</th>
                     <th></th>
                 </tr>
             </thead>
@@ -758,10 +1129,17 @@
                             $displayDate = $rawDateVal;
                         }
                     @endphp
+                    @php
+                        $rImgs = $row['images'] ?? [];
+                        if (is_string($rImgs)) $rImgs = json_decode($rImgs, true) ?: [];
+                        $rImgs = is_array($rImgs) ? array_values(array_filter($rImgs)) : [];
+                        $imgCount = count($rImgs);
+                    @endphp
                     <tr data-row-id="{{ $row['id'] ?? '' }}"
                         data-created-at="{{ $row['created_at'] ?? '' }}"
                         data-updated-at="{{ $row['updated_at'] ?? '' }}"
-                        data-raw-created-at="{{ $row['raw_created_at'] ?? '' }}">
+                        data-raw-created-at="{{ $row['raw_created_at'] ?? '' }}"
+                        data-images="{{ json_encode($rImgs) }}">
                         <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600; cursor: pointer;" onclick="openExpenseDetails(this, event)" title="Sətir detalları və yaradılma vaxtına bax (created_at)">{{ $idx + 1 }}</td>
                         <td class="excel-cell align-center date-cell" contenteditable="true" data-field="date" data-col="A" title="Tarixi dəyişmək üçün klikləyin. Yaradılma vaxtına baxmaq üçün saat ikonuna klikləyin.">
                             {{ $displayDate }}
@@ -779,6 +1157,19 @@
                         <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="true" data-field="amount_card" data-col="F" oninput="recalcRow(this)">{{ $card > 0 ? number_format($card, 2, '.', '') : '0.00' }}</td>
                         <td class="excel-cell align-left" contenteditable="true" data-field="classification" data-col="G">{{ $row['classification'] ?? '' }}</td>
                         <td class="align-right fw-bold row-total-cell" style="background-color: #fafbfc;">{{ number_format($total, 2, '.', '') }}</td>
+                        <td class="align-center images-cell" onclick="openRowImagesModal(this, event)">
+                            @if($imgCount > 0)
+                                <span class="badge-images has-images" title="{{ $imgCount }} şəkil əlavə edilib. Klikləyərək bax və ya yenisini əlavə et.">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="18" x="3" y="3" rx="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg>
+                                    <span class="badge-images-text">{{ $imgCount }} şəkil</span>
+                                </span>
+                            @else
+                                <span class="badge-images no-images" title="Xərc üçün ən azı 1 şəkil əlavə edilməlidir!">
+                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                                    <span class="badge-images-text">Şəkil yoxdur ⚠️</span>
+                                </span>
+                            @endif
+                        </td>
                         <td class="text-center">
                             <div class="row-actions-group">
                                 <button type="button" class="history-row-btn" onclick="openExpenseDetails(this, event)" title="Yaradılma vaxtına bax (created_at)">
@@ -798,7 +1189,7 @@
                     </tr>
                 @empty
                     <tr id="emptyRowPlaceholder">
-                        <td colspan="10" class="text-center py-5 text-muted" style="background: #ffffff; font-size: 13px;">
+                        <td colspan="11" class="text-center py-5 text-muted" style="background: #ffffff; font-size: 13px;">
                             <div class="py-2">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="d-block mx-auto mb-2 text-muted">
                                     <circle cx="12" cy="12" r="10"></circle>
@@ -821,6 +1212,7 @@
                     <td class="align-right fw-bold" id="footerTotalCard">{{ number_format($summary['total_card'] ?? 0, 2, '.', '') }}</td>
                     <td></td>
                     <td class="align-right fw-bold" id="footerGrandTotal">{{ number_format($summary['grand_total'] ?? 0, 2, '.', '') }}</td>
+                    <td></td>
                     <td></td>
                 </tr>
             </tfoot>
@@ -1098,6 +1490,7 @@
         tr.setAttribute('data-row-id', '');
         tr.setAttribute('data-created-at', '');
         tr.setAttribute('data-updated-at', '');
+        tr.setAttribute('data-images', '[]');
         tr.innerHTML = `
             <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600; cursor: pointer;" onclick="openExpenseDetails(this, event)" title="Sətir detalları və yaradılma vaxtına bax (created_at)">${count}</td>
             <td class="excel-cell align-center date-cell is-dirty" contenteditable="true" data-field="date" data-col="A" title="Tarixi dəyişmək üçün klikləyin. Yaradılma vaxtına baxmaq üçün saat ikonuna klikləyin.">
@@ -1116,6 +1509,12 @@
             <td class="excel-cell align-right font-weight-600 is-dirty" contenteditable="true" data-field="amount_card" data-col="F" oninput="recalcRow(this)">0.00</td>
             <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="classification" data-col="G"></td>
             <td class="align-right fw-bold row-total-cell is-dirty" style="background-color: #fafbfc;">0.00</td>
+            <td class="align-center images-cell is-dirty" onclick="openRowImagesModal(this, event)">
+                <span class="badge-images no-images" title="Xərc üçün ən azı 1 şəkil əlavə edilməlidir!">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <span class="badge-images-text">Şəkil yoxdur ⚠️</span>
+                </span>
+            </td>
             <td class="text-center">
                 <div class="row-actions-group">
                     <button type="button" class="history-row-btn" onclick="openExpenseDetails(this, event)" title="Yaradılma vaxtına bax (created_at)">
@@ -1160,7 +1559,7 @@
             if (remainingRows.length === 0) {
                 tableBody.innerHTML = `
                     <tr id="emptyRowPlaceholder">
-                        <td colspan="10" class="text-center py-5 text-muted" style="background: #ffffff; font-size: 13px;">
+                        <td colspan="11" class="text-center py-5 text-muted" style="background: #ffffff; font-size: 13px;">
                             <div class="py-2">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="d-block mx-auto mb-2 text-muted">
                                     <circle cx="12" cy="12" r="10"></circle>
@@ -1188,9 +1587,34 @@
         const rowsData = [];
         const rows = document.querySelectorAll('#expensesTableBody tr:not(#emptyRowPlaceholder)');
 
+        let hasImageError = false;
+        let firstMissingRow = null;
+        let firstMissingTr = null;
+
         rows.forEach((tr, idx) => {
             const rowObj = {};
             rowObj['id'] = tr.getAttribute('data-row-id') || '';
+
+            // Şəkilləri oxuyuruq
+            let rowImgs = [];
+            try {
+                rowImgs = JSON.parse(tr.getAttribute('data-images') || '[]');
+            } catch(e) {
+                rowImgs = [];
+            }
+            if (!Array.isArray(rowImgs)) rowImgs = [];
+            rowObj['images'] = rowImgs;
+
+            if (rowImgs.length === 0) {
+                if (!hasImageError) {
+                    hasImageError = true;
+                    firstMissingRow = idx + 1;
+                    firstMissingTr = tr;
+                }
+                const badge = tr.querySelector('.badge-images');
+                if (badge) badge.classList.add('error-pulse');
+            }
+
             tr.querySelectorAll('td.excel-cell').forEach(c => {
                 const field = c.dataset.field;
                 if (field) {
@@ -1207,6 +1631,16 @@
             rowObj['row_num'] = idx + 1;
             rowsData.push(rowObj);
         });
+
+        if (hasImageError) {
+            alert(`⚠️ Xəta: Sətir #${firstMissingRow} üçün xərc şəkli (çek/qəbz) əlavə edilməyib!\n\nHər bir xərc üçün ən azı 1 şəkil əlavə edilməsi mütləqdir.`);
+            if (firstMissingTr) {
+                firstMissingTr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                const cell = firstMissingTr.querySelector('.images-cell');
+                if (cell) openRowImagesModal(cell, null);
+            }
+            return;
+        }
 
         const saveBtn = document.getElementById('saveBtn');
         saveBtn.disabled = true;
