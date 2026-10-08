@@ -120,7 +120,12 @@ class ExpenseController extends Controller
             $branchGames = $portalService->getBranchGames((int)$filterBranch);
         }
 
-        // 1. Əvvəlcə yerli bazada mühasibin redaktə edib yadda saxladığı qeyd varmı yoxlayırıq
+        // 1. Həmişə əsas bazadan (PortalWebsite) ən son canlı xərcləri çəkirik!
+        $report = $portalService->getExpensesReport([
+            'branch_id' => $filterBranch,
+            'month' => $filterMonth,
+        ]);
+
         $savedRecord = null;
         if ($filterBranch && $filterBranch !== 'all') {
             $savedRecord = ExpenseRecord::where('branch_id', (string)$filterBranch)
@@ -128,28 +133,27 @@ class ExpenseController extends Controller
                 ->first();
         }
 
-        if ($savedRecord && is_array($savedRecord->expenses_data)) {
-            $expenses = $savedRecord->expenses_data;
-            $summary = $savedRecord->summary_data ?? $this->calculateSummary($expenses);
-            $connected = true;
-            $hasCustomEdits = true;
-            $lastSavedAt = $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
-        } else {
-            // Əgər yadda saxlanmış qeyd yoxdursa, birbaşa PortalWebsite-dan çəkirik
-            $report = $portalService->getExpensesReport([
-                'branch_id' => $filterBranch,
-                'month' => $filterMonth,
-            ]);
-
+        $connected = $report['connected'] ?? true;
+        if (!empty($report['expenses']) || $connected) {
             $expenses = $report['expenses'] ?? [];
             $summary = $report['summary'] ?? $this->calculateSummary($expenses);
-            $connected = $report['connected'] ?? true;
-            $hasCustomEdits = false;
-            $lastSavedAt = null;
+            $hasCustomEdits = (bool)$savedRecord;
+            $lastSavedAt = $savedRecord && $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
 
             if (empty($branchGames) && !empty($report['games'])) {
                 $branchGames = $report['games'];
             }
+        } elseif ($savedRecord && is_array($savedRecord->expenses_data)) {
+            // Yalnız əsas serverlə əlaqə kəsildikdə yerli bazadakı nüsxədən ehtiyat kimi oxuyuruq
+            $expenses = $savedRecord->expenses_data;
+            $summary = $savedRecord->summary_data ?? $this->calculateSummary($expenses);
+            $hasCustomEdits = true;
+            $lastSavedAt = $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
+        } else {
+            $expenses = [];
+            $summary = $this->calculateSummary($expenses);
+            $hasCustomEdits = false;
+            $lastSavedAt = null;
         }
 
         // created_at və updated_at vaxtlarını əsas bazadan zənginləşdiririk
@@ -340,6 +344,54 @@ class ExpenseController extends Controller
             'deleted_count' => count($deletedIds),
             'api_errors' => $apiErrors,
         ]);
+    }
+
+    /**
+     * Tək bir xərc sətrini bazadan dərhal silir
+     */
+    public function deleteSingle(Request $request, PortalWebsiteService $portalService)
+    {
+        $id = $request->input('id');
+        if (!$id || !is_numeric($id)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Silinəcək xərcin ID-si tapılmadı.',
+            ], 400);
+        }
+
+        $result = $portalService->deleteSingleExpense((int)$id);
+
+        if ($result['success']) {
+            // Əgər yerli bazada da bu qeyd saxlanılıbsa, təmizləyirik
+            try {
+                $records = ExpenseRecord::all();
+                foreach ($records as $rec) {
+                    if (is_array($rec->expenses_data)) {
+                        $filtered = array_values(array_filter($rec->expenses_data, function ($item) use ($id) {
+                            return !empty($item['id']) && (int)$item['id'] !== (int)$id;
+                        }));
+                        if (count($filtered) !== count($rec->expenses_data)) {
+                            $rec->update([
+                                'expenses_data' => $filtered,
+                                'summary_data' => $this->calculateSummary($filtered),
+                            ]);
+                        }
+                    }
+                }
+            } catch (\Exception $e) {
+                // ignore
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Xərc uğurla silindi.',
+            ]);
+        }
+
+        return response()->json([
+            'success' => false,
+            'message' => $result['message'] ?? 'Xərci silmək mümkün olmadı.',
+        ], 500);
     }
 
     /**

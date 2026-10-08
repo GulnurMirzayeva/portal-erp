@@ -1140,7 +1140,7 @@
                         data-updated-at="{{ $row['updated_at'] ?? '' }}"
                         data-raw-created-at="{{ $row['raw_created_at'] ?? '' }}"
                         data-images="{{ json_encode($rImgs) }}">
-                        <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600; cursor: pointer;" onclick="openExpenseDetails(this, event)" title="Sətir detalları və yaradılma vaxtına bax (created_at)">{{ $idx + 1 }}</td>
+                        <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600;">{{ $idx + 1 }}</td>
                         <td class="excel-cell align-center date-cell" contenteditable="true" data-field="date" data-col="A" title="Tarixi dəyişmək üçün klikləyin. Yaradılma vaxtına baxmaq üçün saat ikonuna klikləyin.">
                             {{ $displayDate }}
                             <button type="button" class="cell-created-indicator" contenteditable="false" onclick="openExpenseDetails(this, event)" title="Yaradılma vaxtına bax (created_at)">
@@ -1305,20 +1305,12 @@
         initCellEvents();
         initExcelTabs();
 
-        // Sətir silmə və sətirə ikiqat klik (event delegation)
+        // Sətir silmə (event delegation)
         const tableBody = document.getElementById('expensesTableBody');
         if (tableBody) {
             tableBody.addEventListener('click', function (e) {
                 const btn = e.target.closest('.del-row-btn');
                 if (btn) deleteRow(btn);
-            });
-
-            // Cədvəl sətrinə ikiqat klik etdikdə yaradılma tarixini aç
-            tableBody.addEventListener('dblclick', function (e) {
-                const tr = e.target.closest('tr:not(#emptyRowPlaceholder)');
-                if (tr && !e.target.closest('.del-row-btn')) {
-                    openExpenseDetails(tr, e);
-                }
             });
         }
 
@@ -1492,7 +1484,7 @@
         tr.setAttribute('data-updated-at', '');
         tr.setAttribute('data-images', '[]');
         tr.innerHTML = `
-            <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600; cursor: pointer;" onclick="openExpenseDetails(this, event)" title="Sətir detalları və yaradılma vaxtına bax (created_at)">${count}</td>
+            <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600;">${count}</td>
             <td class="excel-cell align-center date-cell is-dirty" contenteditable="true" data-field="date" data-col="A" title="Tarixi dəyişmək üçün klikləyin. Yaradılma vaxtına baxmaq üçün saat ikonuna klikləyin.">
                 ${todayFormatted}
                 <button type="button" class="cell-created-indicator" contenteditable="false" onclick="openExpenseDetails(this, event)" title="Yaradılma vaxtına bax (created_at)">
@@ -1546,40 +1538,74 @@
         const tr = btn.closest('tr');
         if (!tr) return;
 
-        if (confirm('Bu xərc sətrini silmək istədiyinizdən əminsiniz?')) {
-            const rowId = tr.getAttribute('data-row-id');
-            if (rowId && !isNaN(rowId) && parseInt(rowId) > 0) {
-                deletedIds.push(parseInt(rowId));
-            }
+        if (!confirm('Bu xərc sətrini silmək istədiyinizdən əminsiniz?')) {
+            return;
+        }
 
+        const rowId = tr.getAttribute('data-row-id');
+        if (rowId && !isNaN(rowId) && parseInt(rowId) > 0) {
+            btn.disabled = true;
+            btn.style.opacity = '0.4';
+
+            fetch("{{ route('expenses.delete') }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Accept': 'application/json',
+                },
+                body: JSON.stringify({ id: parseInt(rowId) })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    tr.remove();
+                    checkEmptyTableAfterDelete();
+                    recalcTotals();
+                    showToast('✓ ' + (data.message || 'Xərc bazadan silindi.'), '#107c41');
+                } else {
+                    alert('Xəta: ' + (data.message || 'Xərci silmək mümkün olmadı.'));
+                    btn.disabled = false;
+                    btn.style.opacity = '1';
+                }
+            })
+            .catch(err => {
+                alert('Silmə zamanı xəta baş verdi: ' + err.message);
+                btn.disabled = false;
+                btn.style.opacity = '1';
+            });
+        } else {
+            // Hələ bazada saxlanılmamış yerli sətir
             tr.remove();
-
-            const tableBody = document.getElementById('expensesTableBody');
-            const remainingRows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
-            if (remainingRows.length === 0) {
-                tableBody.innerHTML = `
-                    <tr id="emptyRowPlaceholder">
-                        <td colspan="11" class="text-center py-5 text-muted" style="background: #ffffff; font-size: 13px;">
-                            <div class="py-2">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="d-block mx-auto mb-2 text-muted">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="8" x2="12" y2="12"></line>
-                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
-                                </svg>
-                                <p class="font-size-14 mb-1">Bu filial və ay üçün heç bir xərc qeydi tapılmadı.</p>
-                                <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addNewRow()">
-                                    ➕ İlk Sətri Əlavə Et
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            } else {
-                renumberRows();
-            }
-
+            checkEmptyTableAfterDelete();
             recalcTotals();
             markDirty();
+        }
+    }
+
+    function checkEmptyTableAfterDelete() {
+        const tableBody = document.getElementById('expensesTableBody');
+        const remainingRows = tableBody.querySelectorAll('tr:not(#emptyRowPlaceholder)');
+        if (remainingRows.length === 0) {
+            tableBody.innerHTML = `
+                <tr id="emptyRowPlaceholder">
+                    <td colspan="11" class="text-center py-5 text-muted" style="background: #ffffff; font-size: 13px;">
+                        <div class="py-2">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="d-block mx-auto mb-2 text-muted">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <line x1="12" y1="8" x2="12" y2="12"></line>
+                                <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                            </svg>
+                            <p class="font-size-14 mb-1">Bu filial və ay üçün heç bir xərc qeydi tapılmadı.</p>
+                            <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addNewRow()">
+                                ➕ İlk Sətri Əlavə Et
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+        } else {
+            renumberRows();
         }
     }
 
@@ -1778,13 +1804,24 @@
         if (!tr) return;
 
         const rowId = tr.getAttribute('data-row-id') || '';
-        const createdAt = tr.getAttribute('data-created-at') || '';
+        let createdAt = tr.getAttribute('data-created-at') || '';
+        const rawCreatedAt = tr.getAttribute('data-raw-created-at') || '';
+
+        if (!createdAt && rawCreatedAt) {
+            try {
+                const d = new Date(rawCreatedAt);
+                if (!isNaN(d.getTime())) {
+                    const pad = n => String(n).padStart(2, '0');
+                    createdAt = `${pad(d.getDate())}.${pad(d.getMonth() + 1)}.${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+                }
+            } catch(e) {}
+        }
 
         const createdAtBox = document.getElementById('modalCreatedAtBox');
         const createdAtValEl = document.getElementById('modalCreatedAtVal');
         const unsavedNotice = document.getElementById('modalUnsavedNotice');
 
-        if (createdAt) {
+        if (createdAt && createdAt !== 'null') {
             if (createdAtBox) createdAtBox.style.display = 'block';
             if (unsavedNotice) unsavedNotice.style.display = 'none';
             if (createdAtValEl) createdAtValEl.innerText = createdAt;

@@ -369,30 +369,7 @@ class PortalWebsiteService
                     ->delete();
             }
 
-            // Həmçinin bu filial və ay üçün bazada olan, amma cədvəldən silinmiş qeydləri silirik
-            if (!empty($branchId) && !empty($month)) {
-                try {
-                    $start = Carbon::parse($month . '-01')->startOfMonth()->toDateString();
-                    $end = Carbon::parse($month . '-01')->endOfMonth()->toDateString();
 
-                    $submittedIds = array_filter(array_map(function ($r) {
-                        return !empty($r['id']) && is_numeric($r['id']) ? (int)$r['id'] : null;
-                    }, $expenses));
-
-                    $delQuery = DB::connection('portal_website')->table('expenses')
-                        ->where('branch_id', $branchId)
-                        ->whereBetween('date', [$start, $end]);
-
-                    if (!empty($submittedIds)) {
-                        $delQuery->whereNotIn('id', $submittedIds);
-                        $deletedCount += $delQuery->delete();
-                    } elseif (empty($expenses) && !empty($deletedIds)) {
-                        $deletedCount += $delQuery->delete();
-                    }
-                } catch (Exception $e) {
-                    // ignore
-                }
-            }
 
             $savedCount = 0;
             $savedExpenses = [];
@@ -568,6 +545,56 @@ class PortalWebsiteService
                     'message' => 'Şəkilləri yükləmək mümkün olmadı: ' . $e->getMessage(),
                 ];
             }
+        }
+    }
+
+    /**
+     * Tək bir xərci PortalWebsite-dan sil (API + Direct DB fallback).
+     */
+    public function deleteSingleExpense($id): array
+    {
+        if (!$id) {
+            return ['success' => false, 'message' => 'Xərc ID göstərilməyib.'];
+        }
+
+        // 1. API cəhdi
+        try {
+            $response = Http::timeout(15)
+                ->withHeaders([
+                    'X-ERP-API-KEY' => $this->apiToken,
+                    'Accept' => 'application/json',
+                    'Content-Type' => 'application/json',
+                ])
+                ->post("{$this->baseUrl}/api/erp/expenses/delete", [
+                    'id' => (int)$id,
+                ]);
+
+            if ($response->successful()) {
+                return [
+                    'success' => true,
+                    'message' => $response->json('message', 'Xərc uğurla silindi.'),
+                ];
+            }
+        } catch (Exception $e) {
+            Log::warning("PortalWebsite API deleteExpense error: " . $e->getMessage());
+        }
+
+        // 2. Direct DB fallback
+        try {
+            DB::connection('portal_website')->table('expenses')
+                ->where('id', (int)$id)
+                ->delete();
+
+            return [
+                'success' => true,
+                'message' => 'Xərc uğurla silindi.',
+            ];
+        } catch (Exception $e) {
+            Log::error("Direct DB delete expense failed: " . $e->getMessage());
+            return [
+                'success' => false,
+                'message' => 'Silmə xətası: ' . $e->getMessage(),
+            ];
         }
     }
 }
