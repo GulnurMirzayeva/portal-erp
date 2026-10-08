@@ -703,8 +703,8 @@
                 <col style="width: 44px;">  {{-- № --}}
                 <col style="width: 115px;"> {{-- Tarix --}}
                 <col style="width: 160px;"> {{-- Oyun --}}
-                <col style="width: 180px;"> {{-- Xərclər --}}
-                <col style="width: 200px;"> {{-- Qeyd --}}
+                <col style="width: 180px;"> {{-- Qeyd --}}
+                <col style="width: 200px;"> {{-- Kim tərəfindən --}}
                 <col style="width: 120px;"> {{-- Məbləğ nəğd --}}
                 <col style="width: 120px;"> {{-- Məbləğ nəğdsiz --}}
                 <col style="width: 160px;"> {{-- Təsnifat --}}
@@ -717,8 +717,8 @@
                     <th>№</th>
                     <th>Tarix</th>
                     <th>Oyun</th>
-                    <th>Xərclər</th>
                     <th>Qeyd</th>
+                    <th>Kim tərəfindən</th>
                     <th>Məbləğ nəğd</th>
                     <th>Məbləğ nəğdsiz</th>
                     <th>Təsnifat</th>
