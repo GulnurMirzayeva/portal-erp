@@ -413,6 +413,7 @@
     </div>
 
     <div class="excel-ribbon-actions">
+        @can('accounting.edit')
         {{-- Save Edits Button --}}
         <button type="button" class="excel-btn excel-btn-save" id="saveSheetBtn" onclick="saveAccountingSheet()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -431,6 +432,7 @@
             </svg>
             <span>Sətir Əlavə Et</span>
         </button>
+        @endcan
 
 
         {{-- Native Excel (.xlsx) Download --}}
@@ -543,6 +545,9 @@
             </thead>
 
             <tbody id="excelBody">
+                @php
+                    $canEditAccounting = auth()->user()->can('accounting.edit');
+                @endphp
                 @forelse($sales as $index => $row)
                     @php
                         $cash = (float)($row['cash_amount'] ?? 0);
@@ -551,62 +556,64 @@
                     @endphp
                     <tr data-row-index="{{ $index }}" data-sale-id="{{ $row['id'] ?? '' }}">
                         <td class="row-idx-header">{{ $index + 1 }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="row_number" data-col="A">{{ $row['row_number'] ?? ($index + 1) }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="date" data-col="B">{{ $row['date'] ?? '' }}</td>
-                        <td class="excel-cell align-left font-weight-600 text-primary" contenteditable="true" data-field="game_name" data-col="C">{{ $row['game_name'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="time" data-col="D">{{ $row['time'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="player_count" data-col="E" oninput="recalcRow(this)">{{ $row['player_count'] ?? 0 }}</td>
-                        <td class="excel-cell align-right" contenteditable="true" data-field="price_per_person" data-col="F" oninput="recalcRow(this)">{{ $row['price_per_person'] ? number_format($row['price_per_person'], 2, '.', '') : '0.00' }}</td>
-                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="true" data-field="cash_amount" data-col="G" oninput="recalcRow(this)">{{ number_format($cash, 2, '.', '') }}</td>
-                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="true" data-field="card_amount" data-col="H" oninput="recalcRow(this)">{{ number_format($card, 2, '.', '') }}</td>
-                        <td class="excel-cell align-left" contenteditable="true" data-field="discount_note" data-col="I">{{ $row['discount_note'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="row_number" data-col="A">{{ $row['row_number'] ?? ($index + 1) }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="date" data-col="B">{{ $row['date'] ?? '' }}</td>
+                        <td class="excel-cell align-left font-weight-600 text-primary" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="game_name" data-col="C">{{ $row['game_name'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="time" data-col="D">{{ $row['time'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="player_count" data-col="E" oninput="recalcRow(this)">{{ $row['player_count'] ?? 0 }}</td>
+                        <td class="excel-cell align-right" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="price_per_person" data-col="F" oninput="recalcRow(this)">{{ $row['price_per_person'] ? number_format($row['price_per_person'], 2, '.', '') : '0.00' }}</td>
+                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="cash_amount" data-col="G" oninput="recalcRow(this)">{{ number_format($cash, 2, '.', '') }}</td>
+                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="card_amount" data-col="H" oninput="recalcRow(this)">{{ number_format($card, 2, '.', '') }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="discount_note" data-col="I">{{ $row['discount_note'] ?? '' }}</td>
 
                         {{-- Resepşn --}}
-                        <td class="excel-cell align-left" contenteditable="true" data-field="receptionist_name" data-col="J">{{ $row['receptionist_name'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="receptionist_count" data-col="K">{{ $row['receptionist_count'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="receptionist_bonus_00" data-col="L">{{ !empty($row['receptionist_bonus_00']) ? '1' : '0' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="receptionist_name" data-col="J">{{ $row['receptionist_name'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="receptionist_count" data-col="K">{{ $row['receptionist_count'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="receptionist_bonus_00" data-col="L">{{ !empty($row['receptionist_bonus_00']) ? '1' : '0' }}</td>
 
                         {{-- Hostes --}}
-                        <td class="excel-cell align-left" contenteditable="true" data-field="hostess_name" data-col="M">{{ $row['hostess_name'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="hostess_count" data-col="N">{{ $row['hostess_count'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="hostess_bonus_00" data-col="O">{{ !empty($row['hostess_bonus_00']) ? '1' : '0' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="hostess_name" data-col="M">{{ $row['hostess_name'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="hostess_count" data-col="N">{{ $row['hostess_count'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="hostess_bonus_00" data-col="O">{{ !empty($row['hostess_bonus_00']) ? '1' : '0' }}</td>
 
                         {{-- Aktyor 1 --}}
-                        <td class="excel-cell align-left" contenteditable="true" data-field="actor1_name" data-col="P">{{ $row['actor1_name'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="actor1_count" data-col="Q">{{ $row['actor1_count'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="actor1_bonus_00" data-col="R">{{ !empty($row['actor1_bonus_00']) ? '1' : '0' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor1_name" data-col="P">{{ $row['actor1_name'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor1_count" data-col="Q">{{ $row['actor1_count'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor1_bonus_00" data-col="R">{{ !empty($row['actor1_bonus_00']) ? '1' : '0' }}</td>
 
                         {{-- Aktyor 2 --}}
-                        <td class="excel-cell align-left" contenteditable="true" data-field="actor2_name" data-col="S">{{ $row['actor2_name'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="actor2_count" data-col="T">{{ $row['actor2_count'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="actor2_bonus_00" data-col="U">{{ !empty($row['actor2_bonus_00']) ? '1' : '0' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor2_name" data-col="S">{{ $row['actor2_name'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor2_count" data-col="T">{{ $row['actor2_count'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor2_bonus_00" data-col="U">{{ !empty($row['actor2_bonus_00']) ? '1' : '0' }}</td>
 
                         {{-- Operator --}}
-                        <td class="excel-cell align-left" contenteditable="true" data-field="operator_name" data-col="V">{{ $row['operator_name'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="operator_count" data-col="W">{{ $row['operator_count'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="operator_bonus_00" data-col="X">{{ !empty($row['operator_bonus_00']) ? '1' : '0' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="operator_name" data-col="V">{{ $row['operator_name'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="operator_count" data-col="W">{{ $row['operator_count'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="operator_bonus_00" data-col="X">{{ !empty($row['operator_bonus_00']) ? '1' : '0' }}</td>
 
                         {{-- PlusBir Aktyor --}}
-                        <td class="excel-cell align-left" contenteditable="true" data-field="plus_one_actor" data-col="Y">{{ $row['plus_one_actor'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="plus_one_actor_count" data-col="Z">{{ $row['plus_one_actor_count'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_actor" data-col="Y">{{ $row['plus_one_actor'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_actor_count" data-col="Z">{{ $row['plus_one_actor_count'] ?? '' }}</td>
 
                         {{-- PlusBir Resepşn --}}
-                        <td class="excel-cell align-left" contenteditable="true" data-field="plus_one_receptionist" data-col="AA">{{ $row['plus_one_receptionist'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="true" data-field="plus_one_receptionist_count" data-col="AB">{{ $row['plus_one_receptionist_count'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_receptionist" data-col="AA">{{ $row['plus_one_receptionist'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_receptionist_count" data-col="AB">{{ $row['plus_one_receptionist_count'] ?? '' }}</td>
 
                         {{-- Müştəri & Yekun --}}
-                        <td class="excel-cell align-left" contenteditable="true" data-field="customer_name" data-col="AC">{{ $row['customer_name'] ?? '' }}</td>
-                        <td class="excel-cell align-left" contenteditable="true" data-field="customer_phone" data-col="AD">{{ $row['customer_phone'] ?? '' }}</td>
-                        <td class="excel-cell align-left" contenteditable="true" data-field="note" data-col="AE">{{ $row['note'] ?? '' }}</td>
-                        <td class="excel-cell align-right font-weight-700 text-success total-price-cell" contenteditable="true" data-field="total_price" data-col="AF" oninput="recalcSheetTotals()">{{ number_format($total, 2, '.', '') }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="customer_name" data-col="AC">{{ $row['customer_name'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="customer_phone" data-col="AD">{{ $row['customer_phone'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="note" data-col="AE">{{ $row['note'] ?? '' }}</td>
+                        <td class="excel-cell align-right font-weight-700 text-success total-price-cell" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="total_price" data-col="AF" oninput="recalcSheetTotals()">{{ number_format($total, 2, '.', '') }}</td>
                     </tr>
                 @empty
                     <tr id="emptyRow">
                         <td colspan="33" class="text-center py-5 text-muted">
                             <p class="font-size-14 mb-1">Bu filial üçün seçilmiş ayda heç bir satış tapılmadı.</p>
+                            @if($canEditAccounting)
                             <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addNewRow()">
                                 ➕ İlk Sətri Əlavə Et
                             </button>
+                            @endif
                         </td>
                     </tr>
                 @endforelse

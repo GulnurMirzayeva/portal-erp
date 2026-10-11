@@ -320,6 +320,20 @@
         border-color: #f59e0b !important;
         color: #b45309 !important;
     }
+    .inq-cell-input:disabled,
+    .inq-cell-input[readonly] {
+        cursor: default;
+        background: transparent !important;
+        border-color: transparent !important;
+        box-shadow: none !important;
+        color: #1e293b;
+        -moz-appearance: textfield;
+    }
+    .inq-cell-input:disabled::-webkit-outer-spin-button,
+    .inq-cell-input:disabled::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
 
     .inquiry-table tbody td.col-yellow {
         background-color: #fefce8; /* Şəkildə sarı rənglənmiş sahələr */
@@ -402,19 +416,10 @@
 
         <div class="inquiry-actions-group">
             @can('crm.edit')
-                <button type="button" class="btn-inq-light" onclick="openNewMonthModal()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                    Yeni Ay Əlavə Et
-                </button>
                 <button type="button" class="btn-inq-primary" id="btnSaveAll" onclick="saveAllChanges()">
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                     Yadda Saxla (Ctrl+S)
                 </button>
-            @else
-                <span class="badge bg-light text-secondary px-3 py-2 border font-size-12">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="me-1"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                    Yalnız Baxış Rejimi (Direktor)
-                </span>
             @endcan
         </div>
     </div>
@@ -497,16 +502,16 @@
                 <table class="inquiry-table" id="table-{{ $year }}" data-year="{{ $year }}">
                     <thead>
                         <tr>
-                            <th style="min-width: 130px; text-align: left; padding-left: 14px;">День / Ay</th>
-                            <th class="col-yellow" title="Ləğv">Отмена</th>
-                            <th class="col-yellow" title="Endirim">Скидка</th>
-                            <th class="col-yellow" title="Rezervasiya">Резервация</th>
-                            <th class="col-yellow" title="Məkan / Ünvan">Местоположение</th>
-                            <th>Игры</th>
-                            <th class="col-yellow" title="İş qrafiki">График работы</th>
-                            <th class="col-yellow" title="Şikayətlər">Жалобы</th>
-                            <th>Другое</th>
-                            <th class="col-total" title="Cəmi (Sətir)">Общее</th>
+                            <th style="min-width: 140px; text-align: left; padding-left: 14px;">Ay</th>
+                            <th class="col-yellow" title="Ləğv və İmtina">Ləğvetmə</th>
+                            <th class="col-yellow" title="Endirim">Endirim</th>
+                            <th class="col-yellow" title="Rezervasiya">Rezervasiya</th>
+                            <th class="col-yellow" title="Məkan və Ünvan">Məkan / Ünvan</th>
+                            <th>Oyunlar</th>
+                            <th class="col-yellow" title="İş Qrafiki">İş Qrafiki</th>
+                            <th class="col-yellow" title="Şikayətlər">Şikayətlər</th>
+                            <th>Digər</th>
+                            <th class="col-total" title="Cəm">Cəm</th>
                             @if($canEdit || $canDelete)
                                 <th style="width: 70px;">Əməliyyat</th>
                             @endif
@@ -605,7 +610,7 @@
                         {{-- TOTAL SƏTRİ (Şəkildəki çəhrayı/narıncı TOTAL kimi) --}}
                         {{-- ============================================================== --}}
                         <tr class="row-year-total" id="yearTotalRow-{{ $year }}">
-                            <td style="text-align: left; padding-left: 14px;">TOTAL</td>
+                            <td style="text-align: left; padding-left: 14px; font-weight: 800;">YEKUN CƏM</td>
                             <td data-total-col="cancellations">{{ $yData['totals']['cancellations'] }}</td>
                             <td data-total-col="discounts">{{ $yData['totals']['discounts'] }}</td>
                             <td data-total-col="reservations">{{ $yData['totals']['reservations'] }}</td>
@@ -627,43 +632,7 @@
 
 </div>
 
-{{-- Yeni Ay Əlavə Et Modalı --}}
-@if($canEdit)
-<div class="modal fade" id="modalNewMonth" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content" style="border-radius: 16px; border: none; box-shadow: 0 10px 30px rgba(0,0,0,0.15);">
-            <div class="modal-header border-bottom py-3 px-4">
-                <h6 class="modal-title font-weight-700" style="color: #0f172a;">Yeni Ay Statistikası Əlavə Et</h6>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Bağla"></button>
-            </div>
-            <form id="formNewMonth" onsubmit="submitNewMonth(event)">
-                <div class="modal-body p-4">
-                    <div class="row g-3">
-                        <div class="col-6">
-                            <label class="form-label font-size-12 font-weight-700 text-muted">İL</label>
-                            <input type="number" id="newYear" class="form-control" value="{{ $currentYear }}" required min="2020" max="2035">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label font-size-12 font-weight-700 text-muted">AY</label>
-                            <select id="newMonth" class="form-select" required>
-                                @foreach($monthNamesAz as $mNum => $mName)
-                                    <option value="{{ $mNum }}" {{ (date('n') == $mNum) ? 'selected' : '' }}>
-                                        {{ $mName }} ({{ sprintf('%02d', $mNum) }})
-                                    </option>
-                                @endforeach
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer border-top py-3 px-4">
-                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Ləğv et</button>
-                    <button type="submit" class="btn btn-primary rounded-pill px-4" style="background:#107c41; border:none;">Əlavə et</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-@endif
+
 
 @endsection
 
@@ -910,49 +879,7 @@
         });
     }
 
-    // ---------------- Yeni Ay Modalı ----------------
-    function openNewMonthModal() {
-        const modalEl = document.getElementById('modalNewMonth');
-        if (modalEl) {
-            const modal = new bootstrap.Modal(modalEl);
-            modal.show();
-        }
-    }
 
-    function submitNewMonth(e) {
-        e.preventDefault();
-        const year = document.getElementById('newYear').value;
-        const month = document.getElementById('newMonth').value;
-
-        fetch("{{ route('crm.inquiries.saveRow') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({
-                year: parseInt(year),
-                month: parseInt(month),
-                cancellations: 0,
-                discounts: 0,
-                reservations: 0,
-                location: 0,
-                games: 0,
-                working_hours: 0,
-                complaints: 0,
-                other: 0,
-            })
-        })
-        .then(res => res.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert(data.message || 'Xəta baş verdi');
-            }
-        });
-    }
 
     // ---------------- Klaviatura Qısayolu (Ctrl+S / Cmd+S) ----------------
     document.addEventListener('keydown', function(e) {

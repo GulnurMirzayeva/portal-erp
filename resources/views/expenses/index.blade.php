@@ -1019,6 +1019,7 @@
     </div>
 
     <div class="excel-ribbon-actions">
+        @can('expenses.edit')
         {{-- Yadda Saxla Button --}}
         <button type="button" class="excel-btn excel-btn-save" id="saveBtn" onclick="saveAllExpenses()">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
@@ -1037,6 +1038,7 @@
             </svg>
             <span>+ Sətir Əlavə Et</span>
         </button>
+        @endcan
 
         {{-- Excel Export Button --}}
         <a href="{{ route('expenses.export', ['branch_id' => $filterBranch, 'month' => $filterMonth, 'format' => 'xlsx']) }}" class="excel-btn" title="Excel (.xlsx) faylı kimi yüklə">
@@ -1111,6 +1113,10 @@
                 </tr>
             </thead>
             <tbody id="expensesTableBody">
+                @php
+                    $canEditExpenses = auth()->user()->can('expenses.edit');
+                    $canDeleteExpenses = auth()->user()->can('expenses.delete');
+                @endphp
                 @forelse($expenses as $idx => $row)
                     @php
                         $cash = (float)($row['amount_cash'] ?? 0);
@@ -1141,7 +1147,7 @@
                         data-raw-created-at="{{ $row['raw_created_at'] ?? '' }}"
                         data-images="{{ json_encode($rImgs) }}">
                         <td class="row-idx align-center" style="background: #f8f9fa; color: #6c757d; font-weight: 600;">{{ $idx + 1 }}</td>
-                        <td class="excel-cell align-center date-cell" contenteditable="true" data-field="date" data-col="A" title="Tarixi dəyişmək üçün klikləyin. Yaradılma vaxtına baxmaq üçün saat ikonuna klikləyin.">
+                        <td class="excel-cell align-center date-cell" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="date" data-col="A" title="Tarixi dəyişmək üçün klikləyin. Yaradılma vaxtına baxmaq üçün saat ikonuna klikləyin.">
                             {{ $displayDate }}
                             <button type="button" class="cell-created-indicator" contenteditable="false" onclick="openExpenseDetails(this, event)" title="Yaradılma vaxtına bax (created_at)">
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
@@ -1150,12 +1156,12 @@
                                 </svg>
                             </button>
                         </td>
-                        <td class="excel-cell align-left font-weight-600 text-primary" contenteditable="true" data-field="game_name" data-col="B">{{ $row['game_name'] ?? 'Ümumi' }}</td>
-                        <td class="excel-cell align-left font-weight-500" contenteditable="true" data-field="title" data-col="C">{{ $row['title'] ?? '' }}</td>
-                        <td class="excel-cell align-left" contenteditable="true" data-field="note" data-col="D">{{ $row['note'] ?? '' }}</td>
-                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="true" data-field="amount_cash" data-col="E" oninput="recalcRow(this)">{{ $cash > 0 ? number_format($cash, 2, '.', '') : '0.00' }}</td>
-                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="true" data-field="amount_card" data-col="F" oninput="recalcRow(this)">{{ $card > 0 ? number_format($card, 2, '.', '') : '0.00' }}</td>
-                        <td class="excel-cell align-left" contenteditable="true" data-field="classification" data-col="G">{{ $row['classification'] ?? '' }}</td>
+                        <td class="excel-cell align-left font-weight-600 text-primary" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="game_name" data-col="B">{{ $row['game_name'] ?? 'Ümumi' }}</td>
+                        <td class="excel-cell align-left font-weight-500" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="title" data-col="C">{{ $row['title'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="note" data-col="D">{{ $row['note'] ?? '' }}</td>
+                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="amount_cash" data-col="E" oninput="recalcRow(this)">{{ $cash > 0 ? number_format($cash, 2, '.', '') : '0.00' }}</td>
+                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="amount_card" data-col="F" oninput="recalcRow(this)">{{ $card > 0 ? number_format($card, 2, '.', '') : '0.00' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="classification" data-col="G">{{ $row['classification'] ?? '' }}</td>
                         <td class="align-right fw-bold row-total-cell" style="background-color: #fafbfc;">{{ number_format($total, 2, '.', '') }}</td>
                         <td class="align-center images-cell" onclick="openRowImagesModal(this, event)">
                             @if($imgCount > 0)
@@ -1178,12 +1184,14 @@
                                         <polyline points="12 6 12 12 16 14"></polyline>
                                     </svg>
                                 </button>
+                                @if($canDeleteExpenses)
                                 <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Sətri sil">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <polyline points="3 6 5 6 21 6"></polyline>
                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
                                     </svg>
                                 </button>
+                                @endif
                             </div>
                         </td>
                     </tr>
@@ -1197,9 +1205,11 @@
                                     <line x1="12" y1="16" x2="12.01" y2="16"></line>
                                 </svg>
                                 <p class="font-size-14 mb-1">Bu filial və ay üçün heç bir xərc qeydi tapılmadı.</p>
+                                @if($canEditExpenses)
                                 <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addNewRow()">
                                     ➕ İlk Sətri Əlavə Et
                                 </button>
+                                @endif
                             </div>
                         </td>
                     </tr>
