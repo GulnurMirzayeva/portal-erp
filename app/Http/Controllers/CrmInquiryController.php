@@ -138,12 +138,21 @@ class CrmInquiryController extends Controller
             // İlin tamamlanma vəziyyəti: əgər 12 ayın hamısı varsa və ya keçmiş ildir
             $isCompleted = ($year < $currentYear) || (count($monthsList) >= 12);
 
+            $existingMonths = array_column($monthsList, 'month');
+            $missingMonths = [];
+            foreach ($monthNamesAz as $mNum => $mName) {
+                if (!in_array($mNum, $existingMonths)) {
+                    $missingMonths[$mNum] = $mName;
+                }
+            }
+
             $yearsData[$year] = [
                 'year' => $year,
                 'is_current' => ($year === $currentYear),
                 'is_completed' => $isCompleted,
                 'months_count' => count($monthsList),
                 'months' => $monthsList,
+                'missing_months' => $missingMonths,
                 'totals' => $yearTotals,
             ];
         }
@@ -295,6 +304,75 @@ class CrmInquiryController extends Controller
             'message' => "{$periodLabel} uğurla yadda saxlanıldı!",
             'record' => $record,
             'total' => $total,
+        ]);
+    }
+
+    /**
+     * Tələb əsasında ayı cədvələ əlavə et (və ya silinmişdirsə bərpa et).
+     */
+    public function addMonth(Request $request): JsonResponse
+    {
+        $request->validate([
+            'year' => 'required|integer',
+            'month' => 'required|integer|between:1,12',
+        ]);
+
+        $year = (int) $request->input('year');
+        $month = (int) $request->input('month');
+
+        $monthNamesAz = [
+            1 => 'Yanvar', 2 => 'Fevral', 3 => 'Mart', 4 => 'Aprel',
+            5 => 'May', 6 => 'İyun', 7 => 'İyul', 8 => 'Avqust',
+            9 => 'Sentyabr', 10 => 'Oktyabr', 11 => 'Noyabr', 12 => 'Dekabr',
+        ];
+
+        $periodLabel = ($monthNamesAz[$month] ?? $month) . ' ' . $year;
+
+        $record = CrmInquiryStatistic::withTrashed()
+            ->where('year', $year)
+            ->where('month', $month)
+            ->first();
+
+        if ($record) {
+            if ($record->trashed()) {
+                $record->restore();
+            }
+        } else {
+            $record = CrmInquiryStatistic::create([
+                'year' => $year,
+                'month' => $month,
+                'period_label' => $periodLabel,
+                'cancellations' => 0,
+                'discounts' => 0,
+                'reservations' => 0,
+                'location' => 0,
+                'games' => 0,
+                'working_hours' => 0,
+                'complaints' => 0,
+                'other' => 0,
+                'total' => 0,
+                'created_by' => auth()->id(),
+            ]);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => "{$periodLabel} uğurla əlavə edildi!",
+            'record' => [
+                'id' => $record->id,
+                'year' => (int) $record->year,
+                'month' => (int) $record->month,
+                'period_label' => $record->period_label ?: $periodLabel,
+                'cancellations' => (int) $record->cancellations,
+                'discounts' => (int) $record->discounts,
+                'reservations' => (int) $record->reservations,
+                'location' => (int) $record->location,
+                'games' => (int) $record->games,
+                'working_hours' => (int) $record->working_hours,
+                'complaints' => (int) $record->complaints,
+                'other' => (int) $record->other,
+                'total' => (int) $record->calculateTotal(),
+            ],
         ]);
     }
 

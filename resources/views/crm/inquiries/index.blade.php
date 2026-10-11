@@ -395,6 +395,26 @@
         transform: scale(1.08);
         box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
     }
+
+    .btn-inq-add-month {
+        background: #ffffff;
+        border: 1px dashed #107c41;
+        color: #107c41;
+        font-weight: 600;
+        font-size: 12px;
+        border-radius: 8px;
+        padding: 5px 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: all 0.2s ease;
+        cursor: pointer;
+    }
+    .btn-inq-add-month:hover {
+        background: #ecfdf5;
+        border-style: solid;
+        color: #0b5e30;
+    }
 </style>
 @endpush
 
@@ -597,6 +617,36 @@
                                 </td>
                             </tr>
                         @endforelse
+
+                        {{-- Ay Əlavə Et / Bərpa Et Sırası --}}
+                        @if($canEdit && !empty($yData['missing_months']))
+                            <tr class="row-add-month-action" id="addMonthRow-{{ $year }}">
+                                <td colspan="{{ $canDelete ? 11 : 10 }}" class="text-start py-2 px-3" style="background: #fafbfc; border-top: 1px dashed #cbd5e1;">
+                                    <div class="dropdown d-inline-block">
+                                        <button class="btn-inq-add-month dropdown-toggle"
+                                                type="button"
+                                                id="dropdownAddMonth-{{ $year }}"
+                                                data-bs-toggle="dropdown"
+                                                aria-expanded="false">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                            <span>+ Ay Əlavə Et ({{ $year }})</span>
+                                        </button>
+                                        <ul class="dropdown-menu shadow border-0 py-1" aria-labelledby="dropdownAddMonth-{{ $year }}" id="dropdownMenu-{{ $year }}" style="border-radius: 10px; max-height: 250px; overflow-y: auto;">
+                                            @foreach($yData['missing_months'] as $mNum => $mName)
+                                                <li>
+                                                    <a class="dropdown-item font-size-12 py-2 d-flex align-items-center justify-content-between"
+                                                       href="javascript:void(0);"
+                                                       onclick="addMonthToYear({{ $year }}, {{ $mNum }}, '{{ $mName }}')">
+                                                        <span>{{ $mName }} {{ $year }}</span>
+                                                        <span class="badge bg-light text-secondary border font-size-11">{{ sprintf('%02d', $mNum) }}</span>
+                                                    </a>
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endif
 
                         {{-- ============================================================== --}}
                         {{-- TOTAL SƏTRİ (Şəkildəki çəhrayı/narıncı TOTAL kimi) --}}
@@ -826,6 +876,33 @@
                     }, 200);
                 }
                 showToastNotification(data.message || 'Sətir silindi!', 'success');
+            } else {
+                showToastNotification(data.message || 'Xəta baş verdi', 'error');
+            }
+        })
+        .catch(err => {
+            showToastNotification('Əlaqə xətası', 'error');
+        });
+    }
+
+    // ---------------- Ay Əlavə Et / Bərpa Et ----------------
+    function addMonthToYear(year, month, monthName) {
+        fetch("{{ route('crm.inquiries.addMonth') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify({ year: year, month: month })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.success) {
+                showToastNotification(data.message, 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 400);
             } else {
                 showToastNotification(data.message || 'Xəta baş verdi', 'error');
             }

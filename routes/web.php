@@ -45,6 +45,9 @@ Route::middleware('auth')->group(function () {
         Route::post('/crm/inquiries/row', [CrmInquiryController::class, 'saveRow'])
             ->middleware('permission:crm.edit')
             ->name('crm.inquiries.saveRow');
+        Route::post('/crm/inquiries/add-month', [CrmInquiryController::class, 'addMonth'])
+            ->middleware('permission:crm.edit')
+            ->name('crm.inquiries.addMonth');
         Route::delete('/crm/inquiries/{id}', [CrmInquiryController::class, 'destroy'])
             ->middleware('permission:crm.delete')
             ->name('crm.inquiries.destroy');
