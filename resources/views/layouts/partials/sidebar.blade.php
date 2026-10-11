@@ -139,6 +139,11 @@
                             <span class="sub-bullet"></span> Ümumi Statistika
                         </a>
                     </li>
+                    <li>
+                        <a href="{{ route('crm.traffic.index') }}" class="{{ request()->routeIs('crm.traffic.*') ? 'active' : '' }}">
+                            <span class="sub-bullet"></span> Trafik və Sosial Media
+                        </a>
+                    </li>
                 </ul>
             </li>
             @endcan

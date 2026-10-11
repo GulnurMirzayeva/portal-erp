@@ -739,5 +739,47 @@ class PortalWebsiteService
             ];
         }
     }
+
+    /**
+     * Veb-sayt trafik və istifadəçi analitikasını PortalWebsite API vasitəsilə əldə edir.
+     */
+    public function getWebsiteTraffic(string $month): array
+    {
+        $urlsToTry = array_values(array_unique(array_filter([
+            $this->baseUrl,
+            'https://portal.land',
+        ])));
+
+        foreach ($urlsToTry as $url) {
+            try {
+                $response = Http::timeout(5)
+                    ->withHeaders([
+                        'X-ERP-API-KEY' => $this->apiToken,
+                        'Accept' => 'application/json',
+                    ])
+                    ->get("{$url}/api/erp/website-traffic", ['month' => $month]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    return [
+                        'connected' => true,
+                        'daily_data' => $data['daily_data'] ?? [],
+                        'total_users' => $data['total_users'] ?? 0,
+                        'total_visits' => $data['total_visits'] ?? 0,
+                    ];
+                }
+            } catch (Exception $e) {
+                // Ignore and try fallback
+            }
+        }
+
+        return [
+            'connected' => false,
+            'daily_data' => [],
+            'total_users' => 0,
+            'total_visits' => 0,
+        ];
+    }
 }
+
 

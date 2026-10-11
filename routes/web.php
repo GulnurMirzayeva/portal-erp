@@ -23,6 +23,7 @@ Route::post('/logout', [LoginController::class, 'logout'])
 use App\Http\Controllers\AccountingController;
 use App\Http\Controllers\CrmController;
 use App\Http\Controllers\CrmInquiryController;
+use App\Http\Controllers\CrmTrafficController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseClassificationController;
 use App\Http\Controllers\ExpenseController;
@@ -51,6 +52,15 @@ Route::middleware('auth')->group(function () {
         Route::delete('/crm/inquiries/{id}', [CrmInquiryController::class, 'destroy'])
             ->middleware('permission:crm.delete')
             ->name('crm.inquiries.destroy');
+
+        // Trafik və Sosial Media (6 Qrafik və Gündəlik Qeydiyyat)
+        Route::get('/crm/traffic', [CrmTrafficController::class, 'index'])->name('crm.traffic.index');
+        Route::post('/crm/traffic/save', [CrmTrafficController::class, 'save'])
+            ->middleware('permission:crm.edit')
+            ->name('crm.traffic.save');
+        Route::post('/crm/traffic/save-row', [CrmTrafficController::class, 'saveRow'])
+            ->middleware('permission:crm.edit')
+            ->name('crm.traffic.saveRow');
     });
 
     // Mühasibatlıq: Elektron Qaimələr
