@@ -45,6 +45,7 @@
             <li class="menu-title">ERP MODULLARI</li>
 
             {{-- Mühasibatlıq --}}
+            @canany(['accounting.view', 'expenses.view', 'expense-classifications.view'])
             @php
                 $isAccountingActive = request()->routeIs('accounting.*') || request()->routeIs('expenses.*') || request()->routeIs('expense-classifications.*');
                 $isExpensesActive = request()->routeIs('expenses.*') || request()->routeIs('expense-classifications.*');
@@ -69,13 +70,16 @@
                     </span>
                 </a>
                 <ul class="sub-menu {{ $isAccountingActive ? 'show' : '' }}" id="menuAccounting">
+                    @can('accounting.view')
                     <li>
                         <a href="{{ route('accounting.index') }}" class="{{ request()->routeIs('accounting.*') ? 'active' : '' }}">
                             <span class="sub-bullet"></span> Elektron Qaimələr
                         </a>
                     </li>
+                    @endcan
 
                     {{-- Xərclər alt bölməsi --}}
+                    @canany(['expenses.view', 'expense-classifications.view'])
                     <li class="has-nested {{ $isExpensesActive ? 'mm-active' : '' }}">
                         <a href="javascript:void(0);" class="waves-effect has-arrow {{ $isExpensesActive ? 'active' : '' }}" data-toggle="sub-menu" data-target="#menuExpenses">
                             <span class="sub-bullet"></span>
@@ -85,22 +89,29 @@
                             </span>
                         </a>
                         <ul class="sub-menu sub-menu-nested {{ $isExpensesActive ? 'show' : '' }}" id="menuExpenses">
+                            @can('expense-classifications.view')
                             <li>
                                 <a href="{{ route('expense-classifications.index') }}" class="{{ request()->routeIs('expense-classifications.*') ? 'active' : '' }}">
                                     <span class="sub-bullet"></span> Təsnifatlar
                                 </a>
                             </li>
+                            @endcan
+                            @can('expenses.view')
                             <li>
                                 <a href="{{ route('expenses.index') }}" class="{{ request()->routeIs('expenses.*') ? 'active' : '' }}">
                                     <span class="sub-bullet"></span> Xərclərin siyahısı
                                 </a>
                             </li>
+                            @endcan
                         </ul>
                     </li>
+                    @endcan
                 </ul>
             </li>
+            @endcanany
 
             {{-- CRM --}}
+            @can('crm.view')
             @php
                 $isCrmActive = request()->routeIs('crm.*');
             @endphp
@@ -119,12 +130,18 @@
                 </a>
                 <ul class="sub-menu {{ $isCrmActive ? 'show' : '' }}" id="menuCrm">
                     <li>
-                        <a href="{{ route('crm.index') }}" class="{{ request()->routeIs('crm.*') ? 'active' : '' }}">
-                            <span class="sub-bullet"></span> Statistika
+                        <a href="{{ route('crm.inquiries.index') }}" class="{{ request()->routeIs('crm.inquiries.*') ? 'active' : '' }}">
+                            <span class="sub-bullet"></span> Müraciət Statistikası
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('crm.index') }}" class="{{ request()->routeIs('crm.index') ? 'active' : '' }}">
+                            <span class="sub-bullet"></span> Ümumi Statistika
                         </a>
                     </li>
                 </ul>
             </li>
+            @endcan
         </ul>
     </div>
 </aside>

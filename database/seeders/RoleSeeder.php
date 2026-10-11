@@ -13,32 +13,40 @@ class RoleSeeder extends Seeder
      */
     public function run(): void
     {
-        $permissions = Permission::pluck('name')->toArray();
+        // 1. Admin: Bütün icazələr tam şəkildə aktivdir
+        $allPermissions = Permission::all();
+        $adminRole = Role::firstOrCreate(['name' => 'Admin', 'guard_name' => 'web']);
+        $adminRole->syncPermissions($allPermissions);
 
-        $adminRole = Role::firstOrCreate([
-            'name' => 'Admin',
-        ]);
+        // 2. Director: Yalnız "view" və "export" (baxış) icazələri - Redaktə/Silmə yoxdur
+        $directorPermissions = Permission::where(function ($q) {
+            $q->where('name', 'like', '%.view')
+              ->orWhere('name', 'like', '%.export');
+        })->get();
+        $directorRole = Role::firstOrCreate(['name' => 'Director', 'guard_name' => 'web']);
+        $directorRole->syncPermissions($directorPermissions);
 
-        $adminRole->syncPermissions($permissions);
+        // 3. Accountant (Mühasibatlıq): Yalnız Dashboard və Mühasibatlıq/Xərclər
+        $accountantPermissions = Permission::where(function ($q) {
+            $q->where('name', 'dashboard.view')
+              ->orWhere('name', 'like', 'accounting.%')
+              ->orWhere('name', 'like', 'expenses.%')
+              ->orWhere('name', 'like', 'expense-classifications.%');
+        })->get();
+        $accountantRole = Role::firstOrCreate(['name' => 'Accountant', 'guard_name' => 'web']);
+        $accountantRole->syncPermissions($accountantPermissions);
 
-        Role::firstOrCreate([
-            'name' => 'Director',
-        ]);
+        // 4. CRM: Yalnız Dashboard və CRM
+        $crmPermissions = Permission::where(function ($q) {
+            $q->where('name', 'dashboard.view')
+              ->orWhere('name', 'like', 'crm.%');
+        })->get();
+        $crmRole = Role::firstOrCreate(['name' => 'CRM', 'guard_name' => 'web']);
+        $crmRole->syncPermissions($crmPermissions);
 
-        Role::firstOrCreate([
-            'name' => 'HR',
-        ]);
-
-        Role::firstOrCreate([
-            'name' => 'Accountant',
-        ]);
-
-        Role::firstOrCreate([
-            'name' => 'Director Manager',
-        ]);
-
-        Role::firstOrCreate([
-            'name' => 'Marketing',
-        ]);
+        // Əlavə köməkçi rollar (varsa qorunur)
+        Role::firstOrCreate(['name' => 'HR', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Marketing', 'guard_name' => 'web']);
+        Role::firstOrCreate(['name' => 'Director Manager', 'guard_name' => 'web']);
     }
 }
