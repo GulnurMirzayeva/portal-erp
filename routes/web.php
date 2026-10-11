@@ -21,6 +21,7 @@ Route::post('/logout', [LoginController::class, 'logout'])
     ->name('logout');
 
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\CrmController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseClassificationController;
 use App\Http\Controllers\ExpenseController;
@@ -28,6 +29,9 @@ use App\Services\PortalWebsiteService;
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+
+    // CRM
+    Route::get('/crm', [CrmController::class, 'index'])->name('crm.index');
 
     // Mühasibatlıq: Elektron Qaimələr
     Route::get('/accounting', [AccountingController::class, 'index'])->name('accounting.index');
