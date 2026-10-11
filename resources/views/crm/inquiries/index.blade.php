@@ -403,7 +403,7 @@
         font-weight: 600;
         font-size: 12px;
         border-radius: 8px;
-        padding: 5px 12px;
+        padding: 6px 14px;
         display: inline-flex;
         align-items: center;
         gap: 6px;
@@ -414,6 +414,50 @@
         background: #ecfdf5;
         border-style: solid;
         color: #0b5e30;
+    }
+
+    .inq-dropdown-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+    .inq-dropdown-menu {
+        display: none;
+        position: absolute;
+        bottom: calc(100% + 6px);
+        left: 0;
+        z-index: 9999;
+        min-width: 210px;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 10px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.14);
+        padding: 6px 0;
+        margin: 0;
+    }
+    .inq-dropdown-menu.show {
+        display: block !important;
+        animation: inqFadeIn 0.15s ease;
+    }
+    @keyframes inqFadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .inq-dropdown-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 14px;
+        font-size: 13px;
+        font-weight: 500;
+        color: #1e293b;
+        text-decoration: none;
+        cursor: pointer;
+        transition: background 0.15s ease;
+    }
+    .inq-dropdown-item:hover {
+        background: #f1f5f9;
+        color: #107c41;
+        font-weight: 600;
     }
 </style>
 @endpush
@@ -622,27 +666,24 @@
                         @if($canEdit && !empty($yData['missing_months']))
                             <tr class="row-add-month-action" id="addMonthRow-{{ $year }}">
                                 <td colspan="{{ $canDelete ? 11 : 10 }}" class="text-start py-2 px-3" style="background: #fafbfc; border-top: 1px dashed #cbd5e1;">
-                                    <div class="dropdown d-inline-block">
-                                        <button class="btn-inq-add-month dropdown-toggle"
+                                    <div class="inq-dropdown-wrapper">
+                                        <button class="btn-inq-add-month"
                                                 type="button"
-                                                id="dropdownAddMonth-{{ $year }}"
-                                                data-bs-toggle="dropdown"
-                                                aria-expanded="false">
+                                                onclick="toggleAddMonthDropdown(event, {{ $year }})">
                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                                             <span>+ Ay Əlavə Et ({{ $year }})</span>
+                                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
                                         </button>
-                                        <ul class="dropdown-menu shadow border-0 py-1" aria-labelledby="dropdownAddMonth-{{ $year }}" id="dropdownMenu-{{ $year }}" style="border-radius: 10px; max-height: 250px; overflow-y: auto;">
+                                        <div class="inq-dropdown-menu" id="dropdownMenu-{{ $year }}">
                                             @foreach($yData['missing_months'] as $mNum => $mName)
-                                                <li>
-                                                    <a class="dropdown-item font-size-12 py-2 d-flex align-items-center justify-content-between"
-                                                       href="javascript:void(0);"
-                                                       onclick="addMonthToYear({{ $year }}, {{ $mNum }}, '{{ $mName }}')">
-                                                        <span>{{ $mName }} {{ $year }}</span>
-                                                        <span class="badge bg-light text-secondary border font-size-11">{{ sprintf('%02d', $mNum) }}</span>
-                                                    </a>
-                                                </li>
+                                                <a class="inq-dropdown-item"
+                                                   href="javascript:void(0);"
+                                                   onclick="addMonthToYear({{ $year }}, {{ $mNum }}, '{{ $mName }}', this)">
+                                                    <span>{{ $mName }} {{ $year }}</span>
+                                                    <span class="badge bg-light text-secondary border font-size-11">{{ sprintf('%02d', $mNum) }}</span>
+                                                </a>
                                             @endforeach
-                                        </ul>
+                                        </div>
                                     </div>
                                 </td>
                             </tr>
@@ -885,8 +926,33 @@
         });
     }
 
+    // ---------------- Dropdown Menyu Aç/Bağla ----------------
+    function toggleAddMonthDropdown(e, year) {
+        e.stopPropagation();
+        const menu = document.getElementById(`dropdownMenu-${year}`);
+        if (!menu) return;
+
+        const isShown = menu.classList.contains('show');
+        document.querySelectorAll('.inq-dropdown-menu.show').forEach(m => m.classList.remove('show'));
+
+        if (!isShown) {
+            menu.classList.add('show');
+        }
+    }
+
+    document.addEventListener('click', function(e) {
+        if (!e.target.closest('.inq-dropdown-wrapper')) {
+            document.querySelectorAll('.inq-dropdown-menu.show').forEach(m => m.classList.remove('show'));
+        }
+    });
+
     // ---------------- Ay Əlavə Et / Bərpa Et ----------------
-    function addMonthToYear(year, month, monthName) {
+    function addMonthToYear(year, month, monthName, el) {
+        if (el) {
+            el.style.pointerEvents = 'none';
+            el.style.opacity = '0.5';
+        }
+
         fetch("{{ route('crm.inquiries.addMonth') }}", {
             method: 'POST',
             headers: {
@@ -902,13 +968,21 @@
                 showToastNotification(data.message, 'success');
                 setTimeout(() => {
                     location.reload();
-                }, 400);
+                }, 300);
             } else {
                 showToastNotification(data.message || 'Xəta baş verdi', 'error');
+                if (el) {
+                    el.style.pointerEvents = 'auto';
+                    el.style.opacity = '1';
+                }
             }
         })
         .catch(err => {
             showToastNotification('Əlaqə xətası', 'error');
+            if (el) {
+                el.style.pointerEvents = 'auto';
+                el.style.opacity = '1';
+            }
         });
     }
 
