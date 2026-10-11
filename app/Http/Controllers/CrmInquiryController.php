@@ -15,17 +15,45 @@ class CrmInquiryController extends Controller
      */
     public function index(Request $request)
     {
+        $monthNamesAz = [
+            1 => 'Yanvar', 2 => 'Fevral', 3 => 'Mart', 4 => 'Aprel',
+            5 => 'May', 6 => 'İyun', 7 => 'İyul', 8 => 'Avqust',
+            9 => 'Sentyabr', 10 => 'Oktyabr', 11 => 'Noyabr', 12 => 'Dekabr',
+        ];
+
+        $currentYear = (int) Carbon::now()->year;
+        $currentMonth = (int) Carbon::now()->month;
+
+        // Variant 3: Təqvim əsaslı avtomatik cari ayın yaradılması
+        // Hər yeni ay çatanda cari ayın sətri yoxdursa (və əvvəl silinməyibsə), avtomatik yaradılır
+        $hasCurrentMonth = CrmInquiryStatistic::withTrashed()
+            ->where('year', $currentYear)
+            ->where('month', $currentMonth)
+            ->exists();
+
+        if (!$hasCurrentMonth) {
+            CrmInquiryStatistic::create([
+                'year' => $currentYear,
+                'month' => $currentMonth,
+                'period_label' => ($monthNamesAz[$currentMonth] ?? $currentMonth) . ' ' . $currentYear,
+                'cancellations' => 0,
+                'discounts' => 0,
+                'reservations' => 0,
+                'location' => 0,
+                'games' => 0,
+                'working_hours' => 0,
+                'complaints' => 0,
+                'other' => 0,
+                'total' => 0,
+            ]);
+        }
+
         $records = CrmInquiryStatistic::orderBy('year', 'desc')
             ->orderBy('month', 'asc')
             ->get();
 
         // İllər üzrə qruplaşdırma
         $yearsData = [];
-        $monthNamesAz = [
-            1 => 'Yanvar', 2 => 'Fevral', 3 => 'Mart', 4 => 'Aprel',
-            5 => 'May', 6 => 'İyun', 7 => 'İyul', 8 => 'Avqust',
-            9 => 'Sentyabr', 10 => 'Oktyabr', 11 => 'Noyabr', 12 => 'Dekabr',
-        ];
 
         // Əgər heç bir il yoxdursa, ən azı cari ili yaradırıq
         $grouped = $records->groupBy('year');

@@ -374,25 +374,26 @@
     }
 
     /* Əməliyyat düymələri */
-    .btn-row-action {
-        padding: 3px 8px;
-        font-size: 11.5px;
-        font-weight: 600;
-        border-radius: 6px;
-        border: 1px solid #cbd5e1;
-        background: #ffffff;
-        color: #475569;
+    .btn-row-delete {
+        width: 30px;
+        height: 30px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 7px;
+        border: 1px solid #fee2e2;
+        background: #fff5f5;
+        color: #ef4444;
         cursor: pointer;
         transition: all 0.2s ease;
     }
-    .btn-row-action:hover {
-        background: #f1f5f9;
-        color: #0f172a;
-    }
     .btn-row-delete:hover {
-        background: #fee2e2;
-        color: #b91c1c;
-        border-color: #fca5a5;
+        background: #ef4444;
+        color: #ffffff;
+        border-color: #dc2626;
+        transform: scale(1.08);
+        box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
     }
 </style>
 @endpush
@@ -512,8 +513,8 @@
                             <th class="col-yellow" title="Şikayətlər">Şikayətlər</th>
                             <th>Digər</th>
                             <th class="col-total" title="Cəm">Cəm</th>
-                            @if($canEdit || $canDelete)
-                                <th style="width: 70px;">Əməliyyat</th>
+                            @if($canDelete)
+                                <th style="width: 50px;">Sil</th>
                             @endif
                         </tr>
                     </thead>
@@ -581,26 +582,17 @@
                                 {{-- Общее (Cəmi) --}}
                                 <td class="inq-row-total" data-col="total">{{ $mRow['total'] }}</td>
 
-                                @if($canEdit || $canDelete)
+                                @if($canDelete)
                                     <td>
-                                        <div class="d-flex align-items-center justify-content-center gap-1">
-                                            @if($canEdit)
-                                                <button type="button" class="btn-row-action" title="Sətri Yadda Saxla" onclick="saveSingleRow(this)">
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                                                </button>
-                                            @endif
-                                            @if($canDelete)
-                                                <button type="button" class="btn-row-action btn-row-delete" title="Sətri Sil" onclick="deleteRow({{ $mRow['id'] }})">
-                                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                                                </button>
-                                            @endif
-                                        </div>
+                                        <button type="button" class="btn-row-delete" title="Bu ayı sil" onclick="deleteRow({{ $mRow['id'] }}, '{{ $mRow['period_label'] }}')">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                                        </button>
                                     </td>
                                 @endif
                             </tr>
                         @empty
                             <tr class="empty-year-row">
-                                <td colspan="{{ ($canEdit || $canDelete) ? 11 : 10 }}" class="text-center text-muted py-4">
+                                <td colspan="{{ $canDelete ? 11 : 10 }}" class="text-center text-muted py-4">
                                     Bu il üzrə hələ heç bir ay daxil edilməyib.
                                 </td>
                             </tr>
@@ -620,7 +612,7 @@
                             <td data-total-col="complaints">{{ $yData['totals']['complaints'] }}</td>
                             <td data-total-col="other">{{ $yData['totals']['other'] }}</td>
                             <td data-total-col="total">{{ $yData['totals']['total'] }}</td>
-                            @if($canEdit || $canDelete)
+                            @if($canDelete)
                                 <td>—</td>
                             @endif
                         </tr>
@@ -808,55 +800,10 @@
         });
     }
 
-    // ---------------- Tək Sətri Yadda Saxla ----------------
-    function saveSingleRow(btn) {
-        const tr = btn.closest('tr');
-        if (!tr) return;
-
-        const rowData = {
-            id: tr.dataset.id,
-            year: parseInt(tr.dataset.year),
-            month: parseInt(tr.dataset.month),
-            cancellations: parseInt(tr.querySelector('input[data-col="cancellations"]')?.value) || 0,
-            discounts: parseInt(tr.querySelector('input[data-col="discounts"]')?.value) || 0,
-            reservations: parseInt(tr.querySelector('input[data-col="reservations"]')?.value) || 0,
-            location: parseInt(tr.querySelector('input[data-col="location"]')?.value) || 0,
-            games: parseInt(tr.querySelector('input[data-col="games"]')?.value) || 0,
-            working_hours: parseInt(tr.querySelector('input[data-col="working_hours"]')?.value) || 0,
-            complaints: parseInt(tr.querySelector('input[data-col="complaints"]')?.value) || 0,
-            other: parseInt(tr.querySelector('input[data-col="other"]')?.value) || 0,
-        };
-
-        btn.disabled = true;
-
-        fetch("{{ route('crm.inquiries.saveRow') }}", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify(rowData)
-        })
-        .then(res => res.json())
-        .then(data => {
-            btn.disabled = false;
-            if (data.success) {
-                tr.querySelectorAll('.inq-cell-input.is-dirty').forEach(inp => inp.classList.remove('is-dirty'));
-                showToastNotification(data.message || 'Sətir saxlanıldı!', 'success');
-            } else {
-                showToastNotification(data.message || 'Xəta baş verdi', 'error');
-            }
-        })
-        .catch(err => {
-            btn.disabled = false;
-            showToastNotification('Əlaqə xətası', 'error');
-        });
-    }
-
     // ---------------- Sətri Sil ----------------
-    function deleteRow(id) {
-        if (!confirm('Bu ayın statistikasını silmək istədiyinizdən əminsiniz?')) return;
+    function deleteRow(id, label = '') {
+        const confirmMsg = label ? `"${label}" statistika sətrini silmək istədiyinizdən əminsiniz?` : 'Bu ayın statistikasını silmək istədiyinizdən əminsiniz?';
+        if (!confirm(confirmMsg)) return;
 
         fetch(`/crm/inquiries/${id}`, {
             method: 'DELETE',
@@ -871,11 +818,20 @@
                 const tr = document.getElementById(`row-${id}`);
                 if (tr) {
                     const table = tr.closest('table');
-                    tr.remove();
-                    if (table) recalcTableTotals(table);
+                    tr.style.opacity = '0';
+                    tr.style.transform = 'scale(0.96)';
+                    setTimeout(() => {
+                        tr.remove();
+                        if (table) recalcTableTotals(table);
+                    }, 200);
                 }
-                showToastNotification(data.message || 'Silindi', 'success');
+                showToastNotification(data.message || 'Sətir silindi!', 'success');
+            } else {
+                showToastNotification(data.message || 'Xəta baş verdi', 'error');
             }
+        })
+        .catch(err => {
+            showToastNotification('Əlaqə xətası', 'error');
         });
     }
 
