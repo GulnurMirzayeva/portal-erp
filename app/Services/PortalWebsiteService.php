@@ -79,49 +79,173 @@ class PortalWebsiteService
         ];
 
         $queryParams = $filters;
-        // Əgər bütün aylar/datalar istənibsə, API-yə date_from və date_to göndəririk ki, oktyabr limiti tətbiq olunmasın
+
+        // branch_id: əgər 'all' və ya boşdursa, parametrdən çıxarırıq ki, API bütün filialları versin
+        if (isset($queryParams['branch_id']) && ($queryParams['branch_id'] === 'all' || empty($queryParams['branch_id']))) {
+            unset($queryParams['branch_id']);
+        }
+
+        // month: əgər 'all' istənibsə, date_from və date_to göndəririk ki, ay məhdudiyyəti olmasın
         if (isset($queryParams['month']) && $queryParams['month'] === 'all') {
             unset($queryParams['month']);
             $queryParams['date_from'] = '2020-01-01';
             $queryParams['date_to'] = date('Y-12-31', strtotime('+1 year'));
         }
 
-        try {
-            $response = Http::timeout(25)
-                ->withHeaders([
-                    'X-ERP-API-KEY' => $this->apiToken,
-                    'Accept' => 'application/json',
-                ])
-                ->get("{$this->baseUrl}/api/erp/accounting-report", $queryParams);
+        // Sınaqdan keçiriləcək API ünvanları (əsas ünvan və ehtiyat live ünvan)
+        $urlsToTry = array_values(array_unique(array_filter([
+            $this->baseUrl,
+            'https://portal.land',
+        ])));
 
-            if ($response->successful()) {
-                $data = $response->json();
+        $lastError = null;
+
+        foreach ($urlsToTry as $url) {
+            try {
+                $response = Http::timeout(35)
+                    ->withHeaders([
+                        'X-ERP-API-KEY' => $this->apiToken,
+                        'Accept' => 'application/json',
+                    ])
+                    ->get("{$url}/api/erp/accounting-report", $queryParams);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    return [
+                        'connected' => true,
+                        'summary' => $data['summary'] ?? $defaultSummary,
+                        'branches' => $data['branches'] ?? [],
+                        'sales' => $data['sales'] ?? [],
+                    ];
+                }
+
+                $lastError = 'API Xətası (' . $response->status() . '): ' . ($response->json('message') ?? 'Sorğu uğursuz oldu.');
+            } catch (Exception $e) {
+                Log::warning("PortalWebsite API connection error ({$url}): " . $e->getMessage());
+                $lastError = "Serverə qoşulmaq mümkün olmadı ({$url}): " . $e->getMessage();
+            }
+        }
+
+        // 3. Əgər heç bir API ünvanı cavab vermədisə, Direct DB fallback cəhd edirik
+        try {
+            $dbSales = $this->fetchSalesFromDirectDb($filters);
+            if (!empty($dbSales)) {
+                $summary = $this->summarizeSalesList($dbSales, $filters);
                 return [
                     'connected' => true,
-                    'summary' => $data['summary'] ?? $defaultSummary,
-                    'branches' => $data['branches'] ?? [],
-                    'sales' => $data['sales'] ?? [],
+                    'summary' => $summary,
+                    'branches' => [],
+                    'sales' => $dbSales,
                 ];
             }
+        } catch (Exception $dbEx) {
+            Log::warning("Direct DB sales fallback failed: " . $dbEx->getMessage());
+        }
 
-            return [
-                'connected' => false,
-                'error' => 'API Xətası (' . $response->status() . '): ' . ($response->json('message') ?? 'Sorğu uğursuz oldu.'),
-                'summary' => $defaultSummary,
-                'branches' => [],
-                'sales' => [],
-            ];
-        } catch (Exception $e) {
-            Log::warning("PortalWebsite API connection error: " . $e->getMessage());
+        return [
+            'connected' => false,
+            'error' => $lastError ?? "PortalWebsite serverinə qoşulmaq mümkün olmadı. Serverin işlədiyindən əmin olun.",
+            'summary' => $defaultSummary,
+            'branches' => [],
+            'sales' => [],
+        ];
+    }
 
-            return [
-                'connected' => false,
-                'error' => "PortalWebsite serverinə qoşulmaq mümkün olmadı ({$this->baseUrl}). Serverin işlədiyindən əmin olun.",
-                'summary' => $defaultSummary,
-                'branches' => [],
-                'sales' => [],
+    /**
+     * Birbaşa verilənlər bazasından satışları çəkir (API offline olduqda fallback kimi).
+     */
+    protected function fetchSalesFromDirectDb(array $filters): array
+    {
+        $branchId = $filters['branch_id'] ?? null;
+        $month = $filters['month'] ?? null;
+        $dateFrom = $filters['date_from'] ?? null;
+        $dateTo = $filters['date_to'] ?? null;
+
+        $query = DB::connection('portal_website')->table('sales')
+            ->leftJoin('games', 'sales.game_id', '=', 'games.id')
+            ->leftJoin('branches', 'sales.branch_id', '=', 'branches.id')
+            ->leftJoin('reservations', 'sales.reservation_id', '=', 'reservations.id')
+            ->select([
+                'sales.*',
+                'games.name as game_name',
+                'branches.name as branch_name',
+                'reservations.user_phone as reservation_user_phone',
+            ]);
+
+        if (!empty($branchId) && $branchId !== 'all') {
+            $query->where('sales.branch_id', $branchId);
+        }
+
+        if (!empty($dateFrom) && !empty($dateTo)) {
+            $query->whereBetween('sales.reservation_date', [$dateFrom, $dateTo]);
+        } elseif (!empty($month) && $month !== 'all') {
+            $start = Carbon::parse($month . '-01')->startOfMonth()->toDateString();
+            $end = Carbon::parse($month . '-01')->endOfMonth()->toDateString();
+            $query->whereBetween('sales.reservation_date', [$start, $end]);
+        }
+
+        $records = $query->orderBy('sales.reservation_date', 'asc')->orderBy('sales.entry_time', 'asc')->get();
+        $formatted = [];
+
+        foreach ($records as $idx => $r) {
+            $cash = 0.0;
+            $card = 0.0;
+            if (!empty($r->payments)) {
+                $payArr = is_string($r->payments) ? json_decode($r->payments, true) : (array)$r->payments;
+                foreach ((array)$payArr as $p) {
+                    if (($p['type'] ?? '') === 'cash') $cash = (float)($p['amount'] ?? 0);
+                    if (($p['type'] ?? '') === 'card') $card = (float)($p['amount'] ?? 0);
+                }
+            }
+            $total = (float)($r->total_price ?? ($cash + $card));
+
+            $formatted[] = [
+                'row_number' => $idx + 1,
+                'id' => $r->id,
+                'date' => $r->reservation_date ? Carbon::parse($r->reservation_date)->format('d.m.Y') : '',
+                'game_name' => $r->game_name ?? '—',
+                'branch_name' => $r->branch_name ?? '—',
+                'branch_id' => $r->branch_id,
+                'time' => $r->entry_time ? Carbon::parse($r->entry_time)->format('H:i') : ($r->reservation_time ? Carbon::parse($r->reservation_time)->format('H:i') : '—'),
+                'player_count' => (int)($r->actual_player_count ?? $r->player_count),
+                'price_per_person' => (float)($r->price_per_person ?? 0),
+                'cash_amount' => $cash,
+                'card_amount' => $card,
+                'total_price' => $total,
+                'discount_note' => $r->discount_type ?? '',
+                'customer_name' => $r->group_leader_name ?? '—',
+                'customer_phone' => $r->reservation_user_phone ?? '—',
+                'note' => $r->team_review ?? ($r->note ?? ''),
             ];
         }
+
+        return $formatted;
+    }
+
+    protected function summarizeSalesList(array $sales, array $filters): array
+    {
+        $totalSales = count($sales);
+        $totalRevenue = 0;
+        $totalCash = 0;
+        $totalCard = 0;
+
+        foreach ($sales as $s) {
+            $totalRevenue += (float)($s['total_price'] ?? 0);
+            $totalCash += (float)($s['cash_amount'] ?? 0);
+            $totalCard += (float)($s['card_amount'] ?? 0);
+        }
+
+        return [
+            'total_sales' => $totalSales,
+            'total_revenue' => round($totalRevenue, 2),
+            'total_cash' => round($totalCash, 2),
+            'total_card' => round($totalCard, 2),
+            'average_price' => $totalSales > 0 ? round($totalRevenue / $totalSales, 2) : 0,
+            'total_midnight_bonuses' => 0,
+            'total_plus_one_bonuses' => 0,
+            'filter_month' => $filters['month'] ?? date('Y-m'),
+            'filter_branch_id' => $filters['branch_id'] ?? null,
+        ];
     }
 
     /**

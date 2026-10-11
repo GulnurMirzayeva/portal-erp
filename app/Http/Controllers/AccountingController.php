@@ -85,32 +85,61 @@ class AccountingController extends Controller
             $selectedMonthName = ($monthNamesAz[$parts[1] ?? ''] ?? ($parts[1] ?? '')) . ' ' . ($parts[0] ?? '');
         }
 
-        // Əvvəlcə yerli bazada mühasibin redaktə edib yadda saxladığı qeyd varmı yoxlayırıq
+        // Canlı PortalWebsite API-dən satışları çəkirik
+        $result = $portalService->getAccountingReport([
+            'month' => $filterMonth,
+            'branch_id' => $apiBranchId,
+        ]);
+        $liveSales = $result['sales'] ?? [];
+        $connected = $result['connected'] ?? false;
+        $error = $result['error'] ?? null;
+
+        // Yerli bazada mühasibin redaktə edib yadda saxladığı qeyd varmı yoxlayırıq (əgər refresh istənməyibsə)
         $savedRecord = null;
-        if ($apiBranchId !== null) {
+        if ($apiBranchId !== null && !$request->boolean('refresh')) {
             $savedRecord = AccountingRecord::where('branch_id', (string)$apiBranchId)
                 ->where('month', $filterMonth)
                 ->first();
         }
 
-        if ($savedRecord && !empty($savedRecord->sales_data)) {
-            $sales = $savedRecord->sales_data;
-            $summary = $savedRecord->summary_data ?? $this->calculateSummary($sales);
-            $connected = true;
-            $error = null;
+        if ($savedRecord && !empty($savedRecord->sales_data) && !$request->boolean('refresh')) {
+            // Əgər yerli redaktələr varsa, canlı API satışları ilə birləşdiririk:
+            // redaktə olunmuşlar saxlanılır, portal-a yeni əlavə edilmiş satışlar da itmir!
+            $savedSales = $savedRecord->sales_data;
+            $savedSalesById = [];
+            foreach ($savedSales as $s) {
+                if (!empty($s['id'])) {
+                    $savedSalesById[(int)$s['id']] = $s;
+                }
+            }
+
+            $mergedSales = [];
+            $seenIds = [];
+            foreach ($liveSales as $liveSale) {
+                $id = !empty($liveSale['id']) ? (int)$liveSale['id'] : null;
+                if ($id && isset($savedSalesById[$id])) {
+                    $mergedSales[] = $savedSalesById[$id];
+                    $seenIds[$id] = true;
+                } else {
+                    $mergedSales[] = $liveSale;
+                    if ($id) $seenIds[$id] = true;
+                }
+            }
+
+            foreach ($savedSales as $s) {
+                $id = !empty($s['id']) ? (int)$s['id'] : null;
+                if (!$id || !isset($seenIds[$id])) {
+                    $mergedSales[] = $s;
+                }
+            }
+
+            $sales = $mergedSales;
+            $summary = $this->calculateSummary($sales);
             $hasCustomEdits = true;
             $lastSavedAt = $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
         } else {
-            // Əgər yadda saxlanmış qeyd yoxdursa, birbaşa PortalWebsite API-dən çəkirik
-            $result = $portalService->getAccountingReport([
-                'month' => $filterMonth,
-                'branch_id' => $apiBranchId,
-            ]);
-
-            $sales = $result['sales'] ?? [];
+            $sales = $liveSales;
             $summary = $result['summary'] ?? $this->calculateSummary($sales);
-            $connected = $result['connected'] ?? false;
-            $error = $result['error'] ?? null;
             $hasCustomEdits = false;
             $lastSavedAt = null;
         }
@@ -306,6 +335,13 @@ class AccountingController extends Controller
         }
 
         // Əvvəlcə yerli redaktə olunmuş qeydə baxırıq
+        // Canlı API-dən satışları çəkirik
+        $result = $portalService->getAccountingReport([
+            'month' => $filterMonth,
+            'branch_id' => $apiBranchId,
+        ]);
+        $liveSales = $result['sales'] ?? [];
+
         $savedRecord = null;
         if ($apiBranchId !== null) {
             $savedRecord = AccountingRecord::where('branch_id', (string)$apiBranchId)
@@ -314,13 +350,36 @@ class AccountingController extends Controller
         }
 
         if ($savedRecord && !empty($savedRecord->sales_data)) {
-            $sales = $savedRecord->sales_data;
+            $savedSales = $savedRecord->sales_data;
+            $savedSalesById = [];
+            foreach ($savedSales as $s) {
+                if (!empty($s['id'])) {
+                    $savedSalesById[(int)$s['id']] = $s;
+                }
+            }
+
+            $mergedSales = [];
+            $seenIds = [];
+            foreach ($liveSales as $liveSale) {
+                $id = !empty($liveSale['id']) ? (int)$liveSale['id'] : null;
+                if ($id && isset($savedSalesById[$id])) {
+                    $mergedSales[] = $savedSalesById[$id];
+                    $seenIds[$id] = true;
+                } else {
+                    $mergedSales[] = $liveSale;
+                    if ($id) $seenIds[$id] = true;
+                }
+            }
+
+            foreach ($savedSales as $s) {
+                $id = !empty($s['id']) ? (int)$s['id'] : null;
+                if (!$id || !isset($seenIds[$id])) {
+                    $mergedSales[] = $s;
+                }
+            }
+            $sales = $mergedSales;
         } else {
-            $result = $portalService->getAccountingReport([
-                'month' => $filterMonth,
-                'branch_id' => $apiBranchId,
-            ]);
-            $sales = $result['sales'] ?? [];
+            $sales = $liveSales;
         }
 
         // CSV ixrac

@@ -392,37 +392,47 @@ class DashboardController extends Controller
             $query = AccountingRecord::where('month', $month);
             if ($branchId !== null) {
                 $query->where('branch_id', (string)$branchId);
-                $rec = $query->first();
-                if ($rec && !empty($rec->sales_data)) {
-                    return $rec->sales_data;
-                }
-            } else {
-                $localRecords = $query->get();
-                if ($localRecords->isNotEmpty()) {
-                    $editedBranches = [];
-                    foreach ($localRecords as $rec) {
-                        if (!empty($rec->sales_data)) {
-                            $editedBranches[(string)$rec->branch_id] = $rec->sales_data;
+            }
+            $localRecords = $query->get();
+            if ($localRecords->isEmpty()) {
+                return $sales;
+            }
+
+            $editedSalesById = [];
+            foreach ($localRecords as $rec) {
+                if (!empty($rec->sales_data) && is_array($rec->sales_data)) {
+                    foreach ($rec->sales_data as $s) {
+                        if (!empty($s['id'])) {
+                            $editedSalesById[(int)$s['id']] = $s;
                         }
-                    }
-
-                    if (!empty($editedBranches)) {
-                        // Əgər redaktə olunmuş filiallar varsa, həmin filialların sətirlərini yenisi ilə əvəz edirik
-                        $filteredSales = array_filter($sales, function ($s) use ($editedBranches) {
-                            $bId = (string)($s['branch_id'] ?? '');
-                            return !isset($editedBranches[$bId]);
-                        });
-
-                        foreach ($editedBranches as $branchSales) {
-                            foreach ($branchSales as $bs) {
-                                $filteredSales[] = $bs;
-                            }
-                        }
-
-                        return array_values($filteredSales);
                     }
                 }
             }
+
+            if (empty($editedSalesById)) {
+                return $sales;
+            }
+
+            $mergedSales = [];
+            $seenIds = [];
+            foreach ($sales as $sale) {
+                $id = !empty($sale['id']) ? (int)$sale['id'] : null;
+                if ($id && isset($editedSalesById[$id])) {
+                    $mergedSales[] = $editedSalesById[$id];
+                    $seenIds[$id] = true;
+                } else {
+                    $mergedSales[] = $sale;
+                    if ($id) $seenIds[$id] = true;
+                }
+            }
+
+            foreach ($editedSalesById as $id => $s) {
+                if (!isset($seenIds[$id])) {
+                    $mergedSales[] = $s;
+                }
+            }
+
+            return $mergedSales;
         } catch (\Exception $e) {
             Log::warning("Local edits check failed: " . $e->getMessage());
         }
