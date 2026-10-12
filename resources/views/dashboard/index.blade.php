@@ -226,9 +226,31 @@
         padding: 20px 22px;
     }
 
-    /* ---------------- Branch Table ---------------- */
+    /* ---------------- Responsive Branch Table ---------------- */
+    .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    .table-responsive::-webkit-scrollbar {
+        height: 7px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f8fafc;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
     .branch-clean-table {
+        width: 100%;
+        min-width: 980px; /* Bütün 10 sütunun hər ölçüdə tam və aydın görünməsi üçün */
         margin: 0;
+        border-collapse: separate;
+        border-spacing: 0;
     }
     .branch-clean-table th {
         font-size: 11px;
@@ -238,19 +260,64 @@
         color: #64748b;
         background: #f8fafc;
         border-bottom: 1px solid #edf2ee;
-        padding: 14px 16px;
+        padding: 13px 14px;
         white-space: nowrap;
+        vertical-align: middle;
     }
     .branch-clean-table td {
-        padding: 14px 16px;
+        padding: 13px 14px;
         vertical-align: middle;
         font-size: 13px;
         color: #334155;
         border-bottom: 1px solid #f8fafc;
+        white-space: nowrap;
+        background: #ffffff;
         transition: background 0.15s ease;
     }
     .branch-clean-table tr:hover td {
-        background-color: #fbfdfc;
+        background-color: #f8fafc;
+    }
+
+    /* Mobildə və kiçik ekranlarda cədvəli sürüşdürərkən Filial adı sol tərəfdə dondurulur (Sticky) */
+    @media (max-width: 992px) {
+        .branch-clean-table th:first-child,
+        .branch-clean-table td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background: #ffffff;
+        }
+        .branch-clean-table th:first-child {
+            background: #f8fafc;
+            z-index: 3;
+        }
+
+        .branch-clean-table th:nth-child(2),
+        .branch-clean-table td:nth-child(2) {
+            position: sticky;
+            left: 54px;
+            z-index: 2;
+            background: #ffffff;
+            box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.08);
+        }
+        .branch-clean-table th:nth-child(2) {
+            background: #f8fafc;
+            z-index: 3;
+        }
+
+        .branch-clean-table tfoot td:first-child {
+            position: sticky;
+            left: 0;
+            z-index: 2;
+            background: #f8fafc;
+        }
+        .branch-clean-table tfoot td:nth-child(2) {
+            position: sticky;
+            left: 54px;
+            z-index: 2;
+            background: #f8fafc;
+            box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.08);
+        }
     }
 
     .branch-icon-badge {
@@ -702,9 +769,13 @@
                             Bütün filialların cari dövr üzrə dövriyyəsi, ödəniş formaları və gəlir payı
                         </p>
                     </div>
-                    <div class="d-flex align-items-center gap-2">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
                         <span class="badge bg-light text-dark border font-size-12 px-2 py-1">
                             {{ count($branchStats) }} Filial Analiz Edildi
+                        </span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle d-inline-flex d-lg-none align-items-center gap-1 font-size-11 px-2 py-1" style="font-weight: 600;">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            Bütün sütunlar üçün sağa sürüşdürün
                         </span>
                     </div>
                 </div>
