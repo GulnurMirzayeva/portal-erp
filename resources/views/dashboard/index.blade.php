@@ -230,46 +230,47 @@
     .table-responsive {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
+        position: relative;
     }
     .table-responsive::-webkit-scrollbar {
-        height: 7px;
+        height: 6px;
     }
     .table-responsive::-webkit-scrollbar-track {
-        background: #f8fafc;
+        background: #f1f5f9;
+        border-radius: 999px;
     }
     .table-responsive::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
+        background: #94a3b8;
         border-radius: 999px;
     }
     .table-responsive::-webkit-scrollbar-thumb:hover {
-        background: #94a3b8;
+        background: #64748b;
     }
 
     .branch-clean-table {
         width: 100%;
-        min-width: 980px; /* Bütün 10 sütunun hər ölçüdə tam və aydın görünməsi üçün */
+        min-width: 860px;
         margin: 0;
-        border-collapse: separate;
-        border-spacing: 0;
+        border-collapse: collapse;
     }
     .branch-clean-table th {
         font-size: 11px;
         font-weight: 700;
         text-transform: uppercase;
-        letter-spacing: 0.6px;
+        letter-spacing: 0.5px;
         color: #64748b;
         background: #f8fafc;
-        border-bottom: 1px solid #edf2ee;
-        padding: 13px 14px;
+        border-bottom: 2px solid #e2e8f0;
+        padding: 12px 14px;
         white-space: nowrap;
         vertical-align: middle;
     }
     .branch-clean-table td {
-        padding: 13px 14px;
+        padding: 12px 14px;
         vertical-align: middle;
         font-size: 13px;
         color: #334155;
-        border-bottom: 1px solid #f8fafc;
+        border-bottom: 1px solid #f1f5f9;
         white-space: nowrap;
         background: #ffffff;
         transition: background 0.15s ease;
@@ -278,45 +279,32 @@
         background-color: #f8fafc;
     }
 
-    /* Mobildə və kiçik ekranlarda cədvəli sürüşdürərkən Filial adı sol tərəfdə dondurulur (Sticky) */
-    @media (max-width: 992px) {
-        .branch-clean-table th:first-child,
-        .branch-clean-table td:first-child {
-            position: sticky;
-            left: 0;
-            z-index: 2;
-            background: #ffffff;
+    /* Mobil və kiçik ekranlar üçün xüsusi optimizasiya (Sıxılmadan, rahat sürüşmə) */
+    @media (max-width: 768px) {
+        .branch-clean-table {
+            min-width: 780px;
         }
-        .branch-clean-table th:first-child {
-            background: #f8fafc;
-            z-index: 3;
+        .branch-clean-table th {
+            padding: 9px 10px;
+            font-size: 10.5px;
         }
-
-        .branch-clean-table th:nth-child(2),
-        .branch-clean-table td:nth-child(2) {
-            position: sticky;
-            left: 54px;
-            z-index: 2;
-            background: #ffffff;
-            box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.08);
+        .branch-clean-table td {
+            padding: 9px 10px;
+            font-size: 12px;
         }
-        .branch-clean-table th:nth-child(2) {
-            background: #f8fafc;
-            z-index: 3;
+        .branch-icon-badge {
+            display: none !important; /* Mobildə enli ikonu gizlədirik ki, filial adı yığcam və aydın olsun */
         }
-
-        .branch-clean-table tfoot td:first-child {
-            position: sticky;
-            left: 0;
-            z-index: 2;
-            background: #f8fafc;
+        .branch-name-title {
+            font-size: 12.5px;
         }
-        .branch-clean-table tfoot td:nth-child(2) {
-            position: sticky;
-            left: 54px;
-            z-index: 2;
-            background: #f8fafc;
-            box-shadow: 4px 0 8px -2px rgba(0, 0, 0, 0.08);
+        .soft-share-bar {
+            max-width: 70px;
+        }
+        .rank-circle {
+            width: 22px;
+            height: 22px;
+            font-size: 11px;
         }
     }
 
