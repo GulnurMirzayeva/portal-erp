@@ -717,11 +717,11 @@
                             </svg>
                             Filialların Gəlir Reytinqi
                         </h4>
-                        <p class="text-muted font-size-12 mb-0 mt-1">Gəlir həcminə görə ən güclü filiallar</p>
+                        <p class="text-muted font-size-12 mb-0 mt-1">Bütün filialların gəlir həcmi</p>
                     </div>
                 </div>
-                <div class="soft-box-body p-2">
-                    <div id="branchRankingChart" style="min-height: 345px;"></div>
+                <div class="soft-box-body p-2" style="max-height: 480px; overflow-y: auto;">
+                    <div id="branchRankingChart"></div>
                 </div>
             </div>
         </div>
@@ -1108,11 +1108,12 @@ document.addEventListener('DOMContentLoaded', () => {
         dailyChart.render();
     }
 
-    // 2. Filialların Gəlir Reytinqi (Horizontal Bar Chart)
+    // 2. Filialların Gəlir Reytinqi (Horizontal Bar Chart — Bütün filiallar, 0 olsa belə)
     @php
-        $topBranchStats = array_slice($branchStats, 0, 10);
-        $chartBranchNames = array_map(fn($b) => mb_substr($b['name'], 0, 18), $topBranchStats);
-        $chartBranchRevenues = array_map(fn($b) => round($b['revenue'], 2), $topBranchStats);
+        $chartBranchNames = array_map(fn($b) => mb_substr($b['name'], 0, 22), $branchStats);
+        $chartBranchRevenues = array_map(fn($b) => round($b['revenue'], 2), $branchStats);
+        $branchCount = count($branchStats);
+        $branchChartHeight = max(345, $branchCount * 32);
     @endphp
 
     const branchNames = @json(array_reverse($chartBranchNames));
@@ -1125,7 +1126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }],
         chart: {
             type: 'bar',
-            height: 345,
+            height: {{ $branchChartHeight }},
             fontFamily: 'Inter, sans-serif',
             toolbar: { show: false }
         },
@@ -1133,7 +1134,7 @@ document.addEventListener('DOMContentLoaded', () => {
             bar: {
                 borderRadius: 6,
                 horizontal: true,
-                barHeight: '60%',
+                barHeight: '68%',
                 dataLabels: {
                     position: 'bottom'
                 }
@@ -1149,7 +1150,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 fontWeight: 700
             },
             formatter: function (val) {
-                return val > 0 ? Number(val).toLocaleString('az-AZ', { maximumFractionDigits: 0 }) + ' ₼' : '';
+                return Number(val).toLocaleString('az-AZ', { maximumFractionDigits: 0 }) + ' ₼';
             },
             offsetX: 6
         },
@@ -1163,7 +1164,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         yaxis: {
             labels: {
-                style: { colors: '#334155', fontSize: '11px', fontWeight: 600 }
+                style: { colors: '#334155', fontSize: '11.5px', fontWeight: 600 }
             }
         },
         grid: {
