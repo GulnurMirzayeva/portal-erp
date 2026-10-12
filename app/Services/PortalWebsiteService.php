@@ -743,52 +743,64 @@ class PortalWebsiteService
     /**
      * Veb-sayt trafik və istifadəçi analitikasını (GA4 və ya Portal API) vasitəsilə əldə edir.
      */
+    /**
+     * Veb-sayt trafik və istifadəçi analitikasını (GA4 və ya Portal API) vasitəsilə əldə edir.
+     */
     public function getWebsiteTraffic(string $month): array
     {
         $cacheKey = "ga4_traffic_{$month}";
-        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($month) {
-            // 1. Google Analytics (GA4)-dən birbaşa canlı məlumatları çəkirik
-            $gaData = $this->fetchFromGoogleAnalytics($month);
-            if (!empty($gaData['connected']) && !empty($gaData['daily_data'])) {
-                return $gaData;
+        if ($cached = \Illuminate\Support\Facades\Cache::get($cacheKey)) {
+            if (!empty($cached['connected']) && !empty($cached['daily_data'])) {
+                return $cached;
             }
+        }
 
-            // 2. Portal Website API vasitəsilə cəhd edirik
-            $urlsToTry = array_values(array_unique(array_filter([
-                $this->baseUrl,
-                'https://portal.land',
-            ])));
+        // 1. Google Analytics (GA4)-dən birbaşa canlı məlumatları çəkirik
+        $gaData = $this->fetchFromGoogleAnalytics($month);
+        if (!empty($gaData['connected']) && !empty($gaData['daily_data'])) {
+            \Illuminate\Support\Facades\Cache::put($cacheKey, $gaData, 1800);
+            return $gaData;
+        }
 
-            foreach ($urlsToTry as $url) {
-                try {
-                    $response = Http::timeout(5)
-                        ->withHeaders([
-                            'X-ERP-API-KEY' => $this->apiToken,
-                            'Accept' => 'application/json',
-                        ])
-                        ->get("{$url}/api/erp/website-traffic", ['month' => $month]);
+        // 2. Portal Website API vasitəsilə cəhd edirik
+        $urlsToTry = array_values(array_unique(array_filter([
+            $this->baseUrl,
+            'https://portal.land',
+        ])));
 
-                    if ($response->successful()) {
-                        $data = $response->json();
-                        return [
+        foreach ($urlsToTry as $url) {
+            try {
+                $response = Http::timeout(5)
+                    ->withHeaders([
+                        'X-ERP-API-KEY' => $this->apiToken,
+                        'Accept' => 'application/json',
+                    ])
+                    ->get("{$url}/api/erp/website-traffic", ['month' => $month]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    if (!empty($data['daily_data'])) {
+                        $res = [
                             'connected' => true,
                             'daily_data' => $data['daily_data'] ?? [],
                             'total_users' => $data['total_users'] ?? 0,
                             'total_visits' => $data['total_visits'] ?? 0,
                         ];
+                        \Illuminate\Support\Facades\Cache::put($cacheKey, $res, 1800);
+                        return $res;
                     }
-                } catch (Exception $e) {
-                    // Ignore
                 }
+            } catch (Exception $e) {
+                // Ignore
             }
+        }
 
-            return [
-                'connected' => false,
-                'daily_data' => [],
-                'total_users' => 0,
-                'total_visits' => 0,
-            ];
-        });
+        return [
+            'connected' => false,
+            'daily_data' => [],
+            'total_users' => 0,
+            'total_visits' => 0,
+        ];
     }
 
     /**
@@ -799,15 +811,22 @@ class PortalWebsiteService
         try {
             $credsPath = config('services.google_analytics.credentials', storage_path('app/google/analytics.json'));
             if (!file_exists($credsPath)) {
-                return ['connected' => false, 'daily_data' => [], 'total_users' => 0, 'total_visits' => 0];
+                $fallbackPath = base_path('../PortalWebsite/storage/app/google/analytics.json');
+                if (file_exists($fallbackPath)) {
+                    $credsPath = $fallbackPath;
+                } else {
+                    Log::warning("GA4 credentials file not found at: {$credsPath}");
+                    return ['connected' => false, 'daily_data' => [], 'total_users' => 0, 'total_visits' => 0];
+                }
             }
 
             $creds = json_decode(file_get_contents($credsPath), true);
             if (empty($creds['client_email']) || empty($creds['private_key'])) {
+                Log::warning("GA4 credentials file invalid format or missing keys.");
                 return ['connected' => false, 'daily_data' => [], 'total_users' => 0, 'total_visits' => 0];
             }
 
-            $propertyId = config('services.google_analytics.property_id', '519908149');
+            $propertyId = config('services.google_analytics.property_id', env('GA4_PROPERTY_ID', '519908149'));
             $start = Carbon::parse($month . '-01')->startOfMonth()->format('Y-m-d');
             $end = Carbon::parse($month . '-01')->endOfMonth()->format('Y-m-d');
 
@@ -826,17 +845,23 @@ class PortalWebsiteService
             openssl_sign($data, $signature, $creds['private_key'], OPENSSL_ALGO_SHA256);
             $jwt = $data . '.' . $b64($signature);
 
-            $tokenResp = Http::timeout(6)->asForm()->post('https://oauth2.googleapis.com/token', [
+            $tokenResp = Http::timeout(10)->asForm()->post('https://oauth2.googleapis.com/token', [
                 'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
                 'assertion' => $jwt,
             ]);
 
-            $token = $tokenResp->json('access_token');
-            if (empty($token)) {
+            if ($tokenResp->failed()) {
+                Log::warning("GA4 OAuth token request failed: " . $tokenResp->body());
                 return ['connected' => false, 'daily_data' => [], 'total_users' => 0, 'total_visits' => 0];
             }
 
-            $gaResp = Http::timeout(10)->withToken($token)->post("https://analyticsdata.googleapis.com/v1beta/properties/{$propertyId}:runReport", [
+            $token = $tokenResp->json('access_token');
+            if (empty($token)) {
+                Log::warning("GA4 OAuth access_token missing in response: " . $tokenResp->body());
+                return ['connected' => false, 'daily_data' => [], 'total_users' => 0, 'total_visits' => 0];
+            }
+
+            $gaResp = Http::timeout(15)->withToken($token)->post("https://analyticsdata.googleapis.com/v1beta/properties/{$propertyId}:runReport", [
                 'dateRanges' => [['startDate' => $start, 'endDate' => $end]],
                 'metrics' => [
                     ['name' => 'screenPageViews'],
@@ -846,6 +871,7 @@ class PortalWebsiteService
             ]);
 
             if (!$gaResp->successful()) {
+                Log::warning("GA4 runReport request failed: " . $gaResp->body());
                 return ['connected' => false, 'daily_data' => [], 'total_users' => 0, 'total_visits' => 0];
             }
 
