@@ -890,6 +890,118 @@ class PortalWebsiteService
     }
 
     /**
+     * Veb-saytdan aylıq və filial üzrə komanda / rezervasiya statistikasını (ümumi, accepted, rejected, pending) əldə edir.
+     */
+    public function getReservationStatistics(string $month, ?string $branchId = null): array
+    {
+        $cacheKey = "portal_reservation_stats_{$month}_" . ($branchId ?? 'all');
+        if ($cached = \Illuminate\Support\Facades\Cache::get($cacheKey)) {
+            if (!empty($cached['connected'])) {
+                return $cached;
+            }
+        }
+
+        $queryParams = ['month' => $month];
+        if (!empty($branchId) && $branchId !== 'all') {
+            $queryParams['branch_id'] = $branchId;
+        }
+
+        // 1. Portal Website canlı API
+        $urlsToTry = array_values(array_unique(array_filter([
+            $this->baseUrl,
+            'https://portal.land',
+        ])));
+
+        foreach ($urlsToTry as $url) {
+            try {
+                $response = Http::timeout(8)
+                    ->withHeaders([
+                        'X-ERP-API-KEY' => $this->apiToken,
+                        'Accept' => 'application/json',
+                    ])
+                    ->get("{$url}/api/erp/reservation-statistics", $queryParams);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    if (isset($data['total'])) {
+                        $res = [
+                            'connected' => true,
+                            'total' => (int)($data['total'] ?? 0),
+                            'accepted' => (int)($data['accepted'] ?? 0),
+                            'rejected' => (int)($data['rejected'] ?? 0),
+                            'pending' => (int)($data['pending'] ?? 0),
+                            'accepted_percent' => (float)($data['accepted_percent'] ?? 0),
+                            'rejected_percent' => (float)($data['rejected_percent'] ?? 0),
+                            'pending_percent' => (float)($data['pending_percent'] ?? 0),
+                        ];
+                        \Illuminate\Support\Facades\Cache::put($cacheKey, $res, 180);
+                        return $res;
+                    }
+                }
+            } catch (Exception $e) {
+                Log::warning("PortalWebsite reservation statistics API error ({$url}): " . $e->getMessage());
+            }
+        }
+
+        // 2. Direct DB fallback
+        try {
+            $date = Carbon::parse($month . '-01');
+            $startDate = $date->copy()->startOfMonth()->format('Y-m-d');
+            $endDate = $date->copy()->endOfMonth()->format('Y-m-d');
+
+            $query = DB::connection('portal_website')->table('reservations')
+                ->whereBetween('reservation_date', [$startDate, $endDate]);
+
+            if (!empty($branchId) && $branchId !== 'all') {
+                $query->where('branch_id', $branchId);
+            }
+
+            $rawCounts = $query->selectRaw('status, count(*) as count')
+                ->groupBy('status')
+                ->pluck('count', 'status')
+                ->toArray();
+
+            $accepted = (int)($rawCounts['accepted'] ?? 0);
+            $rejected = (int)($rawCounts['rejected'] ?? 0);
+            $pending = (int)(($rawCounts['waiting'] ?? 0) + ($rawCounts['pending'] ?? 0));
+            $total = $accepted + $rejected + $pending;
+
+            foreach ($rawCounts as $st => $cnt) {
+                if (!in_array($st, ['accepted', 'rejected', 'waiting', 'pending'])) {
+                    $total += (int)$cnt;
+                }
+            }
+
+            $res = [
+                'connected' => true,
+                'total' => $total,
+                'accepted' => $accepted,
+                'rejected' => $rejected,
+                'pending' => $pending,
+                'accepted_percent' => $total > 0 ? round(($accepted / $total) * 100, 1) : 0,
+                'rejected_percent' => $total > 0 ? round(($rejected / $total) * 100, 1) : 0,
+                'pending_percent' => $total > 0 ? round(($pending / $total) * 100, 1) : 0,
+            ];
+            \Illuminate\Support\Facades\Cache::put($cacheKey, $res, 180);
+            return $res;
+        } catch (Exception $e) {
+            Log::warning("Direct DB reservation query failed: " . $e->getMessage());
+        }
+
+        return [
+            'connected' => false,
+            'total' => 0,
+            'accepted' => 0,
+            'rejected' => 0,
+            'pending' => 0,
+            'accepted_percent' => 0,
+            'rejected_percent' => 0,
+            'pending_percent' => 0,
+        ];
+    }
+
+
+    /**
      * Google Analytics (GA4) API vasitəsilə birbaşa aylıq trafik və istifadəçiləri əldə edir.
      */
     protected function fetchFromGoogleAnalytics(string $month): array

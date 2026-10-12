@@ -99,6 +99,12 @@ class DashboardController extends Controller
         // 10. Ən çox gəlir gətirən TOP Oyunlar
         $topGames = $this->aggregateTopGames($sales, 5);
 
+        // 11. Komandalar (Rezervasiyalar) Status Statistikası (Aylıq və Filial üzrə: Ümumi, Accepted, Rejected, Pending)
+        if ($forceRefresh) {
+            Cache::forget("portal_reservation_stats_{$filterMonth}_" . ($filterBranch ?? 'all'));
+        }
+        $reservationStats = $portalService->getReservationStatistics($filterMonth, $filterBranch);
+
         return view('dashboard.index', [
             'filterMonth' => $filterMonth,
             'filterBranch' => $filterBranch,
@@ -113,6 +119,7 @@ class DashboardController extends Controller
             'branchStats' => $branchStats,
             'dailyTrend' => $dailyTrend,
             'topGames' => $topGames,
+            'reservationStats' => $reservationStats,
             'isCurrentMonth' => $isCurrentMonth,
             'lastUpdated' => Carbon::now()->format('H:i:s'),
         ]);

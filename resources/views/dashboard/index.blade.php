@@ -622,11 +622,11 @@
         </div>
 
 
-        {{-- Card 3: Total Teams (Komandalar) --}}
+        {{-- Card 2: Total Teams & Reservation Statuses (Komandalar / Rezervasiyalar) --}}
         <div class="kpi-soft-card">
             <div>
                 <div class="kpi-soft-header">
-                    <p class="kpi-soft-label">Komandalar</p>
+                    <p class="kpi-soft-label" style="font-weight: 800; letter-spacing: 0.5px; color: #5a6a85;">KOMANDALAR</p>
                     <div class="kpi-soft-icon" style="background: #f5f3ff; color: #7c3aed;">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                             <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
@@ -636,13 +636,50 @@
                         </svg>
                     </div>
                 </div>
-                <div class="kpi-soft-val text-dark">
-                    {{ number_format($kpi['total_sales']) }} <span class="font-size-16 font-weight-600 text-muted">komanda</span>
+
+                {{-- Total Count & Acceptance Rate --}}
+                <div class="d-flex align-items-baseline justify-content-between mb-2">
+                    <div class="kpi-soft-val text-dark mb-0">
+                        {{ number_format($reservationStats['total'] ?? $kpi['total_sales']) }}
+                        <span class="font-size-15 font-weight-600 text-muted">komanda</span>
+                    </div>
+                    <span class="badge font-size-11" style="background: #eefbf3; color: #16a34a; border: 1px solid #bbf7d0;" title="Təsdiqlənmə faizi">
+                        {{ $reservationStats['accepted_percent'] ?? 0 }}% qəbul
+                    </span>
+                </div>
+
+                {{-- Status Ratio Multi-segment Bar --}}
+                <div class="soft-ratio-wrap my-2">
+                    <div class="soft-ratio-bar" style="height: 7px; display: flex; border-radius: 999px; overflow: hidden; background: #f1f5f9;">
+                        <div style="width: {{ $reservationStats['accepted_percent'] ?? 0 }}%; background: #16a34a; transition: width 0.3s ease;" title="Təsdiqlənmiş: {{ number_format($reservationStats['accepted'] ?? 0) }} ({{ $reservationStats['accepted_percent'] ?? 0 }}%)"></div>
+                        <div style="width: {{ $reservationStats['rejected_percent'] ?? 0 }}%; background: #dc2626; transition: width 0.3s ease;" title="İmtina: {{ number_format($reservationStats['rejected'] ?? 0) }} ({{ $reservationStats['rejected_percent'] ?? 0 }}%)"></div>
+                        <div style="width: {{ $reservationStats['pending_percent'] ?? 0 }}%; background: #f59e0b; transition: width 0.3s ease;" title="Gözləyən: {{ number_format($reservationStats['pending'] ?? 0) }} ({{ $reservationStats['pending_percent'] ?? 0 }}%)"></div>
+                    </div>
+                </div>
+
+                {{-- 3 Status Breakdown Pills (Accepted, Rejected, Pending) --}}
+                <div class="d-flex align-items-center justify-content-between gap-1 pt-1 flex-wrap">
+                    <div class="d-flex align-items-center gap-1 font-size-11" title="Təsdiqlənmiş (Accepted)">
+                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #16a34a; display: inline-block;"></span>
+                        <span class="text-muted">Təsdiq:</span>
+                        <strong class="text-success">{{ number_format($reservationStats['accepted'] ?? 0) }}</strong>
+                    </div>
+                    <div class="d-flex align-items-center gap-1 font-size-11" title="İmtina edilmiş (Rejected)">
+                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #dc2626; display: inline-block;"></span>
+                        <span class="text-muted">İmtina:</span>
+                        <strong class="text-danger">{{ number_format($reservationStats['rejected'] ?? 0) }}</strong>
+                    </div>
+                    <div class="d-flex align-items-center gap-1 font-size-11" title="Gözləyən (Pending / Waiting)">
+                        <span style="width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; display: inline-block;"></span>
+                        <span class="text-muted">Gözləyən:</span>
+                        <strong class="text-warning">{{ number_format($reservationStats['pending'] ?? 0) }}</strong>
+                    </div>
                 </div>
             </div>
-            <div class="kpi-soft-footer">
-                <span class="badge bg-light text-dark border font-size-11">Orta Komanda: {{ number_format($kpi['avg_ticket'], 2) }} ₼</span>
-                <span>1 komanda üzrə</span>
+
+            <div class="kpi-soft-footer justify-content-between pt-2 border-top mt-2" style="font-size: 11.5px;">
+                <span class="text-muted">Orta komanda: <strong class="text-dark">{{ number_format($kpi['avg_ticket'], 2) }} ₼</strong></span>
+                <span class="text-muted">{{ $selectedMonthName }}</span>
             </div>
         </div>
 
