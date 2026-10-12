@@ -89,20 +89,14 @@
     /* ---------------- Responsive 4 KPI Cards Grid ---------------- */
     .kpi-cards-grid {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 18px;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
         margin-bottom: 24px;
     }
-    @media (max-width: 1040px) {
-        .kpi-cards-grid {
-            grid-template-columns: repeat(2, 1fr);
-            gap: 22px; /* Generous gap when wrapping to 2 rows */
-        }
-    }
-    @media (max-width: 576px) {
+    @media (max-width: 992px) {
         .kpi-cards-grid {
             grid-template-columns: 1fr;
-            gap: 18px;
+            gap: 16px;
         }
     }
 
@@ -572,43 +566,6 @@
             </div>
         </div>
 
-        {{-- Card 2: Cash vs Nağdsız Breakdown (Clean & Spacious, No Duplicated Text) --}}
-        <div class="kpi-soft-card">
-            <div>
-                <div class="kpi-soft-header">
-                    <p class="kpi-soft-label">Ödəniş Balansı</p>
-                    <div class="kpi-soft-icon" style="background: #f0f9ff; color: #0284c7;">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                            <rect width="20" height="14" x="2" y="5" rx="2"></rect>
-                            <line x1="2" x2="22" y1="10" y2="10"></line>
-                        </svg>
-                    </div>
-                </div>
-
-                <div class="d-flex align-items-center justify-content-between mb-1">
-                    <div>
-                        <span class="font-size-11 text-muted d-block font-weight-600">NAĞDSIZ ({{ $kpi['card_percent'] }}%)</span>
-                        <span class="font-size-15 font-weight-800 text-info">{{ number_format($kpi['total_card'], 2) }} ₼</span>
-                    </div>
-                    <div class="text-end">
-                        <span class="font-size-11 text-muted d-block font-weight-600">NAĞD ({{ $kpi['cash_percent'] }}%)</span>
-                        <span class="font-size-15 font-weight-800 text-warning">{{ number_format($kpi['total_cash'], 2) }} ₼</span>
-                    </div>
-                </div>
-
-                <div class="soft-ratio-wrap">
-                    <div class="soft-ratio-bar">
-                        <div class="soft-ratio-card" style="width: {{ $kpi['card_percent'] }}%;" title="Nağdsız: {{ $kpi['card_percent'] }}%"></div>
-                        <div class="soft-ratio-cash" style="width: {{ $kpi['cash_percent'] }}%;" title="Nağd: {{ $kpi['cash_percent'] }}%"></div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="kpi-soft-footer justify-content-between">
-                <span class="soft-pill" style="background: #f0f9ff; color: #0284c7;">Nağdsız: {{ number_format($kpi['total_card'], 0) }} ₼</span>
-                <span class="soft-pill" style="background: #fffbeb; color: #d97706;">Nağd: {{ number_format($kpi['total_cash'], 0) }} ₼</span>
-            </div>
-        </div>
 
         {{-- Card 3: Total Teams (Komandalar) --}}
         <div class="kpi-soft-card">
