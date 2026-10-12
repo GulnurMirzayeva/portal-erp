@@ -16,13 +16,13 @@ class CrmTrafficController extends Controller
      */
     public function index(Request $request, PortalWebsiteService $portalService)
     {
-        $availableMonths = $this->getAvailableMonths();
-
         // Cari və ya seçilmiş ay (Defolt cari ay)
         $filterMonth = $request->query('month');
         if (empty($filterMonth) || !preg_match('/^\d{4}-\d{2}$/', $filterMonth)) {
             $filterMonth = Carbon::now()->format('Y-m');
         }
+
+        $availableMonths = $this->getAvailableMonths($filterMonth);
 
         [$year, $month] = explode('-', $filterMonth);
         $year = (int)$year;
@@ -39,20 +39,59 @@ class CrmTrafficController extends Controller
             ->get()
             ->keyBy('day');
 
-        // 2. Veb-sayt göstəriciləri üçün Portal Website API yoxlanışı
+        // 2. Veb-sayt göstəriciləri üçün Portal Website / GA4 API
+        $forceRefresh = $request->boolean('refresh');
+        if ($forceRefresh) {
+            \Illuminate\Support\Facades\Cache::forget("ga4_traffic_{$filterMonth}");
+        }
+
         $apiTraffic = $portalService->getWebsiteTraffic($filterMonth);
         $apiConnected = $apiTraffic['connected'] ?? false;
         $apiDailyData = $apiTraffic['daily_data'] ?? [];
 
-        // 3. Günbəgün 1-dən $daysInMonth-a qədər massiv formalaşdırırıq
+        // 3. Əgər API/GA4-dən canlı datalar gəlibsə, ERP verilənlər bazasında avtomatik saxlayırıq/yeniləyirik
+        if (!empty($apiDailyData)) {
+            foreach ($apiDailyData as $day => $trafficValues) {
+                $dayNum = (int)$day;
+                if ($dayNum < 1 || $dayNum > $daysInMonth) {
+                    continue;
+                }
+
+                $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $dayNum);
+                $usersCount = (int)($trafficValues['users'] ?? 0);
+                $visitsCount = (int)($trafficValues['visits'] ?? 0);
+
+                if ($usersCount > 0 || $visitsCount > 0) {
+                    $rec = $existingRecords->get($dayNum);
+                    if ($rec) {
+                        if ($rec->website_users != $usersCount || $rec->website_visits != $visitsCount) {
+                            $rec->website_users = $usersCount;
+                            $rec->website_visits = $visitsCount;
+                            $rec->save();
+                        }
+                    } else {
+                        $newRec = CrmTrafficStatistic::create([
+                            'date' => $dateStr,
+                            'year' => $year,
+                            'month' => $month,
+                            'day' => $dayNum,
+                            'website_users' => $usersCount,
+                            'website_visits' => $visitsCount,
+                        ]);
+                        $existingRecords->put($dayNum, $newRec);
+                    }
+                }
+            }
+        }
+
+        // 4. Günbəgün 1-dən $daysInMonth-a qədər massiv formalaşdırırıq
         $dailyRows = [];
         for ($d = 1; $d <= $daysInMonth; $d++) {
             $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $d);
             $rec = $existingRecords->get($d);
 
-            // API-dən gələn sayt istifadəçi və daxilolma məlumatları (əgər varsa)
-            $apiUsers = $apiDailyData[$d]['users'] ?? ($apiDailyData[$dateStr]['users'] ?? null);
-            $apiVisits = $apiDailyData[$d]['visits'] ?? ($apiDailyData[$dateStr]['visits'] ?? null);
+            $apiUsers = $apiDailyData[$d]['users'] ?? null;
+            $apiVisits = $apiDailyData[$d]['visits'] ?? null;
 
             $instMsg = $rec ? (int)$rec->instagram_messages : 0;
             $instNew = $rec ? (int)$rec->instagram_followers_new : 0;
@@ -81,7 +120,7 @@ class CrmTrafficController extends Controller
             ];
         }
 
-        // 4. Aylıq Yekun Cəmlər
+        // 5. Aylıq Yekun Cəmlər
         $totals = [
             'instagram_messages' => array_sum(array_column($dailyRows, 'instagram_messages')),
             'instagram_followers_new' => array_sum(array_column($dailyRows, 'instagram_followers_new')),
@@ -93,7 +132,7 @@ class CrmTrafficController extends Controller
             'website_visits' => array_sum(array_column($dailyRows, 'website_visits')),
         ];
 
-        // 5. Qrafiklər üçün kateqoriyalar (1..daysInMonth) və seriyalar
+        // 6. Qrafiklər üçün kateqoriyalar (1..daysInMonth) və seriyalar
         $chartDays = array_map('strval', range(1, $daysInMonth));
 
         $chartData = [
@@ -106,7 +145,7 @@ class CrmTrafficController extends Controller
             'website_visits' => array_column($dailyRows, 'website_visits'),
         ];
 
-        $canEdit = auth()->user()->can('crm.edit');
+        $canEdit = auth()->check() && auth()->user()->can('crm.edit');
 
         return view('crm.traffic.index', [
             'filterMonth' => $filterMonth,
@@ -121,7 +160,7 @@ class CrmTrafficController extends Controller
     }
 
     /**
-     * Bütün aylıq sətirləri toplu şəkildə yadda saxlayır.
+     * Bütün aylıq sətirləri toplu şəkildə yadda saxlayır (İstənilən seçilmiş ay üçün).
      */
     public function save(Request $request)
     {
@@ -134,8 +173,6 @@ class CrmTrafficController extends Controller
             'rows.*.instagram_followers_lost' => 'nullable|integer',
             'rows.*.calls' => 'nullable|integer',
             'rows.*.tiktok_followers_net' => 'nullable|integer',
-            'rows.*.website_users' => 'nullable|integer',
-            'rows.*.website_visits' => 'nullable|integer',
             'rows.*.notes' => 'nullable|string|max:500',
         ]);
 
@@ -154,23 +191,23 @@ class CrmTrafficController extends Controller
                 $instLost = (int)($r['instagram_followers_lost'] ?? 0);
                 $instNet = $instNew - $instLost;
 
+                $updateData = [
+                    'year' => $year,
+                    'month' => $month,
+                    'day' => $day,
+                    'instagram_messages' => (int)($r['instagram_messages'] ?? 0),
+                    'instagram_followers_new' => $instNew,
+                    'instagram_followers_lost' => $instLost,
+                    'instagram_followers_net' => $instNet,
+                    'calls' => (int)($r['calls'] ?? 0),
+                    'tiktok_followers_net' => (int)($r['tiktok_followers_net'] ?? 0),
+                    'notes' => $r['notes'] ?? null,
+                    'updated_by' => $userId,
+                ];
+
                 CrmTrafficStatistic::updateOrCreate(
                     ['date' => $dateStr],
-                    [
-                        'year' => $year,
-                        'month' => $month,
-                        'day' => $day,
-                        'instagram_messages' => (int)($r['instagram_messages'] ?? 0),
-                        'instagram_followers_new' => $instNew,
-                        'instagram_followers_lost' => $instLost,
-                        'instagram_followers_net' => $instNet,
-                        'calls' => (int)($r['calls'] ?? 0),
-                        'tiktok_followers_net' => (int)($r['tiktok_followers_net'] ?? 0),
-                        'website_users' => (int)($r['website_users'] ?? 0),
-                        'website_visits' => (int)($r['website_visits'] ?? 0),
-                        'notes' => $r['notes'] ?? null,
-                        'updated_by' => $userId,
-                    ]
+                    $updateData
                 );
             }
 
@@ -212,8 +249,6 @@ class CrmTrafficController extends Controller
             'instagram_followers_lost',
             'calls',
             'tiktok_followers_net',
-            'website_users',
-            'website_visits',
             'notes',
         ];
 
@@ -248,9 +283,9 @@ class CrmTrafficController extends Controller
     }
 
     /**
-     * Mövcud ayların siyahısı (Sayt var olandan: Noyabr 2025-dən cari aya qədər).
+     * Mövcud ayların siyahısı (Sayt var olandan: Noyabr 2025-dən cari aya qədər və bazadakı bütün aylar).
      */
-    protected function getAvailableMonths(): array
+    protected function getAvailableMonths(?string $selectedMonth = null): array
     {
         $monthNamesAz = [
             '01' => 'Yanvar', '02' => 'Fevral', '03' => 'Mart', '04' => 'Aprel',
@@ -268,6 +303,23 @@ class CrmTrafficController extends Controller
         while ($cur->lessThanOrEqualTo($end)) {
             $allMonths->push($cur->format('Y-m'));
             $cur->addMonth();
+        }
+
+        // Bazada mövcud olan digər ayları da əlavə edirik
+        try {
+            $dbMonths = CrmTrafficStatistic::select('year', 'month')
+                ->distinct()
+                ->get()
+                ->map(fn($r) => sprintf('%04d-%02d', $r->year, $r->month));
+            foreach ($dbMonths as $dbm) {
+                $allMonths->push($dbm);
+            }
+        } catch (\Exception $e) {
+            // DB fallback
+        }
+
+        if ($selectedMonth && preg_match('/^\d{4}-\d{2}$/', $selectedMonth)) {
+            $allMonths->push($selectedMonth);
         }
 
         return $allMonths->unique()->sortDesc()->values()->map(function ($ym) use ($monthNamesAz) {

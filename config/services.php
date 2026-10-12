@@ -40,4 +40,10 @@ return [
         'token' => env('PORTAL_WEBSITE_API_TOKEN', 'portal_erp_sec_2026_9a8b7c6d5e4f3a2b1c'),
     ],
 
+    'google_analytics' => [
+        'property_id' => env('GA4_PROPERTY_ID', '519908149'),
+        'credentials' => storage_path('app/google/analytics.json'),
+    ],
+
 ];
+

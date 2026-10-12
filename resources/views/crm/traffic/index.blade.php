@@ -321,6 +321,25 @@
         font-weight: 700;
     }
 
+    .excel-cell-auto {
+        background-color: #f8fafc !important;
+        color: #0369a1;
+        font-weight: 700;
+        cursor: default !important;
+        user-select: text;
+        padding: 6px 10px;
+    }
+    .badge-auto-val {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 6px;
+        background: #e0f2fe;
+        color: #0369a1;
+        font-weight: 700;
+        font-size: 12.5px;
+        border: 1px solid #bae6fd;
+    }
+
     .excel-table tfoot td {
         background: #e2e8f0;
         font-weight: 800;
@@ -367,18 +386,6 @@
         <div class="traffic-toolbar-left">
             <span class="traffic-status-dot"></span>
             <h5 class="traffic-title">{{ $periodDisplay }} — Trafik və Sosial Media Analitikası</h5>
-
-            @if($apiConnected)
-                <span class="traffic-badge-api" title="Portal.land API ilə canlı trafik əlaqəsi aktivdir">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
-                    Portal API Aktiv
-                </span>
-            @else
-                <span class="traffic-card-badge badge-api" title="Portal API endpoint-i qoşulduqda sayt statistikaları avtomatik yenilənəcək">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
-                    API Qəbulu Hazırdır
-                </span>
-            @endif
         </div>
 
         <div class="traffic-toolbar-controls">
@@ -394,14 +401,7 @@
                 </select>
             </form>
 
-            @can('crm.edit')
-                <button type="button" class="btn-traffic-save" id="btnSaveAll" onclick="saveAllTrafficData()">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                    Yadda Saxla
-                </button>
-            @endcan
-
-            <a href="{{ route('crm.traffic.index', ['month' => $filterMonth]) }}" class="btn-traffic-refresh" title="Səhifəni yenilə">
+            <a href="{{ route('crm.traffic.index', ['month' => $filterMonth, 'refresh' => 1]) }}" class="btn-traffic-refresh" title="Məlumatları yenilə">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 Yenilə
             </a>
@@ -474,7 +474,7 @@
                     <h6 class="traffic-card-title">Sayt istifadəçiləri</h6>
                     <p class="traffic-card-sub" id="headerTotalWebUsers">Ümumi istifadəçi sayı: {{ number_format($totals['website_users']) }}</p>
                 </div>
-                <span class="traffic-card-badge badge-api">Veb-sayt API</span>
+                <span class="traffic-card-badge badge-api">Google Analytics API</span>
             </div>
             <div id="chartWebsiteUsers" class="traffic-chart-container"></div>
         </div>
@@ -486,7 +486,7 @@
                     <h6 class="traffic-card-title">Sayta daxilolmalar</h6>
                     <p class="traffic-card-sub" id="headerTotalWebVisits">Daxilolmaların ümumi sayı: {{ number_format($totals['website_visits']) }}</p>
                 </div>
-                <span class="traffic-card-badge badge-api">Veb-sayt API</span>
+                <span class="traffic-card-badge badge-api">Google Analytics API</span>
             </div>
             <div id="chartWebsiteVisits" class="traffic-chart-container"></div>
         </div>
@@ -501,19 +501,33 @@
             <div>
                 <h6 class="font-size-16 fw-bold text-dark m-0">📅 {{ $periodDisplay }} — Gündəlik Göstəricilərin Qeydiyyatı</h6>
                 <p class="text-muted font-size-12 m-0 mt-1">
-                    Xanalara rəqəmləri daxil etdikdə yekun cəmlər və yuxarıdakı qrafiklər dərhal yenilənir.
+                    Cədvəldə istədiyiniz ayı seçib məlumatları doldura bilərsiniz. Sayt göstəriciləri avtomatik Google Analytics-dən gəlir.
                 </p>
             </div>
-            <div class="d-flex align-items-center gap-2">
-                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="exportTableToCSV('dailyTrafficTable', 'Trafik_Sosial_Media_{{ $filterMonth }}.csv')">
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                {{-- Ay seçimi birbaşa cədvəlin üstündə --}}
+                <div class="d-flex align-items-center gap-2 bg-light px-2 py-1 rounded border">
+                    <label for="tableMonthSelect" class="font-size-12 fw-bold text-secondary mb-0">Ay:</label>
+                    <select id="tableMonthSelect" class="form-select form-select-sm border-0 bg-transparent fw-bold text-dark p-0 pe-4" style="cursor: pointer;" onchange="location.href='{{ route('crm.traffic.index') }}?month=' + this.value">
+                        @foreach($availableMonths as $m)
+                            <option value="{{ $m['key'] }}" {{ ($filterMonth === $m['key']) ? 'selected' : '' }}>
+                                {{ $m['name'] }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                @can('crm.edit')
+                    <button type="button" class="btn btn-sm btn-success fw-bold px-3 py-1 d-inline-flex align-items-center gap-1 shadow-sm" id="btnSaveTable" onclick="saveAllTrafficData()">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        Yadda Saxla
+                    </button>
+                @endcan
+
+                <button type="button" class="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1" onclick="exportTableToCSV('dailyTrafficTable', 'Trafik_Sosial_Media_{{ $filterMonth }}.csv')">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                     CSV İxrac
                 </button>
-                @can('crm.edit')
-                    <button type="button" class="btn btn-sm btn-success fw-bold px-3" onclick="saveAllTrafficData()">
-                        💾 Bütün Sətirləri Saxla
-                    </button>
-                @endcan
             </div>
         </div>
 
@@ -528,8 +542,14 @@
                         <th style="min-width: 110px;" title="İnstaqram Xalis Artım (Yeni - Çıxan)">İNSTAQRAM NET</th>
                         <th style="min-width: 100px;" title="Daxil Olan Zənglər">ZƏNGLƏR</th>
                         <th style="min-width: 110px;" title="TikTok Xalis İzləyici Dəyişimi">TİKTOK İZLƏYİCİ</th>
-                        <th style="min-width: 110px;" title="Sayt Unikal İstifadəçiləri">SAYT İSTİFADƏÇİ</th>
-                        <th style="min-width: 110px;" title="Sayta Daxilolmalar / Ziyarətlər">SAYTA DAXİLOLMA</th>
+                        <th style="min-width: 125px;" title="Sayt Unikal İstifadəçiləri (Google Analytics / Avtomatik)">
+                            SAYT İSTİFADƏÇİ
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" style="font-size: 9.5px; font-weight: 700;">AVTO</span>
+                        </th>
+                        <th style="min-width: 125px;" title="Sayta Daxilolmalar / Ziyarətlər (Google Analytics / Avtomatik)">
+                            SAYTA DAXİLOLMA
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" style="font-size: 9.5px; font-weight: 700;">AVTO</span>
+                        </th>
                         <th style="min-width: 180px;">QEYD</th>
                     </tr>
                 </thead>
@@ -582,19 +602,19 @@
                                 oninput="markRowDirty(this)"
                                 onblur="onCellBlur(this)">{{ $row['tiktok_followers_net'] }}</td>
 
-                            {{-- 5. Website Users --}}
-                            <td class="excel-cell-edit"
-                                contenteditable="{{ $canEdit ? 'true' : 'false' }}"
+                            {{-- 5. Website Users (Google Analytics / Avtomatik - Qeyri-redaktə) --}}
+                            <td class="excel-cell-auto"
                                 data-field="website_users"
-                                oninput="markRowDirty(this)"
-                                onblur="onCellBlur(this)">{{ $row['website_users'] }}</td>
+                                title="Google Analytics-dən avtomatik gəlir və bazada saxlanılır">
+                                <span class="badge-auto-val">{{ $row['website_users'] ? number_format($row['website_users']) : '0' }}</span>
+                            </td>
 
-                            {{-- 6. Website Visits --}}
-                            <td class="excel-cell-edit"
-                                contenteditable="{{ $canEdit ? 'true' : 'false' }}"
+                            {{-- 6. Website Visits (Google Analytics / Avtomatik - Qeyri-redaktə) --}}
+                            <td class="excel-cell-auto"
                                 data-field="website_visits"
-                                oninput="markRowDirty(this)"
-                                onblur="onCellBlur(this)">{{ $row['website_visits'] }}</td>
+                                title="Google Analytics-dən avtomatik gəlir və bazada saxlanılır">
+                                <span class="badge-auto-val">{{ $row['website_visits'] ? number_format($row['website_visits']) : '0' }}</span>
+                            </td>
 
                             {{-- Notes --}}
                             <td class="excel-cell-edit text-start"
@@ -618,8 +638,8 @@
                         <td id="foot_tiktok" class="{{ $totals['tiktok_followers_net'] > 0 ? 'badge-net-pos' : ($totals['tiktok_followers_net'] < 0 ? 'badge-net-neg' : 'badge-net-zero') }}">
                             {{ ($totals['tiktok_followers_net'] > 0 ? '+' : '') . number_format($totals['tiktok_followers_net']) }}
                         </td>
-                        <td id="foot_web_users">{{ number_format($totals['website_users']) }}</td>
-                        <td id="foot_web_visits">{{ number_format($totals['website_visits']) }}</td>
+                        <td id="foot_web_users" class="fw-bold text-primary">{{ number_format($totals['website_users']) }}</td>
+                        <td id="foot_web_visits" class="fw-bold text-primary">{{ number_format($totals['website_visits']) }}</td>
                         <td>—</td>
                     </tr>
                 </tfoot>
@@ -897,7 +917,7 @@ function onCellBlur(el) {
 
 // Bulk Save All Traffic Data
 function saveAllTrafficData() {
-    const btn = document.getElementById('btnSaveAll');
+    const btn = document.getElementById('btnSaveTable') || document.getElementById('btnSaveAll');
     if (btn) {
         btn.innerHTML = `
             <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="width: 13px; height: 13px;"></span>
@@ -914,8 +934,6 @@ function saveAllTrafficData() {
         const lst = parseInt(tr.querySelector('[data-field="instagram_followers_lost"]')?.innerText.replace(/[^0-9-]/g, '') || '0', 10);
         const cls = parseInt(tr.querySelector('[data-field="calls"]')?.innerText.replace(/[^0-9-]/g, '') || '0', 10);
         const ttk = parseInt(tr.querySelector('[data-field="tiktok_followers_net"]')?.innerText.replace(/[^0-9-]/g, '') || '0', 10);
-        const usr = parseInt(tr.querySelector('[data-field="website_users"]')?.innerText.replace(/[^0-9-]/g, '') || '0', 10);
-        const vst = parseInt(tr.querySelector('[data-field="website_visits"]')?.innerText.replace(/[^0-9-]/g, '') || '0', 10);
         const nts = tr.querySelector('[data-field="notes"]')?.innerText.trim() || '';
 
         rows.push({
@@ -925,8 +943,6 @@ function saveAllTrafficData() {
             instagram_followers_lost: lst,
             calls: cls,
             tiktok_followers_net: ttk,
-            website_users: usr,
-            website_visits: vst,
             notes: nts
         });
     });
@@ -947,13 +963,11 @@ function saveAllTrafficData() {
     .then(data => {
         if (btn) {
             btn.innerHTML = `✓ Saxlanıldı`;
-            btn.classList.replace('btn-traffic-save', 'btn-success');
             setTimeout(() => {
                 btn.innerHTML = `
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
                     Yadda Saxla
                 `;
-                btn.classList.replace('btn-success', 'btn-traffic-save');
                 btn.disabled = false;
             }, 1500);
         }
@@ -962,9 +976,12 @@ function saveAllTrafficData() {
         document.querySelectorAll('#dailyTrafficTable .dirty').forEach(el => el.classList.remove('dirty'));
     })
     .catch(err => {
-        alert("Xəta baş verdi: " . err);
+        alert("Xəta baş verdi: " + err);
         if (btn) {
-            btn.innerHTML = `Yadda Saxla`;
+            btn.innerHTML = `
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                Yadda Saxla
+            `;
             btn.disabled = false;
         }
     });

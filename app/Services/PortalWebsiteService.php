@@ -741,44 +741,144 @@ class PortalWebsiteService
     }
 
     /**
-     * Veb-sayt trafik və istifadəçi analitikasını PortalWebsite API vasitəsilə əldə edir.
+     * Veb-sayt trafik və istifadəçi analitikasını (GA4 və ya Portal API) vasitəsilə əldə edir.
      */
     public function getWebsiteTraffic(string $month): array
     {
-        $urlsToTry = array_values(array_unique(array_filter([
-            $this->baseUrl,
-            'https://portal.land',
-        ])));
-
-        foreach ($urlsToTry as $url) {
-            try {
-                $response = Http::timeout(5)
-                    ->withHeaders([
-                        'X-ERP-API-KEY' => $this->apiToken,
-                        'Accept' => 'application/json',
-                    ])
-                    ->get("{$url}/api/erp/website-traffic", ['month' => $month]);
-
-                if ($response->successful()) {
-                    $data = $response->json();
-                    return [
-                        'connected' => true,
-                        'daily_data' => $data['daily_data'] ?? [],
-                        'total_users' => $data['total_users'] ?? 0,
-                        'total_visits' => $data['total_visits'] ?? 0,
-                    ];
-                }
-            } catch (Exception $e) {
-                // Ignore and try fallback
+        $cacheKey = "ga4_traffic_{$month}";
+        return \Illuminate\Support\Facades\Cache::remember($cacheKey, 3600, function () use ($month) {
+            // 1. Google Analytics (GA4)-dən birbaşa canlı məlumatları çəkirik
+            $gaData = $this->fetchFromGoogleAnalytics($month);
+            if (!empty($gaData['connected']) && !empty($gaData['daily_data'])) {
+                return $gaData;
             }
-        }
 
-        return [
-            'connected' => false,
-            'daily_data' => [],
-            'total_users' => 0,
-            'total_visits' => 0,
-        ];
+            // 2. Portal Website API vasitəsilə cəhd edirik
+            $urlsToTry = array_values(array_unique(array_filter([
+                $this->baseUrl,
+                'https://portal.land',
+            ])));
+
+            foreach ($urlsToTry as $url) {
+                try {
+                    $response = Http::timeout(5)
+                        ->withHeaders([
+                            'X-ERP-API-KEY' => $this->apiToken,
+                            'Accept' => 'application/json',
+                        ])
+                        ->get("{$url}/api/erp/website-traffic", ['month' => $month]);
+
+                    if ($response->successful()) {
+                        $data = $response->json();
+                        return [
+                            'connected' => true,
+                            'daily_data' => $data['daily_data'] ?? [],
+                            'total_users' => $data['total_users'] ?? 0,
+                            'total_visits' => $data['total_visits'] ?? 0,
+                        ];
+                    }
+                } catch (Exception $e) {
+                    // Ignore
+                }
+            }
+
+            return [
+                'connected' => false,
+                'daily_data' => [],
+                'total_users' => 0,
+                'total_visits' => 0,
+            ];
+        });
+    }
+
+    /**
+     * Google Analytics (GA4) API vasitəsilə birbaşa aylıq trafik və istifadəçiləri əldə edir.
+     */
+    protected function fetchFromGoogleAnalytics(string $month): array
+    {
+        try {
+            $credsPath = config('services.google_analytics.credentials', storage_path('app/google/analytics.json'));
+            if (!file_exists($credsPath)) {
+                return ['connected' => false, 'daily_data' => [], 'total_users' => 0, 'total_visits' => 0];
+            }
+
+            $creds = json_decode(file_get_contents($credsPath), true);
+            if (empty($creds['client_email']) || empty($creds['private_key'])) {
+                return ['connected' => false, 'daily_data' => [], 'total_users' => 0, 'total_visits' => 0];
+            }
+
+            $propertyId = config('services.google_analytics.property_id', '519908149');
+            $start = Carbon::parse($month . '-01')->startOfMonth()->format('Y-m-d');
+            $end = Carbon::parse($month . '-01')->endOfMonth()->format('Y-m-d');
+
+            // JWT token yaradılması
+            $now = time();
+            $b64 = fn($str) => rtrim(strtr(base64_encode($str), '+/', '-_'), '=');
+            $header = $b64(json_encode(['alg' => 'RS256', 'typ' => 'JWT']));
+            $claim = $b64(json_encode([
+                'iss' => $creds['client_email'],
+                'scope' => 'https://www.googleapis.com/auth/analytics.readonly',
+                'aud' => 'https://oauth2.googleapis.com/token',
+                'exp' => $now + 3600,
+                'iat' => $now,
+            ]));
+            $data = $header . '.' . $claim;
+            openssl_sign($data, $signature, $creds['private_key'], OPENSSL_ALGO_SHA256);
+            $jwt = $data . '.' . $b64($signature);
+
+            $tokenResp = Http::timeout(6)->asForm()->post('https://oauth2.googleapis.com/token', [
+                'grant_type' => 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+                'assertion' => $jwt,
+            ]);
+
+            $token = $tokenResp->json('access_token');
+            if (empty($token)) {
+                return ['connected' => false, 'daily_data' => [], 'total_users' => 0, 'total_visits' => 0];
+            }
+
+            $gaResp = Http::timeout(10)->withToken($token)->post("https://analyticsdata.googleapis.com/v1beta/properties/{$propertyId}:runReport", [
+                'dateRanges' => [['startDate' => $start, 'endDate' => $end]],
+                'metrics' => [
+                    ['name' => 'screenPageViews'],
+                    ['name' => 'activeUsers'],
+                ],
+                'dimensions' => [['name' => 'date']],
+            ]);
+
+            if (!$gaResp->successful()) {
+                return ['connected' => false, 'daily_data' => [], 'total_users' => 0, 'total_visits' => 0];
+            }
+
+            $rows = $gaResp->json('rows', []);
+            $dailyData = [];
+            $totalViews = 0;
+            $totalUsers = 0;
+
+            foreach ($rows as $r) {
+                $rawDate = $r['dimensionValues'][0]['value'] ?? ''; // YYYYMMDD
+                $day = (int)substr($rawDate, 6, 2);
+                $views = (int)($r['metricValues'][0]['value'] ?? 0);
+                $users = (int)($r['metricValues'][1]['value'] ?? 0);
+
+                $dailyData[$day] = [
+                    'users' => $users,
+                    'visits' => $views,
+                ];
+
+                $totalViews += $views;
+                $totalUsers += $users;
+            }
+
+            return [
+                'connected' => true,
+                'daily_data' => $dailyData,
+                'total_users' => $totalUsers,
+                'total_visits' => $totalViews,
+            ];
+        } catch (Exception $e) {
+            Log::warning("GA4 fetch error: " . $e->getMessage());
+            return ['connected' => false, 'daily_data' => [], 'total_users' => 0, 'total_visits' => 0];
+        }
     }
 }
 
