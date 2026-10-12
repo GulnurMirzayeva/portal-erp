@@ -39,47 +39,49 @@ class CrmTrafficController extends Controller
             ->get()
             ->keyBy('day');
 
-        // 2. Veb-sayt göstəriciləri üçün Portal Website / GA4 API
+        // 2. Veb-sayt göstəriciləri
         $forceRefresh = $request->boolean('refresh');
         if ($forceRefresh) {
             \Illuminate\Support\Facades\Cache::forget("ga4_traffic_{$filterMonth}");
+            \Illuminate\Support\Facades\Cache::forget("website_registered_users_{$filterMonth}");
         }
 
+        // 2.1. Saytdan qeydiyyatdan keçən istifadəçilər (Portal Veb-sayt API / DB)
+        $registeredUsersData = $portalService->getWebsiteRegisteredUsers($filterMonth);
+        $regDailyData = $registeredUsersData['daily_data'] ?? [];
+
+        // 2.2. Sayta daxilolmalar / ziyarətlər (Google Analytics GA4 API)
         $apiTraffic = $portalService->getWebsiteTraffic($filterMonth);
-        $apiConnected = $apiTraffic['connected'] ?? false;
-        $apiDailyData = $apiTraffic['daily_data'] ?? [];
+        $gaDailyData = $apiTraffic['daily_data'] ?? [];
 
-        // 3. Əgər API/GA4-dən canlı datalar gəlibsə, ERP verilənlər bazasında avtomatik saxlayırıq/yeniləyirik
-        if (!empty($apiDailyData)) {
-            foreach ($apiDailyData as $day => $trafficValues) {
-                $dayNum = (int)$day;
-                if ($dayNum < 1 || $dayNum > $daysInMonth) {
-                    continue;
-                }
+        // 3. Əgər canlı datalar gəlibsə, ERP verilənlər bazasında avtomatik saxlayırıq/yeniləyirik
+        for ($d = 1; $d <= $daysInMonth; $d++) {
+            $regUserCount = isset($regDailyData[$d]) ? (int)$regDailyData[$d] : null;
+            $gaVisitCount = isset($gaDailyData[$d]['visits']) ? (int)$gaDailyData[$d]['visits'] : null;
 
-                $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $dayNum);
-                $usersCount = (int)($trafficValues['users'] ?? 0);
-                $visitsCount = (int)($trafficValues['visits'] ?? 0);
+            if ($regUserCount !== null || $gaVisitCount !== null) {
+                $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $d);
+                $rec = $existingRecords->get($d);
 
-                if ($usersCount > 0 || $visitsCount > 0) {
-                    $rec = $existingRecords->get($dayNum);
-                    if ($rec) {
-                        if ($rec->website_users != $usersCount || $rec->website_visits != $visitsCount) {
-                            $rec->website_users = $usersCount;
-                            $rec->website_visits = $visitsCount;
-                            $rec->save();
-                        }
-                    } else {
-                        $newRec = CrmTrafficStatistic::create([
-                            'date' => $dateStr,
-                            'year' => $year,
-                            'month' => $month,
-                            'day' => $dayNum,
-                            'website_users' => $usersCount,
-                            'website_visits' => $visitsCount,
-                        ]);
-                        $existingRecords->put($dayNum, $newRec);
+                $uCount = $regUserCount ?? ($rec ? (int)$rec->website_users : 0);
+                $vCount = $gaVisitCount ?? ($rec ? (int)$rec->website_visits : 0);
+
+                if ($rec) {
+                    if ($rec->website_users != $uCount || $rec->website_visits != $vCount) {
+                        $rec->website_users = $uCount;
+                        $rec->website_visits = $vCount;
+                        $rec->save();
                     }
+                } else if ($uCount > 0 || $vCount > 0) {
+                    $newRec = CrmTrafficStatistic::create([
+                        'date' => $dateStr,
+                        'year' => $year,
+                        'month' => $month,
+                        'day' => $d,
+                        'website_users' => $uCount,
+                        'website_visits' => $vCount,
+                    ]);
+                    $existingRecords->put($d, $newRec);
                 }
             }
         }
@@ -90,17 +92,14 @@ class CrmTrafficController extends Controller
             $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $d);
             $rec = $existingRecords->get($d);
 
-            $apiUsers = $apiDailyData[$d]['users'] ?? null;
-            $apiVisits = $apiDailyData[$d]['visits'] ?? null;
-
             $instMsg = $rec ? (int)$rec->instagram_messages : 0;
             $instNew = $rec ? (int)$rec->instagram_followers_new : 0;
             $instLost = $rec ? (int)$rec->instagram_followers_lost : 0;
             $instNet = $rec ? (int)$rec->instagram_followers_net : ($instNew - $instLost);
             $calls = $rec ? (int)$rec->calls : 0;
             $tiktok = $rec ? (int)$rec->tiktok_followers_net : 0;
-            $webUsers = $apiUsers !== null ? (int)$apiUsers : ($rec ? (int)$rec->website_users : 0);
-            $webVisits = $apiVisits !== null ? (int)$apiVisits : ($rec ? (int)$rec->website_visits : 0);
+            $webUsers = isset($regDailyData[$d]) ? (int)$regDailyData[$d] : ($rec ? (int)$rec->website_users : 0);
+            $webVisits = isset($gaDailyData[$d]['visits']) ? (int)$gaDailyData[$d]['visits'] : ($rec ? (int)$rec->website_visits : 0);
 
             $dailyRows[$d] = [
                 'day' => $d,
@@ -145,6 +144,7 @@ class CrmTrafficController extends Controller
             'website_visits' => array_column($dailyRows, 'website_visits'),
         ];
 
+        $apiConnected = ($registeredUsersData['connected'] ?? false) || ($apiTraffic['connected'] ?? false);
         $canEdit = auth()->check() && auth()->user()->can('crm.edit');
 
         return view('crm.traffic.index', [

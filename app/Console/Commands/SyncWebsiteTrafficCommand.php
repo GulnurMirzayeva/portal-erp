@@ -60,43 +60,40 @@ class SyncWebsiteTrafficCommand extends Command
             $month = (int)$month;
             $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
 
+            $regData = $portalService->getWebsiteRegisteredUsers($ym);
+            $regDaily = $regData['daily_data'] ?? [];
+
             $traffic = $portalService->getWebsiteTraffic($ym);
+            $gaDaily = $traffic['daily_data'] ?? [];
 
-            if (!($traffic['connected'] ?? false)) {
-                $this->warn("{$ym} üçün GA4 bağlantısı uğursuz oldu və ya data tapılmadı.");
-                continue;
-            }
-
-            $dailyData = $traffic['daily_data'] ?? [];
             $updatedCount = 0;
 
-            foreach ($dailyData as $day => $metrics) {
-                $dayNum = (int)$day;
-                if ($dayNum < 1 || $dayNum > $daysInMonth) {
-                    continue;
-                }
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $d);
+                $users = isset($regDaily[$d]) ? (int)$regDaily[$d] : null;
+                $visits = isset($gaDaily[$d]['visits']) ? (int)$gaDaily[$d]['visits'] : null;
 
-                $dateStr = sprintf('%04d-%02d-%02d', $year, $month, $dayNum);
-                $users = (int)($metrics['users'] ?? 0);
-                $visits = (int)($metrics['visits'] ?? 0);
+                if ($users !== null || $visits !== null) {
+                    $rec = CrmTrafficStatistic::firstOrNew(['date' => $dateStr]);
+                    $rec->year = $year;
+                    $rec->month = $month;
+                    $rec->day = $d;
 
-                if ($users > 0 || $visits > 0) {
-                    CrmTrafficStatistic::updateOrCreate(
-                        ['date' => $dateStr],
-                        [
-                            'year' => $year,
-                            'month' => $month,
-                            'day' => $dayNum,
-                            'website_users' => $users,
-                            'website_visits' => $visits,
-                        ]
-                    );
+                    if ($users !== null) {
+                        $rec->website_users = $users;
+                    }
+                    if ($visits !== null) {
+                        $rec->website_visits = $visits;
+                    }
+                    $rec->save();
                     $updatedCount++;
                 }
             }
 
-            $this->info("{$ym} üçün {$updatedCount} günün statistikası ERP bazasında saxlanıldı. Ümumi istifadəçi: " . ($traffic['total_users'] ?? 0) . ", Ümumi ziyarət: " . ($traffic['total_visits'] ?? 0));
-            Log::info("Traffic GA4 sync completed for {$ym}: {$updatedCount} days updated.");
+            $totalReg = $regData['total'] ?? 0;
+            $totalVisits = $traffic['total_visits'] ?? 0;
+            $this->info("{$ym} üçün {$updatedCount} günün statistikası ERP bazasında saxlanıldı. Qeydiyyatlar: {$totalReg}, Ziyarətlər (GA4): {$totalVisits}");
+            Log::info("Traffic sync completed for {$ym}: {$updatedCount} days updated (Reg: {$totalReg}, Visits: {$totalVisits}).");
         }
 
         $this->info("Sinxronizasiya uğurla tamamlandı!");

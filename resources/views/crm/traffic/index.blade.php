@@ -467,14 +467,14 @@
             <div id="chartTikTok" class="traffic-chart-container"></div>
         </div>
 
-        {{-- 5. SAYT İSTİFADƏÇİLƏRİ (UNİKAL) --}}
+        {{-- 5. SAYTDA QEYDİYYATDAN KEÇƏNLƏR (PORTAL Veb-sayt API) --}}
         <div class="traffic-chart-card">
             <div class="traffic-card-header">
                 <div>
-                    <h6 class="traffic-card-title">Sayt istifadəçiləri</h6>
-                    <p class="traffic-card-sub" id="headerTotalWebUsers">Ümumi istifadəçi sayı: {{ number_format($totals['website_users']) }}</p>
+                    <h6 class="traffic-card-title">Sayt istifadəçiləri (Qeydiyyat)</h6>
+                    <p class="traffic-card-sub" id="headerTotalWebUsers">Ümumi qeydiyyat sayı: {{ number_format($totals['website_users']) }}</p>
                 </div>
-                <span class="traffic-card-badge badge-api">Google Analytics API</span>
+                <span class="traffic-card-badge badge-api" style="background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe;">Portal Veb-sayt</span>
             </div>
             <div id="chartWebsiteUsers" class="traffic-chart-container"></div>
         </div>
@@ -501,7 +501,7 @@
             <div>
                 <h6 class="font-size-16 fw-bold text-dark m-0">📅 {{ $periodDisplay }} — Gündəlik Göstəricilərin Qeydiyyatı</h6>
                 <p class="text-muted font-size-12 m-0 mt-1">
-                    Cədvəldə istədiyiniz ayı seçib məlumatları doldura bilərsiniz. Sayt göstəriciləri avtomatik Google Analytics-dən gəlir.
+                    Cədvəldə istədiyiniz ayı seçib məlumatları doldura bilərsiniz. Sayt qeydiyyatları və ziyarətlər avtomatik yenilənir.
                 </p>
             </div>
             <div class="d-flex align-items-center gap-2 flex-wrap">
@@ -542,8 +542,8 @@
                         <th style="min-width: 110px;" title="İnstaqram Xalis Artım (Yeni - Çıxan)">İNSTAQRAM NET</th>
                         <th style="min-width: 100px;" title="Daxil Olan Zənglər">ZƏNGLƏR</th>
                         <th style="min-width: 110px;" title="TikTok Xalis İzləyici Dəyişimi">TİKTOK İZLƏYİCİ</th>
-                        <th style="min-width: 125px;" title="Sayt Unikal İstifadəçiləri (Google Analytics / Avtomatik)">
-                            SAYT İSTİFADƏÇİ
+                        <th style="min-width: 130px;" title="Saytdan qeydiyyatdan keçən yeni istifadəçilər (Portal API / Avtomatik)">
+                            SAYTDA QEYDİYYAT
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle ms-1" style="font-size: 9.5px; font-weight: 700;">AVTO</span>
                         </th>
                         <th style="min-width: 125px;" title="Sayta Daxilolmalar / Ziyarətlər (Google Analytics / Avtomatik)">
@@ -602,10 +602,10 @@
                                 oninput="markRowDirty(this)"
                                 onblur="onCellBlur(this)">{{ $row['tiktok_followers_net'] }}</td>
 
-                            {{-- 5. Website Users (Google Analytics / Avtomatik - Qeyri-redaktə) --}}
+                            {{-- 5. Website Registered Users (Portal Veb-sayt / Avtomatik - Qeyri-redaktə) --}}
                             <td class="excel-cell-auto"
                                 data-field="website_users"
-                                title="Google Analytics-dən avtomatik gəlir və bazada saxlanılır">
+                                title="Saytdan qeydiyyatdan keçənlərin sayı (Portal API-dən avtomatik gəlir)">
                                 <span class="badge-auto-val">{{ $row['website_users'] ? number_format($row['website_users']) : '0' }}</span>
                             </td>
 
@@ -761,10 +761,10 @@ let chartTikTok = new ApexCharts(
 );
 chartTikTok.render();
 
-// 5. Website Users Chart
+// 5. Website Registered Users Chart
 let chartWebUsers = new ApexCharts(
     document.querySelector("#chartWebsiteUsers"),
-    createLineChartOptions('İstifadəçi sayı', @json($chartData['website_users']), '#3b82f6')
+    createLineChartOptions('Qeydiyyat sayı', @json($chartData['website_users']), '#3b82f6')
 );
 chartWebUsers.render();
 
@@ -861,7 +861,7 @@ function recalcAllTotals() {
         'Yeni: ' + totalNew.toLocaleString() + ' • Çıxan: ' + totalLost.toLocaleString() + ' • Xalis: ' + (totalNet > 0 ? '+' : '') + totalNet.toLocaleString();
     document.getElementById('headerTotalCalls').innerText = 'Ümumi zəng sayı: ' + totalCalls.toLocaleString();
     document.getElementById('headerTotalTiktok').innerText = 'Xalis izləyici dəyişimi: ' + (totalTiktok > 0 ? '+' : '') + totalTiktok.toLocaleString();
-    document.getElementById('headerTotalWebUsers').innerText = 'Ümumi istifadəçi sayı: ' + totalWebUsers.toLocaleString();
+    document.getElementById('headerTotalWebUsers').innerText = 'Ümumi qeydiyyat sayı: ' + totalWebUsers.toLocaleString();
     document.getElementById('headerTotalWebVisits').innerText = 'Daxilolmaların ümumi sayı: ' + totalWebVisits.toLocaleString();
 
     // Live update charts

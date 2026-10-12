@@ -804,6 +804,92 @@ class PortalWebsiteService
     }
 
     /**
+     * Veb-saytdan qeydiyyatdan keçən istifadəçilərin sayını (Portal API və ya DB) əldə edir.
+     */
+    public function getWebsiteRegisteredUsers(string $month): array
+    {
+        $cacheKey = "website_registered_users_{$month}";
+        if ($cached = \Illuminate\Support\Facades\Cache::get($cacheKey)) {
+            if (!empty($cached['connected']) && !empty($cached['daily_data'])) {
+                return $cached;
+            }
+        }
+
+        // 1. Portal Website canlı API vasitəsilə çəkirik
+        $urlsToTry = array_values(array_unique(array_filter([
+            $this->baseUrl,
+            'https://portal.land',
+        ])));
+
+        foreach ($urlsToTry as $url) {
+            try {
+                $response = Http::timeout(8)
+                    ->withHeaders([
+                        'X-ERP-API-KEY' => $this->apiToken,
+                        'Accept' => 'application/json',
+                    ])
+                    ->get("{$url}/api/erp/registered-users", ['month' => $month]);
+
+                if ($response->successful()) {
+                    $data = $response->json();
+                    if (isset($data['daily_data'])) {
+                        $res = [
+                            'connected' => true,
+                            'total' => (int)($data['total'] ?? 0),
+                            'daily_data' => $data['daily_data'] ?? [],
+                        ];
+                        \Illuminate\Support\Facades\Cache::put($cacheKey, $res, 1800);
+                        return $res;
+                    }
+                }
+            } catch (Exception $e) {
+                Log::warning("PortalWebsite registered users API error ({$url}): " . $e->getMessage());
+            }
+        }
+
+        // 2. Direct DB fallback
+        try {
+            $date = Carbon::parse($month . '-01');
+            $start = $date->copy()->startOfMonth()->format('Y-m-d 00:00:00');
+            $end = $date->copy()->endOfMonth()->format('Y-m-d 23:59:59');
+
+            $users = DB::connection('portal_website')->table('users')
+                ->whereBetween('created_at', [$start, $end])
+                ->selectRaw('DAY(created_at) as day, count(*) as count')
+                ->groupBy('day')
+                ->pluck('count', 'day')
+                ->toArray();
+
+            $daysInMonth = $date->daysInMonth;
+            $dailyData = [];
+            $total = 0;
+            for ($d = 1; $d <= $daysInMonth; $d++) {
+                $cnt = (int)($users[$d] ?? 0);
+                $dailyData[$d] = $cnt;
+                $total += $cnt;
+            }
+
+            if ($total > 0) {
+                $res = [
+                    'connected' => true,
+                    'total' => $total,
+                    'daily_data' => $dailyData,
+                ];
+                \Illuminate\Support\Facades\Cache::put($cacheKey, $res, 1800);
+                return $res;
+            }
+        } catch (Exception $e) {
+            Log::warning("Direct DB registered users query failed: " . $e->getMessage());
+        }
+
+        return [
+            'connected' => false,
+            'total' => 0,
+            'daily_data' => [],
+        ];
+    }
+
+    /**
      * Google Analytics (GA4) API vasitəsilə birbaşa aylıq trafik və istifadəçiləri əldə edir.
      */
     protected function fetchFromGoogleAnalytics(string $month): array
