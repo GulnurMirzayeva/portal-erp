@@ -572,7 +572,7 @@
             </div>
         </div>
 
-        {{-- Card 2: Cash vs Terminal Breakdown (Clean & Spacious, No Duplicated Text) --}}
+        {{-- Card 2: Cash vs Nağdsız Breakdown (Clean & Spacious, No Duplicated Text) --}}
         <div class="kpi-soft-card">
             <div>
                 <div class="kpi-soft-header">
@@ -587,7 +587,7 @@
 
                 <div class="d-flex align-items-center justify-content-between mb-1">
                     <div>
-                        <span class="font-size-11 text-muted d-block font-weight-600">KART ({{ $kpi['card_percent'] }}%)</span>
+                        <span class="font-size-11 text-muted d-block font-weight-600">NAĞDSIZ ({{ $kpi['card_percent'] }}%)</span>
                         <span class="font-size-15 font-weight-800 text-info">{{ number_format($kpi['total_card'], 2) }} ₼</span>
                     </div>
                     <div class="text-end">
@@ -598,23 +598,23 @@
 
                 <div class="soft-ratio-wrap">
                     <div class="soft-ratio-bar">
-                        <div class="soft-ratio-card" style="width: {{ $kpi['card_percent'] }}%;" title="Terminal: {{ $kpi['card_percent'] }}%"></div>
+                        <div class="soft-ratio-card" style="width: {{ $kpi['card_percent'] }}%;" title="Nağdsız: {{ $kpi['card_percent'] }}%"></div>
                         <div class="soft-ratio-cash" style="width: {{ $kpi['cash_percent'] }}%;" title="Nağd: {{ $kpi['cash_percent'] }}%"></div>
                     </div>
                 </div>
             </div>
 
             <div class="kpi-soft-footer justify-content-between">
-                <span class="soft-pill" style="background: #f0f9ff; color: #0284c7;">Terminal: {{ number_format($kpi['total_card'], 0) }} ₼</span>
+                <span class="soft-pill" style="background: #f0f9ff; color: #0284c7;">Nağdsız: {{ number_format($kpi['total_card'], 0) }} ₼</span>
                 <span class="soft-pill" style="background: #fffbeb; color: #d97706;">Nağd: {{ number_format($kpi['total_cash'], 0) }} ₼</span>
             </div>
         </div>
 
-        {{-- Card 3: Total Reservations --}}
+        {{-- Card 3: Total Teams (Komandalar) --}}
         <div class="kpi-soft-card">
             <div>
                 <div class="kpi-soft-header">
-                    <p class="kpi-soft-label">Rezervasiyalar</p>
+                    <p class="kpi-soft-label">Komandalar</p>
                     <div class="kpi-soft-icon" style="background: #f5f3ff; color: #7c3aed;">
                         <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                             <rect width="18" height="18" x="3" y="4" rx="2" ry="2"></rect>
@@ -625,12 +625,12 @@
                     </div>
                 </div>
                 <div class="kpi-soft-val text-dark">
-                    {{ number_format($kpi['total_sales']) }} <span class="font-size-16 font-weight-600 text-muted">rezervasiya</span>
+                    {{ number_format($kpi['total_sales']) }} <span class="font-size-16 font-weight-600 text-muted">komanda</span>
                 </div>
             </div>
             <div class="kpi-soft-footer">
-                <span class="badge bg-light text-dark border font-size-11">Orta Rezervasiya: {{ number_format($kpi['avg_ticket'], 2) }} ₼</span>
-                <span>bir oyun üzrə</span>
+                <span class="badge bg-light text-dark border font-size-11">Orta Komanda: {{ number_format($kpi['avg_ticket'], 2) }} ₼</span>
+                <span>1 komanda üzrə</span>
             </div>
         </div>
 
@@ -662,9 +662,9 @@
             </div>
             <div class="kpi-soft-footer">
                 @if($topBranch && $topBranch['sales_count'] > 0)
-                    <span>{{ $topBranch['sales_count'] }} rezervasiya &bull; {{ number_format($topBranch['players']) }} oyunçu</span>
+                    <span>{{ $topBranch['sales_count'] }} komanda &bull; {{ number_format($topBranch['players']) }} oyunçu</span>
                 @else
-                    <span>Dövr üzrə rezervasiya yoxdur</span>
+                    <span>Dövr üzrə komanda yoxdur</span>
                 @endif
             </div>
         </div>
@@ -682,7 +682,7 @@
                                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                                 <polyline points="17 6 23 6 23 12"></polyline>
                             </svg>
-                            Gəlir və Rezervasiya Dinamikası (Günlər üzrə)
+                            Gəlir və Komanda Dinamikası (Günlər üzrə)
                         </h4>
                         <p class="text-muted font-size-12 mb-0 mt-1">
                             {{ $selectedMonthName }} ayı üzrə gündəlik ümumi gəlir, kart və nağd ödənişlərin axını
@@ -693,7 +693,7 @@
                         <div class="text-end d-none d-md-block">
                             <span class="font-size-11 text-muted d-block">Pik Gün: <strong>{{ $dailyTrend['peak_day']['day'] }} {{ $selectedMonthName }}</strong></span>
                             <span class="badge bg-soft-success text-success font-size-11 font-weight-700">
-                                {{ number_format($dailyTrend['peak_day']['revenue'], 2) }} ₼ ({{ $dailyTrend['peak_day']['sales_count'] }} rezervasiya)
+                                {{ number_format($dailyTrend['peak_day']['revenue'], 2) }} ₼ ({{ $dailyTrend['peak_day']['sales_count'] }} komanda)
                             </span>
                         </div>
                     @endif
@@ -758,13 +758,13 @@
                             <tr>
                                 <th style="width: 60px;" class="text-center">№</th>
                                 <th>Filial</th>
-                                <th class="text-center">Rezervasiyalar</th>
+                                <th class="text-center">Komandalar</th>
                                 <th class="text-center">Oyunçular</th>
                                 <th class="text-end">Nağd</th>
-                                <th class="text-end">Terminal (Kart)</th>
+                                <th class="text-end">Nağdsız</th>
                                 <th class="text-end">Cəmi Gəlir</th>
                                 <th style="width: 150px;">Gəlir Payı</th>
-                                <th class="text-end">Orta Rezervasiya</th>
+                                <th class="text-end">Orta Komanda</th>
                                 <th class="text-center" style="width: 100px;">Qaimə</th>
                             </tr>
                         </thead>
@@ -799,7 +799,7 @@
                                         </div>
                                     </td>
 
-                                    {{-- Reservations Count --}}
+                                    {{-- Teams Count --}}
                                     <td class="text-center font-weight-700">
                                         {{ number_format($bs['sales_count']) }}
                                     </td>
@@ -834,7 +834,7 @@
                                         </div>
                                     </td>
 
-                                    {{-- Average Ticket (1 rezervasiyadan orta gəlir) --}}
+                                    {{-- Average Ticket (1 komandadan orta gəlir) --}}
                                     <td class="text-end font-weight-600 text-muted">
                                         {{ number_format($bs['avg_price'], 2) }} ₼
                                     </td>
@@ -850,7 +850,7 @@
                             @empty
                                 <tr>
                                     <td colspan="10" class="text-center py-4 text-muted">
-                                        Bu dövr üzrə filial rezervasiyası tapılmadı.
+                                        Bu dövr üzrə filial komandası tapılmadı.
                                     </td>
                                 </tr>
                             @endforelse
@@ -906,7 +906,7 @@
                                 <div class="d-flex align-items-center justify-content-between mb-2 gap-2">
                                     <div class="d-flex align-items-center gap-2">
                                         <span class="pm-dot pm-dot-blue"></span>
-                                        <span class="pm-type-name">Terminal</span>
+                                        <span class="pm-type-name">Nağdsız</span>
                                     </div>
                                     <span class="pm-rate-pill pm-pill-blue">{{ $kpi['card_percent'] }}%</span>
                                 </div>
@@ -947,7 +947,7 @@
                             </svg>
                             Ən Çox Gəlir Gətirən TOP 5 Oyun
                         </h4>
-                        <p class="text-muted font-size-12 mb-0 mt-1">Gəlir və rezervasiya sayına görə ən aktiv oyunlar</p>
+                        <p class="text-muted font-size-12 mb-0 mt-1">Gəlir və komanda sayına görə ən aktiv oyunlar</p>
                     </div>
                 </div>
                 <div class="soft-box-body">
@@ -976,7 +976,7 @@
                                     <div>
                                         <h6 class="game-clean-name">{{ $game['name'] }}</h6>
                                         <div class="game-clean-sub">
-                                            <span>{{ number_format($game['sales_count']) }} rezervasiya</span>
+                                            <span>{{ number_format($game['sales_count']) }} komanda</span>
                                             <span class="game-dot">&bull;</span>
                                             <span>{{ number_format($game['players']) }} oyunçu</span>
                                         </div>
@@ -1025,7 +1025,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 data: dailyRevenue
             },
             {
-                name: 'Terminal / Kart (₼)',
+                name: 'Nağdsız (₼)',
                 data: dailyCard
             },
             {
@@ -1191,7 +1191,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const donutOptions = {
         series: (cashVal === 0 && cardVal === 0) ? [1] : [cardVal, cashVal],
-        labels: (cashVal === 0 && cardVal === 0) ? ['Məlumat yoxdur'] : ['Terminal (Kart)', 'Nağd'],
+        labels: (cashVal === 0 && cardVal === 0) ? ['Məlumat yoxdur'] : ['Nağdsız', 'Nağd'],
         chart: {
             type: 'donut',
             height: 210,
