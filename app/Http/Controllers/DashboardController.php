@@ -74,12 +74,6 @@ class DashboardController extends Controller
         // 8. Filiallar üzrə Müqayisəli Analitika (Cədvəl və Reytinq Qrafiki üçün)
         $branchStats = $this->aggregateBranchStats($sales, $branches, $kpi['total_revenue']);
 
-        // 9. Günlük Gəlir Dinamikası (Area Chart üçün)
-        $dailyTrend = $this->calculateDailyTrend($sales, $filterMonth);
-
-        // 10. Ən çox gəlir gətirən TOP Oyunlar
-        $topGames = $this->aggregateTopGames($sales, 5);
-
         // Seçilmiş ayın və filialın adları
         $selectedMonthName = $this->getMonthDisplayName($filterMonth, $availableMonths);
         $selectedBranchName = 'Bütün Filiallar';
@@ -91,6 +85,19 @@ class DashboardController extends Controller
                 }
             }
         }
+
+        // 9. Günlük Komanda Sayı Dinamikası (3 Dövrün Müqayisəsi: Cari ay, Ötən ay, Keçən ilin eyni ayı)
+        $dailyTrend = $this->calculateDailyTrend(
+            $portalService,
+            $sales,
+            $filterMonth,
+            $filterBranch,
+            $availableMonths,
+            $forceRefresh
+        );
+
+        // 10. Ən çox gəlir gətirən TOP Oyunlar
+        $topGames = $this->aggregateTopGames($sales, 5);
 
         return view('dashboard.index', [
             'filterMonth' => $filterMonth,
@@ -315,76 +322,125 @@ class DashboardController extends Controller
     }
 
     /**
-     * Seçilmiş ay üzrə günlər ardıcıllığında gəlir və ödəniş trendini hesablayır.
+     * Günlük Komanda (Rezervasiya) Dinamikası — 3 dövrün müqayisəsi:
+     * 1. Cari / Seçilmiş ay
+     * 2. Ötən ay
+     * 3. Keçən ilin həmin ayı
      */
-    private function calculateDailyTrend(array $sales, string $filterMonth): array
-    {
+    private function calculateDailyTrend(
+        PortalWebsiteService $portalService,
+        array $sales,
+        string $filterMonth,
+        ?string $filterBranch,
+        array $availableMonths,
+        bool $forceRefresh = false
+    ): array {
         $startDate = Carbon::parse($filterMonth . '-01');
         $daysInMonth = $startDate->daysInMonth;
 
-        // Ayın hər günü üçün sıfır struktur yaradırıq
-        $daysData = [];
-        for ($d = 1; $d <= $daysInMonth; $d++) {
-            $dayKey = sprintf('%02d', $d);
-            $daysData[$dayKey] = [
-                'day' => $dayKey,
-                'date_label' => $dayKey . '.' . $startDate->format('m'),
-                'revenue' => 0.0,
-                'cash' => 0.0,
-                'card' => 0.0,
-                'sales_count' => 0,
-            ];
-        }
+        $prevYm = $startDate->copy()->subMonth()->format('Y-m');
+        $lastYearYm = $startDate->copy()->subYear()->format('Y-m');
 
+        $prevMonthName = $this->getMonthDisplayName($prevYm, $availableMonths);
+        $lastYearMonthName = $this->getMonthDisplayName($lastYearYm, $availableMonths);
+
+        // 1. Cari / Seçilmiş ayın günbəgün komanda sayı
+        $currentCounts = array_fill(1, $daysInMonth, 0);
         foreach ($sales as $s) {
-            $dateStr = $s['date'] ?? '';
-            $day = null;
-
-            if (preg_match('/^(\d{2})\.(\d{2})\.(\d{4})$/', $dateStr, $matches)) {
-                $day = $matches[1];
-            } elseif (preg_match('/^\d{4}-\d{2}-(\d{2})$/', $dateStr, $matches)) {
-                $day = $matches[1];
-            }
-
-            if ($day && isset($daysData[$day])) {
-                $cash = (float)($s['cash_amount'] ?? 0);
-                $card = (float)($s['card_amount'] ?? 0);
-                $total = (float)($s['total_price'] ?? ($cash + $card));
-
-                $daysData[$day]['revenue'] += $total;
-                $daysData[$day]['cash'] += $cash;
-                $daysData[$day]['card'] += $card;
-                $daysData[$day]['sales_count']++;
+            $day = $this->extractDayFromSale($s);
+            if ($day && $day >= 1 && $day <= $daysInMonth) {
+                $currentCounts[$day]++;
             }
         }
 
-        $categories = [];
-        $revenueSeries = [];
-        $cashSeries = [];
-        $cardSeries = [];
+        // 2. Ötən ayın günbəgün komanda sayı (keşləmə ilə)
+        $prevCacheKey = "portal_dashboard_report_{$prevYm}_" . ($filterBranch ?? 'all');
+        if ($forceRefresh) {
+            Cache::forget($prevCacheKey);
+        }
+        $prevReport = Cache::remember($prevCacheKey, 86400, function () use ($portalService, $prevYm, $filterBranch) {
+            return $portalService->getAccountingReport([
+                'month' => $prevYm,
+                'branch_id' => $filterBranch,
+            ]);
+        });
+        $prevSales = $this->applyLocalEdits($prevReport['sales'] ?? [], $prevYm, $filterBranch);
+        $prevCounts = array_fill(1, $daysInMonth, 0);
+        foreach ($prevSales as $s) {
+            $day = $this->extractDayFromSale($s);
+            if ($day && $day >= 1 && $day <= $daysInMonth) {
+                $prevCounts[$day]++;
+            }
+        }
+
+        // 3. Keçən ilin həmin ayının günbəgün komanda sayı (keşləmə ilə)
+        $lastYearCacheKey = "portal_dashboard_report_{$lastYearYm}_" . ($filterBranch ?? 'all');
+        if ($forceRefresh) {
+            Cache::forget($lastYearCacheKey);
+        }
+        $lastYearReport = Cache::remember($lastYearCacheKey, 86400, function () use ($portalService, $lastYearYm, $filterBranch) {
+            return $portalService->getAccountingReport([
+                'month' => $lastYearYm,
+                'branch_id' => $filterBranch,
+            ]);
+        });
+        $lastYearSales = $this->applyLocalEdits($lastYearReport['sales'] ?? [], $lastYearYm, $filterBranch);
+        $lastYearCounts = array_fill(1, $daysInMonth, 0);
+        foreach ($lastYearSales as $s) {
+            $day = $this->extractDayFromSale($s);
+            if ($day && $day >= 1 && $day <= $daysInMonth) {
+                $lastYearCounts[$day]++;
+            }
+        }
+
+        // Cari ay üçün pik gün
         $peakDay = null;
-        $maxRevenue = -1;
-
-        foreach ($daysData as $item) {
-            $categories[] = $item['day'];
-            $revenueSeries[] = round($item['revenue'], 2);
-            $cashSeries[] = round($item['cash'], 2);
-            $cardSeries[] = round($item['card'], 2);
-
-            if ($item['revenue'] > $maxRevenue && $item['revenue'] > 0) {
-                $maxRevenue = $item['revenue'];
-                $peakDay = $item;
+        $maxCount = -1;
+        foreach ($currentCounts as $d => $cnt) {
+            if ($cnt > $maxCount && $cnt > 0) {
+                $maxCount = $cnt;
+                $peakDay = [
+                    'day' => sprintf('%02d', $d),
+                    'count' => $cnt,
+                ];
             }
         }
+
+        $categories = array_map(fn($d) => sprintf('%02d', $d), range(1, $daysInMonth));
 
         return [
             'categories' => $categories,
-            'revenue_series' => $revenueSeries,
-            'cash_series' => $cashSeries,
-            'card_series' => $cardSeries,
+            'current_series' => array_values($currentCounts),
+            'prev_series' => array_values($prevCounts),
+            'last_year_series' => array_values($lastYearCounts),
             'peak_day' => $peakDay,
             'total_days' => $daysInMonth,
+            'prev_month_name' => $prevMonthName,
+            'last_year_month_name' => $lastYearMonthName,
+            'totals' => [
+                'current' => array_sum($currentCounts),
+                'prev' => array_sum($prevCounts),
+                'last_year' => array_sum($lastYearCounts),
+            ],
         ];
+    }
+
+    /**
+     * Qeydin tarixindən gün nömrəsini çıxarır.
+     */
+    private function extractDayFromSale(array $s): ?int
+    {
+        $dateStr = $s['date'] ?? '';
+        if (preg_match('/^(\d{1,2})\./', $dateStr, $m)) {
+            return (int)$m[1];
+        }
+        if (preg_match('/^\d{4}-\d{2}-(\d{1,2})/', $dateStr, $m)) {
+            return (int)$m[1];
+        }
+        if (preg_match('/^(\d{1,2})-/', $dateStr, $m)) {
+            return (int)$m[1];
+        }
+        return null;
     }
 
     /**

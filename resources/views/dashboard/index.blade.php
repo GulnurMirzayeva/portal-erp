@@ -672,7 +672,7 @@
 
     {{-- MAIN ANALYTICS ROW: REVENUE TREND + BRANCH COMPARISON CHART --}}
     <div class="row">
-        {{-- Left: Daily Revenue Dynamics (Area Chart) --}}
+        {{-- Left: Daily Reservations / Teams 3-Period Dynamics (Area Chart) --}}
         <div class="col-xl-8">
             <div class="soft-box">
                 <div class="soft-box-header">
@@ -682,10 +682,10 @@
                                 <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
                                 <polyline points="17 6 23 6 23 12"></polyline>
                             </svg>
-                            Gəlir və Komanda Dinamikası (Günlər üzrə)
+                            Komanda Dinamikası (3 Dövrün Müqayisəsi)
                         </h4>
                         <p class="text-muted font-size-12 mb-0 mt-1">
-                            {{ $selectedMonthName }} ayı üzrə gündəlik ümumi gəlir, kart və nağd ödənişlərin axını
+                            {{ $selectedMonthName }}, {{ $dailyTrend['prev_month_name'] }} və {{ $dailyTrend['last_year_month_name'] }} üzrə gündəlik komanda sayının müqayisəsi
                         </p>
                     </div>
 
@@ -693,7 +693,7 @@
                         <div class="text-end d-none d-md-block">
                             <span class="font-size-11 text-muted d-block">Pik Gün: <strong>{{ $dailyTrend['peak_day']['day'] }} {{ $selectedMonthName }}</strong></span>
                             <span class="badge bg-soft-success text-success font-size-11 font-weight-700">
-                                {{ number_format($dailyTrend['peak_day']['revenue'], 2) }} ₼ ({{ $dailyTrend['peak_day']['sales_count'] }} komanda)
+                                {{ $dailyTrend['peak_day']['count'] }} komanda
                             </span>
                         </div>
                     @endif
@@ -1012,25 +1012,25 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
 
-    // 1. Günlük Gəlir Dinamikası (Area Chart)
+    // 1. Günlük Komanda Sayı Dinamikası (3 Xətli Müqayisə: Cari ay, Ötən ay, Keçən ilin eyni ayı)
     const dailyCategories = @json($dailyTrend['categories']);
-    const dailyRevenue = @json($dailyTrend['revenue_series']);
-    const dailyCash = @json($dailyTrend['cash_series']);
-    const dailyCard = @json($dailyTrend['card_series']);
+    const currentSeries = @json($dailyTrend['current_series']);
+    const prevSeries = @json($dailyTrend['prev_series']);
+    const lastYearSeries = @json($dailyTrend['last_year_series']);
 
     const dailyChartOptions = {
         series: [
             {
-                name: 'Cəmi Gəlir (₼)',
-                data: dailyRevenue
+                name: 'Cari Ay ({{ $selectedMonthName }})',
+                data: currentSeries
             },
             {
-                name: 'Nağdsız (₼)',
-                data: dailyCard
+                name: 'Ötən Ay ({{ $dailyTrend['prev_month_name'] }})',
+                data: prevSeries
             },
             {
-                name: 'Nağd (₼)',
-                data: dailyCash
+                name: 'Keçən İl ({{ $dailyTrend['last_year_month_name'] }})',
+                data: lastYearSeries
             }
         ],
         chart: {
@@ -1050,7 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         stroke: {
             curve: 'smooth',
-            width: [3, 2, 2]
+            width: [3, 2.5, 2]
         },
         fill: {
             type: 'gradient',
@@ -1077,7 +1077,7 @@ document.addEventListener('DOMContentLoaded', () => {
             labels: {
                 style: { colors: '#64748b', fontSize: '11px' },
                 formatter: function (val) {
-                    return val >= 1000 ? (val / 1000).toFixed(1) + 'k ₼' : val.toFixed(0) + ' ₼';
+                    return Math.round(val);
                 }
             }
         },
@@ -1086,7 +1086,7 @@ document.addEventListener('DOMContentLoaded', () => {
             intersect: false,
             y: {
                 formatter: function (val) {
-                    return Number(val).toLocaleString('az-AZ', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' ₼';
+                    return Math.round(val) + ' komanda';
                 }
             }
         },
