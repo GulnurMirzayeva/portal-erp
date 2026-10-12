@@ -68,8 +68,8 @@ class DashboardController extends Controller
         // 6. Əsas KPI və Ümumi Göstəricilərin Hesablanması
         $kpi = $this->calculateKpi($sales);
 
-        // 7. Ötən ayla müqayisə (Faiz artımı / azalması)
-        $growth = $this->calculateMonthOverMonthGrowth($portalService, $filterMonth, $filterBranch, $kpi['total_revenue']);
+        // 7. Ötən ayla müqayisə (Faiz artımı / azalması - cari ayda həmin günə qədər olan dövr üzrə)
+        $growth = $this->calculateMonthOverMonthGrowth($portalService, $filterMonth, $filterBranch, $kpi['total_revenue'], $forceRefresh);
 
         // 8. Filiallar üzrə Müqayisəli Analitika (Cədvəl və Reytinq Qrafiki üçün)
         $branchStats = $this->aggregateBranchStats($sales, $branches, $kpi['total_revenue']);
@@ -154,19 +154,54 @@ class DashboardController extends Controller
 
     /**
      * Ötən ayla müqayisədə artım/azalma faizini hesablayır.
+     * Əgər cari aydırsa, ötən ayın tam ayı ilə deyil, məhz həmin günə qədər olan dövrü (Month-to-Date) ilə müqayisə edir.
      */
-    private function calculateMonthOverMonthGrowth(PortalWebsiteService $portalService, string $filterMonth, ?string $filterBranch, float $currentRevenue): array
+    private function calculateMonthOverMonthGrowth(PortalWebsiteService $portalService, string $filterMonth, ?string $filterBranch, float $currentRevenue, bool $forceRefresh = false): array
     {
         try {
             $prevYm = Carbon::parse($filterMonth . '-01')->subMonth()->format('Y-m');
-            $cacheKey = "portal_summary_{$prevYm}_" . ($filterBranch ?? 'all');
+            $isCurrentMonth = ($filterMonth === Carbon::now()->format('Y-m'));
+            $dayLimit = $isCurrentMonth ? Carbon::now()->day : null;
 
-            $prevRevenue = Cache::remember($cacheKey, 86400, function () use ($portalService, $prevYm, $filterBranch) {
+            $dayKeyPart = $dayLimit ? "day_{$dayLimit}" : "full";
+            $cacheKey = "portal_mom_comparison_{$filterMonth}_{$dayKeyPart}_" . ($filterBranch ?? 'all');
+
+            if ($forceRefresh) {
+                Cache::forget($cacheKey);
+            }
+
+            $prevRevenue = Cache::remember($cacheKey, $isCurrentMonth ? 180 : 86400, function () use ($portalService, $prevYm, $filterBranch, $dayLimit) {
                 $prevReport = $portalService->getAccountingReport([
                     'month' => $prevYm,
                     'branch_id' => $filterBranch,
                 ]);
-                return (float)($prevReport['summary']['total_revenue'] ?? 0.0);
+
+                $prevSales = $prevReport['sales'] ?? [];
+                $prevSales = $this->applyLocalEdits($prevSales, $prevYm, $filterBranch);
+
+                if ($dayLimit === null) {
+                    return (float)($prevReport['summary']['total_revenue'] ?? 0.0);
+                }
+
+                // Cari ayda olduğumuz günə qədər (1-dən $dayLimit-ə qədər) olan gəliri hesablayırıq
+                $upToDayRevenue = 0.0;
+                foreach ($prevSales as $s) {
+                    $dateStr = $s['date'] ?? '';
+                    $day = null;
+                    if (preg_match('/^(\d{2})\./', $dateStr, $m)) {
+                        $day = (int)$m[1];
+                    } elseif (preg_match('/^\d{4}-\d{2}-(\d{2})/', $dateStr, $m)) {
+                        $day = (int)$m[1];
+                    }
+
+                    if ($day !== null && $day <= $dayLimit) {
+                        $cash = (float)($s['cash_amount'] ?? 0);
+                        $card = (float)($s['card_amount'] ?? 0);
+                        $upToDayRevenue += (float)($s['total_price'] ?? ($cash + $card));
+                    }
+                }
+
+                return $upToDayRevenue;
             });
 
             if ($prevRevenue > 0) {
@@ -176,8 +211,10 @@ class DashboardController extends Controller
                     'has_prev' => true,
                     'prev_revenue' => $prevRevenue,
                     'diff' => $diff,
-                    'percent' => $percent,
+                    'percent' => abs($percent),
+                    'raw_percent' => $percent,
                     'is_positive' => $diff >= 0,
+                    'day_limit' => $dayLimit,
                     'prev_month_label' => Carbon::parse($prevYm . '-01')->format('m.Y'),
                 ];
             }
@@ -190,7 +227,9 @@ class DashboardController extends Controller
             'prev_revenue' => 0.0,
             'diff' => 0.0,
             'percent' => 0.0,
+            'raw_percent' => 0.0,
             'is_positive' => true,
+            'day_limit' => null,
             'prev_month_label' => '',
         ];
     }

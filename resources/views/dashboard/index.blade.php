@@ -545,28 +545,27 @@
 
     {{-- TOP 4 EXECUTIVE KPI CARDS (ALL 4 SIDE-BY-SIDE ON DESKTOP, BALANCED GAP WHEN WRAPPED) --}}
     <div class="kpi-cards-grid">
-        {{-- Card 1: Total Revenue (Ümumi Dövriyyə) --}}
+        {{-- Card 1: Total Revenue (ÜMUMİ DÖVRİYYƏ) --}}
         <div class="kpi-soft-card">
             <div>
                 <div class="kpi-soft-header">
-                    <p class="kpi-soft-label">Ümumi Dövriyyə</p>
-                    <div class="kpi-soft-icon" style="background: #f0fdf4; color: #16a34a;">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                            <line x1="12" x2="12" y1="2" y2="22"></line>
-                            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
-                        </svg>
+                    <p class="kpi-soft-label" style="font-weight: 800; letter-spacing: 0.5px; color: #5a6a85;">ÜMUMİ DÖVRİYYƏ</p>
+                    <div class="kpi-soft-icon" style="background: #eefbf3; color: #16a34a; font-size: 24px; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                        $
                     </div>
                 </div>
-                <div class="kpi-soft-val text-success">
-                    {{ number_format($kpi['total_revenue'], 2) }} <span class="font-size-18 font-weight-600">₼</span>
+                <div class="kpi-soft-val" style="color: #047857;">
+                    {{ number_format($kpi['total_revenue'], 2) }} <span class="font-size-20 font-weight-700">₼</span>
                 </div>
             </div>
-            <div class="kpi-soft-footer">
+            <div class="kpi-soft-footer" style="gap: 8px;">
                 @if($growth['has_prev'])
                     <span class="soft-pill {{ $growth['is_positive'] ? 'soft-pill-success' : 'soft-pill-danger' }}">
-                        {{ $growth['is_positive'] ? '▲ +' : '▼ ' }}{{ $growth['percent'] }}%
+                        {{ $growth['is_positive'] ? '▲ +' : '▼ -' }}{{ $growth['percent'] }}%
                     </span>
-                    <span>ötən aya nəzərən ({{ number_format($growth['prev_revenue'], 0) }} ₼)</span>
+                    <span style="color: #64748b; font-size: 12.5px; font-weight: 500;" @if(!empty($growth['day_limit'])) title="Ötən ayın {{ $growth['day_limit'] }} tarixinə qədər: {{ number_format($growth['prev_revenue'], 2) }} ₼" @endif>
+                        ötən aya nəzərən ({{ number_format($growth['prev_revenue'], 0) }} ₼)
+                    </span>
                 @else
                     <span class="text-muted">Seçilmiş dövrün ümumi məbləği</span>
                 @endif
