@@ -455,6 +455,26 @@ class PortalWebsiteService
      */
     public function updateExpenses(array $expenses, $branchId, $month, array $deletedIds = []): array
     {
+        // Hər bir xərc üçün game_id mütləq təmin edilir (portal.land API-də Unknown column name xətasının qarşısını almaq üçün)
+        $branchGames = null;
+        foreach ($expenses as &$expItem) {
+            $gid = !empty($expItem['game_id']) && is_numeric($expItem['game_id']) ? (int)$expItem['game_id'] : null;
+            $gName = trim($expItem['game_name'] ?? '');
+            if (!$gid && !empty($gName) && $gName !== 'Ümumi') {
+                if ($branchGames === null) {
+                    $branchGames = $this->getBranchGames((int)$branchId);
+                }
+                foreach ($branchGames as $bg) {
+                    if (mb_strtolower(trim($bg['name'] ?? '')) === mb_strtolower($gName)) {
+                        $gid = (int)$bg['id'];
+                        break;
+                    }
+                }
+            }
+            $expItem['game_id'] = $gid;
+        }
+        unset($expItem);
+
         // 1. API cəhdi
         try {
             $response = Http::timeout(25)

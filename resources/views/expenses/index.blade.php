@@ -1192,6 +1192,7 @@
                         $imgCount = count($rImgs);
                     @endphp
                     <tr data-row-id="{{ $row['id'] ?? '' }}"
+                        data-game-id="{{ $row['game_id'] ?? '' }}"
                         data-created-at="{{ $row['created_at'] ?? '' }}"
                         data-updated-at="{{ $row['updated_at'] ?? '' }}"
                         data-raw-created-at="{{ $row['raw_created_at'] ?? '' }}"
@@ -1410,6 +1411,18 @@
                 if (currentDropdownCell) {
                     currentDropdownCell.innerText = name;
                     currentDropdownCell.classList.add('is-dirty');
+
+                    const field = currentDropdownCell.dataset.field;
+                    const tr = currentDropdownCell.closest('tr');
+                    if (tr && field === 'game_name') {
+                        if (name === 'Ümumi') {
+                            tr.setAttribute('data-game-id', '');
+                        } else {
+                            const found = BRANCH_GAMES.find(g => (typeof g === 'object' ? g.name : g) === name);
+                            tr.setAttribute('data-game-id', (found && found.id) ? found.id : '');
+                        }
+                    }
+
                     markDirty();
                     recalcRow(currentDropdownCell);
                 }
@@ -1652,6 +1665,7 @@
 
         const tr = document.createElement('tr');
         tr.setAttribute('data-row-id', '');
+        tr.setAttribute('data-game-id', '');
         tr.setAttribute('data-created-at', '');
         tr.setAttribute('data-updated-at', '');
         tr.setAttribute('data-images', '[]');
@@ -1803,7 +1817,11 @@
 
         rows.forEach((tr, idx) => {
             const rowId = tr.getAttribute('data-row-id') || '';
-            const rowObj = { id: rowId ? parseInt(rowId) : null };
+            const rowGameId = tr.getAttribute('data-game-id') || '';
+            const rowObj = { 
+                id: rowId ? parseInt(rowId) : null,
+                game_id: rowGameId && !isNaN(rowGameId) ? parseInt(rowGameId) : null
+            };
 
             // Şəkilləri oxuyuruq
             let rowImgs = [];
@@ -1827,6 +1845,14 @@
                     rowObj[field] = val;
                 }
             });
+
+            // game_id təminatı
+            if (!rowObj['game_id'] && rowObj['game_name'] && rowObj['game_name'] !== 'Ümumi') {
+                const foundGame = BRANCH_GAMES.find(g => (typeof g === 'object' ? g.name : g) === rowObj['game_name']);
+                if (foundGame && foundGame.id) {
+                    rowObj['game_id'] = parseInt(foundGame.id);
+                }
+            }
 
             // Tamamilə boş yeni sətirləri yoxlayırıq:
             const hasTitle = Boolean(rowObj['title'] && rowObj['title'].trim());
@@ -1898,6 +1924,7 @@
                         const savedExp = data.expenses[i];
                         if (savedExp) {
                             if (savedExp.id) tr.setAttribute('data-row-id', savedExp.id);
+                            if (savedExp.game_id) tr.setAttribute('data-game-id', savedExp.game_id);
                             if (savedExp.created_at) tr.setAttribute('data-created-at', savedExp.created_at);
                             if (savedExp.updated_at) tr.setAttribute('data-updated-at', savedExp.updated_at);
                         }

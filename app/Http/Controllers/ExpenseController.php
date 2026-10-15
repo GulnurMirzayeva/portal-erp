@@ -212,6 +212,11 @@ class ExpenseController extends Controller
         $expenses = $request->input('expenses', []);
         $deletedIds = $request->input('deleted_ids', []);
 
+        $branchGames = [];
+        try {
+            $branchGames = $portalService->getBranchGames((int)$branchId);
+        } catch (\Exception $e) {}
+
         // Şəkilləri və sahələri normallaşdırırıq, tamamilə boş yeni sətirləri təmizləyirik
         $cleanedExpenses = [];
         foreach ($expenses as $idx => $row) {
@@ -225,6 +230,19 @@ class ExpenseController extends Controller
             if (!$id && empty($title) && empty($note) && $cash == 0.0 && $card == 0.0) {
                 continue;
             }
+
+            // game_id təminatı
+            $gameId = !empty($row['game_id']) && is_numeric($row['game_id']) ? (int)$row['game_id'] : null;
+            $gameName = trim($row['game_name'] ?? '');
+            if (!$gameId && !empty($gameName) && $gameName !== 'Ümumi') {
+                foreach ($branchGames as $bg) {
+                    if (mb_strtolower(trim($bg['name'] ?? '')) === mb_strtolower($gameName)) {
+                        $gameId = (int)$bg['id'];
+                        break;
+                    }
+                }
+            }
+            $row['game_id'] = $gameId;
 
             $rowImgs = $row['images'] ?? [];
             if (is_string($rowImgs)) {
