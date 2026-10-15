@@ -15,6 +15,8 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AccountingController extends Controller
@@ -302,9 +304,9 @@ class AccountingController extends Controller
 
 
     /**
-     * Filialın qaiməsini peşəkar Microsoft Excel (.xlsx) formatında ixrac edir.
+     * Filialın qaiməsini peşəkar Microsoft Excel (.xlsx) formatında ixrac edir (Windows və Mac üçün 100% uyğun).
      */
-    public function export(Request $request, PortalWebsiteService $portalService): StreamedResponse
+    public function export(Request $request, PortalWebsiteService $portalService): Response
     {
         $filterMonth = $request->query('month', Carbon::now()->format('Y-m'));
         $filterBranch = $request->query('branch_id');
@@ -382,66 +384,94 @@ class AccountingController extends Controller
             $sales = $liveSales;
         }
 
-        // CSV ixrac
+        // CSV ixrac (Windows Excel və Mac üçün 100% uyğun)
         if ($format === 'csv') {
-            $fileName = "elektron_qaime_{$branchSlug}_{$filterMonth}.csv";
-            return response()->stream(function () use ($sales) {
-                $handle = fopen('php://output', 'w');
-                fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
-                fputcsv($handle, [
-                    '№', 'Tarix', 'Oyun', 'Saat', 'Say', 'Qiymət', 'Nağd', 'Terminal', 'Qeyd / Endirim',
-                    'Resepşn', 'Say', '00:00', 'Hostes', 'Say', '00:00', 'Aktyor 1', 'Say', '00:00',
-                    'Aktyor 2', 'Say', '00:00', 'Operator', 'Say', '00:00', 'PlusBir Aktyor', 'Say',
-                    'PlusBir Resepşn', 'Say', 'Müştəri', 'Telefon', 'Qeyd', 'Ümumi Gəlir'
-                ], ';');
+            $fallbackFileName = "elektron_qaime_{$branchSlug}_{$filterMonth}.csv";
+            $utf8FileName = "elektron_qaime_{$branchLabel}_{$filterMonth}.csv";
 
-                foreach ($sales as $r) {
-                    fputcsv($handle, [
-                        $r['row_number'] ?? '',
-                        $r['date'] ?? '',
-                        $r['game_name'] ?? '',
-                        $r['time'] ?? '',
-                        $r['player_count'] ?? '',
-                        $r['price_per_person'] ?? '',
-                        $r['cash_amount'] ?? '0.00',
-                        $r['card_amount'] ?? '0.00',
-                        $r['discount_note'] ?? '',
-                        $r['receptionist_name'] ?? '',
-                        $r['receptionist_count'] ?? '',
-                        $r['receptionist_bonus_00'] ?? '',
-                        $r['hostess_name'] ?? '',
-                        $r['hostess_count'] ?? '',
-                        $r['hostess_bonus_00'] ?? '',
-                        $r['actor1_name'] ?? '',
-                        $r['actor1_count'] ?? '',
-                        $r['actor1_bonus_00'] ?? '',
-                        $r['actor2_name'] ?? '',
-                        $r['actor2_count'] ?? '',
-                        $r['actor2_bonus_00'] ?? '',
-                        $r['operator_name'] ?? '',
-                        $r['operator_count'] ?? '',
-                        $r['operator_bonus_00'] ?? '',
-                        $r['plus_one_actor'] ?? '',
-                        $r['plus_one_actor_count'] ?? '',
-                        $r['plus_one_receptionist'] ?? '',
-                        $r['plus_one_receptionist_count'] ?? '',
-                        $r['customer_name'] ?? '',
-                        $r['customer_phone'] ?? '',
-                        $r['note'] ?? '',
-                        $r['total_price'] ?? '0.00',
-                    ], ';');
-                }
-                fclose($handle);
-            }, 200, [
+            if (ob_get_level() > 0 && ob_get_length() > 0) {
+                @ob_clean();
+            }
+
+            $tempCsv = tempnam(sys_get_temp_dir(), 'erp_csv_');
+            $handle = fopen($tempCsv, 'w');
+
+            // UTF-8 BOM (Windows Excel üçün mütləqdir ki, Azərbaycan şriftlərini düzgün göstərsin)
+            fprintf($handle, chr(0xEF) . chr(0xBB) . chr(0xBF));
+
+            // Windows Excel-ə sütun ayırıcısını bildirir ki bütün sətri A sütununa yığmasın
+            fwrite($handle, "sep=;\r\n");
+
+            fputcsv($handle, [
+                '№', 'Tarix', 'Oyun', 'Saat', 'Say', 'Qiymət', 'Nağd', 'Terminal', 'Qeyd / Endirim',
+                'Resepşn', 'Say', '00:00', 'Hostes', 'Say', '00:00', 'Aktyor 1', 'Say', '00:00',
+                'Aktyor 2', 'Say', '00:00', 'Operator', 'Say', '00:00', 'PlusBir Aktyor', 'Say',
+                'PlusBir Resepşn', 'Say', 'Müştəri', 'Telefon', 'Qeyd', 'Ümumi Gəlir'
+            ], ';', '"', "\\");
+
+            foreach ($sales as $r) {
+                fputcsv($handle, [
+                    $r['row_number'] ?? '',
+                    $r['date'] ?? '',
+                    $r['game_name'] ?? '',
+                    $r['time'] ?? '',
+                    $r['player_count'] ?? '',
+                    $r['price_per_person'] ?? '',
+                    $r['cash_amount'] ?? '0.00',
+                    $r['card_amount'] ?? '0.00',
+                    $r['discount_note'] ?? '',
+                    $r['receptionist_name'] ?? '',
+                    $r['receptionist_count'] ?? '',
+                    $r['receptionist_bonus_00'] ?? '',
+                    $r['hostess_name'] ?? '',
+                    $r['hostess_count'] ?? '',
+                    $r['hostess_bonus_00'] ?? '',
+                    $r['actor1_name'] ?? '',
+                    $r['actor1_count'] ?? '',
+                    $r['actor1_bonus_00'] ?? '',
+                    $r['actor2_name'] ?? '',
+                    $r['actor2_count'] ?? '',
+                    $r['actor2_bonus_00'] ?? '',
+                    $r['operator_name'] ?? '',
+                    $r['operator_count'] ?? '',
+                    $r['operator_bonus_00'] ?? '',
+                    $r['plus_one_actor'] ?? '',
+                    $r['plus_one_actor_count'] ?? '',
+                    $r['plus_one_receptionist'] ?? '',
+                    $r['plus_one_receptionist_count'] ?? '',
+                    $r['customer_name'] ?? '',
+                    $r['customer_phone'] ?? '',
+                    $r['note'] ?? '',
+                    $r['total_price'] ?? '0.00',
+                ], ';', '"', "\\");
+            }
+            fclose($handle);
+
+            $disposition = HeaderUtils::makeDisposition(
+                HeaderUtils::DISPOSITION_ATTACHMENT,
+                $utf8FileName,
+                $fallbackFileName
+            );
+
+            return response()->download($tempCsv, $fallbackFileName, [
                 'Content-Type' => 'text/csv; charset=UTF-8',
-                'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
-            ]);
+                'Content-Disposition' => $disposition,
+                'Cache-Control' => 'max-age=0, must-revalidate',
+                'Pragma' => 'public',
+            ])->deleteFileAfterSend(true);
         }
 
         // Standart Microsoft Excel (.xlsx) generasiyası
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle(mb_substr($branchLabel, 0, 31));
+
+        // Vərəq adını təmizləyirik (Windows Excel-də qadağan olunmuş simvolları: \ / ? * : [ ] təmizləyirik)
+        $cleanSheetTitle = preg_replace('/[\\\\\/*?:\[\]]/', '', $branchLabel);
+        $cleanSheetTitle = mb_substr(trim($cleanSheetTitle), 0, 31);
+        if (empty($cleanSheetTitle)) {
+            $cleanSheetTitle = 'Qaime';
+        }
+        $sheet->setTitle($cleanSheetTitle);
 
         // Grid lines aktiv edirik
         $sheet->setShowGridLines(true);
@@ -591,11 +621,11 @@ class AccountingController extends Controller
             $sheet->setCellValue('AE' . $rowNum, $r['note'] ?? '');
             $sheet->setCellValue('AF' . $rowNum, $total);
 
-            // Qiymət və məbləğ formatları
-            $sheet->getStyle('F' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00 "₼"');
-            $sheet->getStyle('G' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00 "₼"');
-            $sheet->getStyle('H' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00 "₼"');
-            $sheet->getStyle('AF' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00 "₼"');
+            // Qiymət və məbləğ formatları (Windows və Mac Excel-in bütün versiyaları ilə 100% uyğun standart format)
+            $sheet->getStyle('F' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->getStyle('G' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->getStyle('H' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->getStyle('AF' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00');
 
             // Alignment
             $sheet->getStyle('A' . $rowNum . ':D' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
@@ -649,9 +679,9 @@ class AccountingController extends Controller
             $sheet->setCellValue('AF' . $totalRow, 0);
         }
 
-        $sheet->getStyle('G' . $totalRow)->getNumberFormat()->setFormatCode('#,##0.00 "₼"');
-        $sheet->getStyle('H' . $totalRow)->getNumberFormat()->setFormatCode('#,##0.00 "₼"');
-        $sheet->getStyle('AF' . $totalRow)->getNumberFormat()->setFormatCode('#,##0.00 "₼"');
+        $sheet->getStyle('G' . $totalRow)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->getStyle('H' . $totalRow)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->getStyle('AF' . $totalRow)->getNumberFormat()->setFormatCode('#,##0.00');
 
         $sheet->getStyle('A' . $totalRow . ':AF' . $totalRow)->getFont()->setBold(true)->setSize(11);
         $sheet->getStyle('A' . $totalRow . ':AF' . $totalRow)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D4EDDA'); // Light green total
@@ -679,17 +709,35 @@ class AccountingController extends Controller
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
-        $fileName = "elektron_qaime_{$branchSlug}_{$filterMonth}.xlsx";
-        $headers = [
-            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
-            'Cache-Control' => 'max-age=0',
-        ];
+        // Windows və Mac üçün ikili təhlükəsiz adlandırma:
+        $asciiBranch = Str::slug($branchLabel, '_');
+        if (empty($asciiBranch)) {
+            $asciiBranch = 'Butun_Filiallar';
+        }
+        $fallbackFileName = "elektron_qaime_{$asciiBranch}_{$filterMonth}.xlsx";
+        $utf8FileName = "elektron_qaime_{$cleanSheetTitle}_{$filterMonth}.xlsx";
 
-        return response()->stream(function () use ($spreadsheet) {
-            $writer = new Xlsx($spreadsheet);
-            $writer->save('php://output');
-        }, 200, $headers);
+        if (ob_get_level() > 0 && ob_get_length() > 0) {
+            @ob_clean();
+        }
+
+        // Diskdə müvəqqəti fayla yazırıq (Zip stream-in yarımçıq qalmaması və Content-Length təminatı üçün)
+        $tempPath = tempnam(sys_get_temp_dir(), 'erp_acc_');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempPath);
+
+        $disposition = HeaderUtils::makeDisposition(
+            HeaderUtils::DISPOSITION_ATTACHMENT,
+            $utf8FileName,
+            $fallbackFileName
+        );
+
+        return response()->download($tempPath, $fallbackFileName, [
+            'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'Content-Disposition' => $disposition,
+            'Cache-Control' => 'max-age=0, must-revalidate',
+            'Pragma' => 'public',
+        ])->deleteFileAfterSend(true);
     }
 
     /**

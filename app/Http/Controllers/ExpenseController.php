@@ -10,12 +10,15 @@ use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Style\NumberFormat;
+use Symfony\Component\HttpFoundation\HeaderUtils;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ExpenseController extends Controller
@@ -493,9 +496,9 @@ class ExpenseController extends Controller
     }
 
     /**
-     * Excel (.xlsx) faylı kimi ixrac et
+     * Excel (.xlsx) faylı kimi ixrac et (Windows və Mac üçün 100% uyğun)
      */
-    public function export(Request $request, PortalWebsiteService $portalService): StreamedResponse
+    public function export(Request $request, PortalWebsiteService $portalService): Response
     {
         $filterMonth = $request->query('month', Carbon::now()->format('Y-m'));
         $filterBranch = $request->query('branch_id');
@@ -530,7 +533,14 @@ class ExpenseController extends Controller
 
         $spreadsheet = new Spreadsheet();
         $sheet = $spreadsheet->getActiveSheet();
-        $sheet->setTitle(mb_substr($selectedBranchName, 0, 31));
+
+        // Vərəq adını təmizləyirik (Windows Excel-də qadağan olunmuş simvolları: \ / ? * : [ ] təmizləyirik)
+        $cleanSheetTitle = preg_replace('/[\\\\\/*?:\[\]]/', '', $selectedBranchName);
+        $cleanSheetTitle = mb_substr(trim($cleanSheetTitle), 0, 31);
+        if (empty($cleanSheetTitle)) {
+            $cleanSheetTitle = 'Xercler';
+        }
+        $sheet->setTitle($cleanSheetTitle);
 
         // 1-ci sətir: Yaşıl Banner (A1:I1)
         // Sol/Mərkəz: Xərclər Sahil | Sağ: ₼17 535,33
@@ -602,7 +612,6 @@ class ExpenseController extends Controller
         foreach ($expenses as $idx => $row) {
             $cash = (float)($row['amount_cash'] ?? 0);
             $card = (float)($row['amount_card'] ?? 0);
-            $total = $cash + $card;
 
             $sheet->setCellValue("A{$rowNum}", $idx + 1);
             $sheet->setCellValue("B{$rowNum}", $row['date'] ?? '');
@@ -644,10 +653,18 @@ class ExpenseController extends Controller
         $totalRow = $rowNum;
         $sheet->mergeCells("A{$totalRow}:E{$totalRow}");
         $sheet->setCellValue("A{$totalRow}", 'YEKUN CƏMİ:');
-        $sheet->setCellValue("F{$totalRow}", "=SUM(F3:F" . ($totalRow - 1) . ")");
-        $sheet->setCellValue("G{$totalRow}", "=SUM(G3:G" . ($totalRow - 1) . ")");
-        $sheet->setCellValue("H{$totalRow}", '');
-        $sheet->setCellValue("I{$totalRow}", "=SUM(I3:I" . ($totalRow - 1) . ")");
+
+        if ($totalRow > 3) {
+            $sheet->setCellValue("F{$totalRow}", "=SUM(F3:F" . ($totalRow - 1) . ")");
+            $sheet->setCellValue("G{$totalRow}", "=SUM(G3:G" . ($totalRow - 1) . ")");
+            $sheet->setCellValue("H{$totalRow}", '');
+            $sheet->setCellValue("I{$totalRow}", "=SUM(I3:I" . ($totalRow - 1) . ")");
+        } else {
+            $sheet->setCellValue("F{$totalRow}", 0);
+            $sheet->setCellValue("G{$totalRow}", 0);
+            $sheet->setCellValue("H{$totalRow}", '');
+            $sheet->setCellValue("I{$totalRow}", 0);
+        }
 
         $sheet->getStyle("A{$totalRow}:I{$totalRow}")->applyFromArray([
             'font' => ['bold' => true],
@@ -680,16 +697,37 @@ class ExpenseController extends Controller
             $sheet->getColumnDimension($col)->setWidth($w);
         }
 
-        $fileName = "Xercler_{$selectedBranchName}_{$filterMonth}.xlsx";
+        // Windows və Mac üçün ikili təhlükəsiz adlandırma:
+        // ASCII adı Windows fayl sistemləri və Edge/Chrome üçün 100% zəmanətli (.xlsx uzantısı itmir)
+        $branchAscii = Str::slug($selectedBranchName, '_');
+        if (empty($branchAscii)) {
+            $branchAscii = 'Filial';
+        }
+        $fallbackFileName = "Xercler_{$branchAscii}_{$filterMonth}.xlsx";
+        $utf8FileName = "Xercler_{$cleanSheetTitle}_{$filterMonth}.xlsx";
 
-        return new StreamedResponse(function () use ($spreadsheet) {
-            $writer = new Xlsx($spreadsheet);
-            $writer->save('php://output');
-        }, 200, [
+        // Output buffer-də hər hansı təsadüfi boşluq/simvol olarsa təmizləyirik (fayl başına zibil düşməsin deyə)
+        if (ob_get_level() > 0 && ob_get_length() > 0) {
+            @ob_clean();
+        }
+
+        // Diskdə müvəqqəti fayla yazırıq (Zip stream-in yarımçıq qalmaması və Content-Length təminatı üçün)
+        $tempPath = tempnam(sys_get_temp_dir(), 'erp_exp_');
+        $writer = new Xlsx($spreadsheet);
+        $writer->save($tempPath);
+
+        $disposition = HeaderUtils::makeDisposition(
+            HeaderUtils::DISPOSITION_ATTACHMENT,
+            $utf8FileName,
+            $fallbackFileName
+        );
+
+        return response()->download($tempPath, $fallbackFileName, [
             'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'Content-Disposition' => "attachment; filename=\"{$fileName}\"",
-            'Cache-Control' => 'max-age=0',
-        ]);
+            'Content-Disposition' => $disposition,
+            'Cache-Control' => 'max-age=0, must-revalidate',
+            'Pragma' => 'public',
+        ])->deleteFileAfterSend(true);
     }
 
     /**
