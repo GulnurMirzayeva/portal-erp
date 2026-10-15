@@ -285,6 +285,56 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
 <style>
+    /* Expense Autocomplete / Selection Menu */
+    .expense-autocomplete-menu {
+        position: absolute;
+        z-index: 10060;
+        background: #ffffff;
+        border: 1px solid #107c41;
+        border-radius: 6px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.18);
+        max-height: 220px;
+        overflow-y: auto;
+        min-width: 170px;
+        display: none;
+        padding: 4px 0;
+        font-family: inherit;
+    }
+    .expense-autocomplete-item {
+        padding: 7px 12px;
+        font-size: 13px;
+        cursor: pointer;
+        color: #1e293b;
+        transition: background 0.12s ease;
+        border-bottom: 1px solid #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .expense-autocomplete-item:last-child {
+        border-bottom: none;
+    }
+    .expense-autocomplete-item:hover, .expense-autocomplete-item.active {
+        background: #ecfdf5;
+        color: #065f46;
+        font-weight: 600;
+    }
+    .dropdown-cell {
+        cursor: pointer;
+        position: relative;
+    }
+    .dropdown-cell:after {
+        content: ' ▾';
+        font-size: 10px;
+        color: #94a3b8;
+        float: right;
+        opacity: 0.6;
+    }
+    .dropdown-cell:hover:after {
+        opacity: 1;
+        color: #107c41;
+    }
+
     /* Excel Workbook Container */
     .excel-container {
         background: #ffffff;
@@ -1021,7 +1071,7 @@
     <div class="excel-ribbon-actions">
         @can('expenses.edit')
         {{-- Yadda Saxla Button --}}
-        <button type="button" class="excel-btn excel-btn-save" id="saveBtn" onclick="saveAllExpenses()">
+        <button type="button" class="excel-btn excel-btn-save" id="saveBtn">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                 <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
                 <polyline points="17 21 17 13 7 13 7 21"></polyline>
@@ -1031,7 +1081,7 @@
         </button>
 
         {{-- Sətir Əlavə Et Button --}}
-        <button type="button" class="excel-btn" id="addRowBtn" onclick="addNewRow()" title="Yeni xərc sətri əlavə et">
+        <button type="button" class="excel-btn" id="addRowBtn" title="Yeni xərc sətri əlavə et">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <line x1="12" y1="5" x2="12" y2="19"></line>
                 <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -1088,7 +1138,7 @@
                     <th>№</th>
                     <th>Tarix</th>
                     <th>Oyun</th>
-                    <th>Qeyd</th>
+                    <th>Qeyd (Xərcin adı)</th>
                     <th>Kim tərəfindən</th>
                     <th>Məbləğ nəğd</th>
                     <th>Məbləğ nəğdsiz</th>
@@ -1156,12 +1206,12 @@
                                 </svg>
                             </button>
                         </td>
-                        <td class="excel-cell align-left font-weight-600 text-primary" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="game_name" data-col="B">{{ $row['game_name'] ?? 'Ümumi' }}</td>
-                        <td class="excel-cell align-left font-weight-500" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="title" data-col="C">{{ $row['title'] ?? '' }}</td>
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="note" data-col="D">{{ $row['note'] ?? '' }}</td>
+                        <td class="excel-cell align-left font-weight-600 text-primary dropdown-cell" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="game_name" data-col="B" title="Oyunu seçin">{{ $row['game_name'] ?? 'Ümumi' }}</td>
+                        <td class="excel-cell align-left font-weight-500" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="title" data-col="C" title="Xərcin adı / Təyinatı">{{ $row['title'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="note" data-col="D" title="Kim tərəfindən / Əlavə qeyd">{{ $row['note'] ?? '' }}</td>
                         <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="amount_cash" data-col="E" oninput="recalcRow(this)">{{ $cash > 0 ? number_format($cash, 2, '.', '') : '0.00' }}</td>
                         <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="amount_card" data-col="F" oninput="recalcRow(this)">{{ $card > 0 ? number_format($card, 2, '.', '') : '0.00' }}</td>
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="classification" data-col="G">{{ $row['classification'] ?? '' }}</td>
+                        <td class="excel-cell align-left dropdown-cell" contenteditable="{{ $canEditExpenses ? 'true' : 'false' }}" data-field="classification" data-col="G" title="Təsnifatı seçin">{{ $row['classification'] ?? '' }}</td>
                         <td class="align-right fw-bold row-total-cell" style="background-color: #fafbfc;">{{ number_format($total, 2, '.', '') }}</td>
                         <td class="align-center images-cell" onclick="openRowImagesModal(this, event)">
                             @if($imgCount > 0)
@@ -1185,7 +1235,7 @@
                                     </svg>
                                 </button>
                                 @if($canDeleteExpenses)
-                                <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Sətri sil">
+                                <button type="button" class="del-row-btn" title="Sətri sil">
                                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                                         <polyline points="3 6 5 6 21 6"></polyline>
                                         <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -1301,6 +1351,9 @@
     </div>
 </div>
 
+{{-- Dinamik Autocomplete Açılan Menyu --}}
+<div id="expenseAutocompleteDropdown" class="expense-autocomplete-menu"></div>
+
 <script>
     const BRANCH_ID = "{{ $filterBranch }}";
     const MONTH = "{{ $filterMonth }}";
@@ -1310,30 +1363,110 @@
     let isDirty = false;
     let deletedIds = [];
     let activeCell = null;
+    let isSaving = false;
+    let isAddingRow = false;
+    let isDeleting = false;
+
+    // Autocomplete Menyu idarəetməsi
+    const dropdownMenu = document.getElementById('expenseAutocompleteDropdown');
+    let currentDropdownCell = null;
+
+    function showAutocomplete(cell, items) {
+        if (!dropdownMenu) return;
+        currentDropdownCell = cell;
+
+        renderDropdownItems(items, cell.innerText.trim());
+
+        const rect = cell.getBoundingClientRect();
+        dropdownMenu.style.top = (window.scrollY + rect.bottom + 2) + 'px';
+        dropdownMenu.style.left = (window.scrollX + rect.left) + 'px';
+        dropdownMenu.style.minWidth = Math.max(rect.width, 170) + 'px';
+        dropdownMenu.style.display = 'block';
+    }
+
+    function renderDropdownItems(items, filterText = '') {
+        if (!dropdownMenu) return;
+        dropdownMenu.innerHTML = '';
+
+        const cleanFilter = filterText.toLowerCase().trim();
+        const filtered = items.filter(it => {
+            const name = typeof it === 'object' ? it.name : it;
+            return cleanFilter === '' || name.toLowerCase().includes(cleanFilter);
+        });
+
+        if (filtered.length === 0) {
+            dropdownMenu.innerHTML = '<div style="padding: 8px 12px; font-size: 12px; color: #94a3b8; font-style: italic;">Nəticə tapılmadı</div>';
+            return;
+        }
+
+        filtered.forEach(item => {
+            const name = typeof item === 'object' ? item.name : item;
+            const div = document.createElement('div');
+            div.className = 'expense-autocomplete-item';
+            div.textContent = name;
+            div.addEventListener('mousedown', function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                if (currentDropdownCell) {
+                    currentDropdownCell.innerText = name;
+                    currentDropdownCell.classList.add('is-dirty');
+                    markDirty();
+                    recalcRow(currentDropdownCell);
+                }
+                hideAutocomplete();
+            });
+            dropdownMenu.appendChild(div);
+        });
+    }
+
+    function hideAutocomplete() {
+        if (dropdownMenu) {
+            dropdownMenu.style.display = 'none';
+        }
+        currentDropdownCell = null;
+    }
+
+    document.addEventListener('click', function (e) {
+        if (dropdownMenu && dropdownMenu.style.display === 'block') {
+            if (!dropdownMenu.contains(e.target) && e.target !== currentDropdownCell) {
+                hideAutocomplete();
+            }
+        }
+    });
 
     document.addEventListener('DOMContentLoaded', function () {
-        initCellEvents();
+        initCellEvents(document);
         initExcelTabs();
 
-        // Sətir silmə (event delegation)
+        // Sətir silmə (event delegation - TƏK BİR DƏFƏ İŞLƏYİR)
         const tableBody = document.getElementById('expensesTableBody');
         if (tableBody) {
             tableBody.addEventListener('click', function (e) {
                 const btn = e.target.closest('.del-row-btn');
-                if (btn) deleteRow(btn);
+                if (btn) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    deleteRow(btn);
+                }
             });
         }
 
-        // Add Row Button
+        // Add Row Button (Tək bir listener)
         const addRowBtn = document.getElementById('addRowBtn');
         if (addRowBtn) {
-            addRowBtn.addEventListener('click', addNewRow);
+            addRowBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                addNewRow();
+            });
         }
 
-        // Save Button
+        // Save Button (Tək bir listener)
         const saveBtn = document.getElementById('saveBtn');
         if (saveBtn) {
-            saveBtn.addEventListener('click', saveAllExpenses);
+            saveBtn.addEventListener('click', function (e) {
+                e.preventDefault();
+                saveAllExpenses();
+            });
         }
 
         // Klaviatura qısayolları: Ctrl+S (Yadda Saxla) və Escape (Modalı bağla)
@@ -1343,6 +1476,7 @@
                 saveAllExpenses();
             } else if (e.key === 'Escape') {
                 closeExpenseModal();
+                hideAutocomplete();
             }
         });
 
@@ -1366,22 +1500,43 @@
         });
     });
 
-    function initCellEvents() {
-        const cells = document.querySelectorAll('td.excel-cell');
+    function initCellEvents(container = document) {
+        const cells = container.querySelectorAll('td.excel-cell');
         cells.forEach(cell => {
+            if (cell.dataset.bound === '1') return;
+            cell.dataset.bound = '1';
+
             cell.addEventListener('focus', function () {
                 activeCell = this;
+                const field = this.dataset.field;
+                if (field === 'classification') {
+                    showAutocomplete(this, CLASSIFICATIONS);
+                } else if (field === 'game_name') {
+                    const games = ['Ümumi'].concat(BRANCH_GAMES.map(g => g.name || g));
+                    showAutocomplete(this, games);
+                } else {
+                    hideAutocomplete();
+                }
             });
 
             cell.addEventListener('input', function () {
                 this.classList.add('is-dirty');
                 markDirty();
+
+                const field = this.dataset.field;
+                if (field === 'classification') {
+                    renderDropdownItems(CLASSIFICATIONS, this.innerText.trim());
+                } else if (field === 'game_name') {
+                    const games = ['Ümumi'].concat(BRANCH_GAMES.map(g => g.name || g));
+                    renderDropdownItems(games, this.innerText.trim());
+                }
             });
 
             // Enter moves down, Tab moves right
             cell.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter') {
                     e.preventDefault();
+                    hideAutocomplete();
                     const tr = this.closest('tr');
                     const nextTr = tr.nextElementSibling;
                     if (nextTr && !nextTr.id) {
@@ -1390,6 +1545,8 @@
                             nextTr.children[cellIdx].focus();
                         }
                     }
+                } else if (e.key === 'Escape') {
+                    hideAutocomplete();
                 }
             });
         });
@@ -1411,6 +1568,7 @@
 
     function recalcRow(cell) {
         const tr = cell.closest('tr');
+        if (!tr) return;
         const cashCell = tr.querySelector('[data-field="amount_cash"]');
         const cardCell = tr.querySelector('[data-field="amount_card"]');
         const totalCell = tr.querySelector('.row-total-cell');
@@ -1477,6 +1635,10 @@
     }
 
     function addNewRow() {
+        if (isAddingRow) return;
+        isAddingRow = true;
+        setTimeout(() => { isAddingRow = false; }, 300);
+
         const tableBody = document.getElementById('expensesTableBody');
         const placeholder = document.getElementById('emptyRowPlaceholder');
         if (placeholder) placeholder.remove();
@@ -1504,12 +1666,12 @@
                     </svg>
                 </button>
             </td>
-            <td class="excel-cell align-left font-weight-600 text-primary is-dirty" contenteditable="true" data-field="game_name" data-col="B">Ümumi</td>
-            <td class="excel-cell align-left font-weight-500 is-dirty" contenteditable="true" data-field="title" data-col="C"></td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="note" data-col="D"></td>
+            <td class="excel-cell align-left font-weight-600 text-primary is-dirty dropdown-cell" contenteditable="true" data-field="game_name" data-col="B" title="Oyunu seçin">Ümumi</td>
+            <td class="excel-cell align-left font-weight-500 is-dirty" contenteditable="true" data-field="title" data-col="C" title="Xərcin adı / Təyinatı"></td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="note" data-col="D" title="Kim tərəfindən / Əlavə qeyd"></td>
             <td class="excel-cell align-right font-weight-600 is-dirty" contenteditable="true" data-field="amount_cash" data-col="E" oninput="recalcRow(this)">0.00</td>
             <td class="excel-cell align-right font-weight-600 is-dirty" contenteditable="true" data-field="amount_card" data-col="F" oninput="recalcRow(this)">0.00</td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="classification" data-col="G"></td>
+            <td class="excel-cell align-left is-dirty dropdown-cell" contenteditable="true" data-field="classification" data-col="G" title="Təsnifatı seçin"></td>
             <td class="align-right fw-bold row-total-cell is-dirty" style="background-color: #fafbfc;">0.00</td>
             <td class="align-center images-cell is-dirty" onclick="openRowImagesModal(this, event)">
                 <span class="badge-images no-images" title="Xərc üçün ən azı 1 şəkil əlavə edilməlidir!">
@@ -1525,7 +1687,7 @@
                             <polyline points="12 6 12 12 16 14"></polyline>
                         </svg>
                     </button>
-                    <button type="button" class="del-row-btn" onclick="deleteRow(this)" title="Sətri sil">
+                    <button type="button" class="del-row-btn" title="Sətri sil">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <polyline points="3 6 5 6 21 6"></polyline>
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
@@ -1536,24 +1698,30 @@
         `;
 
         tableBody.appendChild(tr);
-        initCellEvents();
+        initCellEvents(tr);
         markDirty();
         recalcTotals();
 
         const titleCell = tr.querySelector('[data-field="title"]');
-        if (titleCell) titleCell.focus();
+        if (titleCell) {
+            titleCell.focus();
+        }
     }
 
     function deleteRow(btn) {
+        if (isDeleting) return;
         const tr = btn.closest('tr');
         if (!tr) return;
+
+        const rowId = tr.getAttribute('data-row-id');
+        const isSavedInDb = rowId && !isNaN(rowId) && parseInt(rowId) > 0;
 
         if (!confirm('Bu xərc sətrini silmək istədiyinizdən əminsiniz?')) {
             return;
         }
 
-        const rowId = tr.getAttribute('data-row-id');
-        if (rowId && !isNaN(rowId) && parseInt(rowId) > 0) {
+        if (isSavedInDb) {
+            isDeleting = true;
             btn.disabled = true;
             btn.style.opacity = '0.4';
 
@@ -1568,6 +1736,7 @@
             })
             .then(res => res.json())
             .then(data => {
+                isDeleting = false;
                 if (data.success) {
                     tr.remove();
                     checkEmptyTableAfterDelete();
@@ -1580,6 +1749,7 @@
                 }
             })
             .catch(err => {
+                isDeleting = false;
                 alert('Silmə zamanı xəta baş verdi: ' + err.message);
                 btn.disabled = false;
                 btn.style.opacity = '1';
@@ -1590,6 +1760,7 @@
             checkEmptyTableAfterDelete();
             recalcTotals();
             markDirty();
+            showToast('✓ Sətir silindi.', '#107c41');
         }
     }
 
@@ -1607,9 +1778,11 @@
                                 <line x1="12" y1="16" x2="12.01" y2="16"></line>
                             </svg>
                             <p class="font-size-14 mb-1">Bu filial və ay üçün heç bir xərc qeydi tapılmadı.</p>
+                            @can('expenses.edit')
                             <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addNewRow()">
                                 ➕ İlk Sətri Əlavə Et
                             </button>
+                            @endcan
                         </div>
                     </td>
                 </tr>
@@ -1620,16 +1793,17 @@
     }
 
     function saveAllExpenses() {
+        if (isSaving) return;
+
+        hideAutocomplete();
+
         const rowsData = [];
         const rows = document.querySelectorAll('#expensesTableBody tr:not(#emptyRowPlaceholder)');
-
-        let hasImageError = false;
-        let firstMissingRow = null;
-        let firstMissingTr = null;
+        const emptyRowsToRemove = [];
 
         rows.forEach((tr, idx) => {
-            const rowObj = {};
-            rowObj['id'] = tr.getAttribute('data-row-id') || '';
+            const rowId = tr.getAttribute('data-row-id') || '';
+            const rowObj = { id: rowId ? parseInt(rowId) : null };
 
             // Şəkilləri oxuyuruq
             let rowImgs = [];
@@ -1638,8 +1812,7 @@
             } catch(e) {
                 rowImgs = [];
             }
-            if (!Array.isArray(rowImgs)) rowImgs = [];
-            rowObj['images'] = rowImgs;
+            rowObj['images'] = Array.isArray(rowImgs) ? rowImgs : [];
 
             tr.querySelectorAll('td.excel-cell').forEach(c => {
                 const field = c.dataset.field;
@@ -1654,13 +1827,34 @@
                     rowObj[field] = val;
                 }
             });
-            rowObj['row_num'] = idx + 1;
+
+            // Tamamilə boş yeni sətirləri yoxlayırıq:
+            const hasTitle = Boolean(rowObj['title'] && rowObj['title'].trim());
+            const hasNote = Boolean(rowObj['note'] && rowObj['note'].trim());
+            const hasCash = Boolean(rowObj['amount_cash'] && rowObj['amount_cash'] > 0);
+            const hasCard = Boolean(rowObj['amount_card'] && rowObj['amount_card'] > 0);
+
+            // Əgər bazada yoxdursa və istifadəçi heç nə yazmayıbsa (adı, qeydi yoxdur və məbləğ 0-dır):
+            if (!rowObj['id'] && !hasTitle && !hasNote && !hasCash && !hasCard) {
+                emptyRowsToRemove.push(tr);
+                return; // bu boş sətir serverə göndərilməsin!
+            }
+
+            rowObj['row_num'] = rowsData.length + 1;
             rowsData.push(rowObj);
         });
 
+        // İstifadəçinin boş buraxdığı yeni sətirləri cədvəldən təmizləyirik
+        if (emptyRowsToRemove.length > 0) {
+            emptyRowsToRemove.forEach(tr => tr.remove());
+            renumberRows();
+            checkEmptyTableAfterDelete();
+        }
+
         const saveBtn = document.getElementById('saveBtn');
-        saveBtn.disabled = true;
         const btnText = document.getElementById('saveBtnText');
+        isSaving = true;
+        if (saveBtn) saveBtn.disabled = true;
         if (btnText) btnText.textContent = 'Bazada yenilənir...';
 
         fetch("{{ route('expenses.save') }}", {
@@ -1679,24 +1873,25 @@
         })
         .then(res => res.json())
         .then(data => {
-            saveBtn.disabled = false;
+            isSaving = false;
+            if (saveBtn) saveBtn.disabled = false;
             if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S)';
 
             if (data.success) {
                 isDirty = false;
                 deletedIds = [];
-                saveBtn.classList.remove('has-changes');
+                if (saveBtn) saveBtn.classList.remove('has-changes');
 
                 const statusInd = document.getElementById('saveStatusIndicator');
                 if (statusInd) {
                     statusInd.className = 'badge bg-success text-white ms-2';
-                    statusInd.innerText = 'Bazada yeniləndi (' + data.saved_at + ')';
+                    statusInd.innerText = 'Bazada yeniləndi (' + (data.saved_at || 'indi') + ')';
                 }
 
                 // Remove dirty classes
                 document.querySelectorAll('.is-dirty').forEach(c => c.classList.remove('is-dirty'));
 
-                // Əgər yeni sətirlər əlavə edilibsə və ya qeydlər yenilənibsə, data atributlarını yeniləyirik
+                // Serverdən qayıdan qeydlərin ID-lərini sətirlərə mənimsədirik
                 if (Array.isArray(data.expenses)) {
                     const activeRows = document.querySelectorAll('#expensesTableBody tr:not(#emptyRowPlaceholder)');
                     activeRows.forEach((tr, i) => {
@@ -1715,7 +1910,8 @@
             }
         })
         .catch(err => {
-            saveBtn.disabled = false;
+            isSaving = false;
+            if (saveBtn) saveBtn.disabled = false;
             if (btnText) btnText.textContent = 'Yadda Saxla (Ctrl+S)';
             console.error('Save error:', err);
             showToast('Serverlə əlaqə xətası baş verdi.', '#dc3545');

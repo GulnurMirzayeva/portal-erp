@@ -134,22 +134,8 @@ class ExpenseController extends Controller
         }
 
         $connected = $report['connected'] ?? true;
-        if (!empty($report['expenses'])) {
-            $expenses = $report['expenses'];
-            $summary = $report['summary'] ?? $this->calculateSummary($expenses);
-            $hasCustomEdits = (bool)$savedRecord;
-            $lastSavedAt = $savedRecord && $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
-
-            if (empty($branchGames) && !empty($report['games'])) {
-                $branchGames = $report['games'];
-            }
-        } elseif ($savedRecord && is_array($savedRecord->expenses_data) && !empty($savedRecord->expenses_data)) {
-            // Əsas serverdə bu ay üçün xərc tapılmadıqda və ya hələ sinxronlaşmadıqda, yerli nüsxəni göstəririk
-            $expenses = $savedRecord->expenses_data;
-            $summary = $savedRecord->summary_data ?? $this->calculateSummary($expenses);
-            $hasCustomEdits = true;
-            $lastSavedAt = $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
-        } elseif ($connected) {
+        if ($connected) {
+            // Əgər PortalWebsite ilə canlı əlaqə varsa, əsas server tək həqiqət mənbəyidir!
             $expenses = $report['expenses'] ?? [];
             $summary = $report['summary'] ?? $this->calculateSummary($expenses);
             $hasCustomEdits = (bool)$savedRecord;
@@ -158,6 +144,31 @@ class ExpenseController extends Controller
             if (empty($branchGames) && !empty($report['games'])) {
                 $branchGames = $report['games'];
             }
+
+            // Yerli nüsxəni də canlı serverlə dərhal sinxronlaşdırırıq
+            if ($filterBranch && $filterBranch !== 'all') {
+                try {
+                    ExpenseRecord::updateOrCreate(
+                        [
+                            'branch_id' => (string)$filterBranch,
+                            'month' => $filterMonth,
+                        ],
+                        [
+                            'expenses_data' => $expenses,
+                            'summary_data' => $summary,
+                            'updated_by' => auth()->id() ?? 1,
+                        ]
+                    );
+                } catch (\Exception $e) {
+                    // ignore
+                }
+            }
+        } elseif ($savedRecord && is_array($savedRecord->expenses_data) && !empty($savedRecord->expenses_data)) {
+            // Yalnız PortalWebsite API-yə qoşulmaq mümkün olmadıqda yerli nüsxəni göstəririk
+            $expenses = $savedRecord->expenses_data;
+            $summary = $savedRecord->summary_data ?? $this->calculateSummary($expenses);
+            $hasCustomEdits = true;
+            $lastSavedAt = $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
         } else {
             $expenses = [];
             $summary = $this->calculateSummary($expenses);
@@ -165,7 +176,7 @@ class ExpenseController extends Controller
             $lastSavedAt = null;
         }
 
-        // created_at və updated_at vaxtlarını əsas bazadan zənginləşdiririk
+        // created_at və updated_at vaxtlarını zənginləşdiririk
         $expenses = $this->enrichExpensesWithTimestamps($expenses);
 
         return view('expenses.index', [
@@ -201,17 +212,28 @@ class ExpenseController extends Controller
         $expenses = $request->input('expenses', []);
         $deletedIds = $request->input('deleted_ids', []);
 
-        // Şəkilləri və sahələri normallaşdırırıq
-        foreach ($expenses as $idx => &$row) {
+        // Şəkilləri və sahələri normallaşdırırıq, tamamilə boş yeni sətirləri təmizləyirik
+        $cleanedExpenses = [];
+        foreach ($expenses as $idx => $row) {
+            $id = !empty($row['id']) && is_numeric($row['id']) ? (int)$row['id'] : null;
+            $title = trim($row['title'] ?? '');
+            $note = trim($row['note'] ?? '');
+            $cash = isset($row['amount_cash']) ? (float)$row['amount_cash'] : 0.0;
+            $card = isset($row['amount_card']) ? (float)$row['amount_card'] : 0.0;
+
+            // Əgər yeni sətirdirsə və istifadəçi heç nə yazmayıbsa (adı boş, qeydi boş və hər iki məbləğ 0), bazaya yazmırıq!
+            if (!$id && empty($title) && empty($note) && $cash == 0.0 && $card == 0.0) {
+                continue;
+            }
+
             $rowImgs = $row['images'] ?? [];
             if (is_string($rowImgs)) {
                 $rowImgs = json_decode($rowImgs, true) ?: [];
             }
             $row['images'] = is_array($rowImgs) ? array_values(array_filter($rowImgs)) : [];
 
-            $title = trim($row['title'] ?? '');
             if (empty($title)) {
-                $title = !empty(trim($row['note'] ?? '')) ? trim($row['note']) : 'Xərc';
+                $title = !empty($note) ? $note : 'Xərc';
             }
             $row['title'] = $title;
 
@@ -220,8 +242,10 @@ class ExpenseController extends Controller
                 $classification = 'Digər';
             }
             $row['classification'] = $classification;
+
+            $cleanedExpenses[] = $row;
         }
-        unset($row);
+        $expenses = $cleanedExpenses;
 
         $summary = $this->calculateSummary($expenses);
 
@@ -736,6 +760,9 @@ class ExpenseController extends Controller
     protected function enrichExpensesWithTimestamps(array $expenses): array
     {
         $ids = array_filter(array_map(function ($item) {
+            if (!empty($item['created_at'])) {
+                return null;
+            }
             return !empty($item['id']) && is_numeric($item['id']) ? (int)$item['id'] : null;
         }, $expenses));
 
@@ -754,11 +781,11 @@ class ExpenseController extends Controller
                 $id = !empty($item['id']) && is_numeric($item['id']) ? (int)$item['id'] : null;
                 if ($id && isset($records[$id])) {
                     $row = $records[$id];
-                    if (!empty($row->created_at)) {
+                    if (empty($item['created_at']) && !empty($row->created_at)) {
                         $item['created_at'] = Carbon::parse($row->created_at)->format('d.m.Y H:i:s');
                         $item['raw_created_at'] = (string)$row->created_at;
                     }
-                    if (!empty($row->updated_at)) {
+                    if (empty($item['updated_at']) && !empty($row->updated_at)) {
                         $item['updated_at'] = Carbon::parse($row->updated_at)->format('d.m.Y H:i:s');
                         $item['raw_updated_at'] = (string)$row->updated_at;
                     }
