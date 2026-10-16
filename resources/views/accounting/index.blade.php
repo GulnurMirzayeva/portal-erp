@@ -684,6 +684,29 @@
 
         {{-- Right Area: Pinned Summary Statistics (Never pushed off screen) --}}
         <div class="excel-sheets-summary">
+            {{-- Pinned Live Selection Statistics (Excel Status Bar) --}}
+            <div id="accountingSelectionBar" class="excel-selection-bar" style="display: none;">
+                <span class="sel-label">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg>
+                    <span id="selLabelText">Seçim:</span>
+                </span>
+                <span class="excel-stat-item" id="selCountWrap">
+                    <span class="text-muted font-size-11">Say:</span>
+                    <strong class="sel-val" id="selCountVal">0</strong>
+                </span>
+                <span class="excel-stat-divider" id="selAvgDivider">|</span>
+                <span class="excel-stat-item" id="selAvgWrap">
+                    <span class="text-muted font-size-11">Orta:</span>
+                    <strong class="sel-val" id="selAvgVal">0.00 ₼</strong>
+                </span>
+                <span class="excel-stat-divider" id="selSumDivider">|</span>
+                <span class="excel-stat-item" id="selSumWrap">
+                    <span class="text-muted font-size-11">Cəm:</span>
+                    <strong class="sel-sum" id="selSumVal">0.00 ₼</strong>
+                </span>
+                <button type="button" class="sel-clear" title="Seçimi təmizlə (Esc)">&times;</button>
+            </div>
+
             <span class="excel-stat-item">
                 <span class="text-muted">Sətir sayı:</span>
                 <strong id="rowCountDisplay">{{ count($sales) }}</strong>
@@ -706,6 +729,41 @@
     document.addEventListener('DOMContentLoaded', function () {
         initCellEvents();
         initExcelTabs();
+
+        // Excel-like Drag Selection & Live Calculation Engine
+        window.accountingRangeSelector = new ExcelRangeSelector({
+            table: 'accountingExcelTable',
+            tbody: 'excelBody',
+            wrapper: 'excelWrapper',
+            statusBar: 'accountingSelectionBar',
+            isNumericCell: function(cell) {
+                const field = cell.dataset.field;
+                if (!field || field === 'date' || field === 'time' || field === 'customer_phone' || 
+                    field === 'game_name' || field === 'note' || field === 'discount_note' || 
+                    field === 'customer_name' || cell.classList.contains('row-idx-header')) {
+                    return false;
+                }
+                if (field === 'cash_amount' || field === 'card_amount' || field === 'total_price' || 
+                    field === 'price_per_person' || field === 'player_count' || cell.classList.contains('total-price-cell')) {
+                    return true;
+                }
+                const text = cell.innerText.trim();
+                if (!text || /^\d{1,4}[.\/-]\d{1,2}[.\/-]\d{2,4}$/.test(text) || /^\d{1,2}:\d{2}$/.test(text)) return false;
+                return /^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(text.replace(/[₼AZN\s,]/g, ''));
+            },
+            getRowTotal: function(tr) {
+                const totCell = tr.querySelector('[data-field="total_price"]');
+                if (totCell) {
+                    const val = parseFloat(totCell.innerText.replace(/[^0-9.-]/g, ''));
+                    if (!isNaN(val)) return val;
+                }
+                const cashCell = tr.querySelector('[data-field="cash_amount"]');
+                const cardCell = tr.querySelector('[data-field="card_amount"]');
+                const cash = parseFloat(cashCell ? cashCell.innerText.replace(/[^0-9.-]/g, '') : 0) || 0;
+                const card = parseFloat(cardCell ? cardCell.innerText.replace(/[^0-9.-]/g, '') : 0) || 0;
+                return cash + card;
+            }
+        });
 
         // Keyboard Shortcut: Ctrl+S or Cmd+S to Save
         document.addEventListener('keydown', function (e) {
@@ -870,6 +928,10 @@
         document.getElementById('totalPlayersSum').innerText = totalPlayers;
         document.getElementById('rowCountDisplay').innerText = count;
         document.getElementById('bottomRevDisplay').innerText = totalRevenue.toFixed(2) + ' ₼';
+
+        if (window.accountingRangeSelector) {
+            window.accountingRangeSelector.calculateAndRenderStats();
+        }
     }
 
     function addNewRow() {
@@ -1009,4 +1071,6 @@
         }, 3500);
     }
 </script>
+
+@include('layouts.partials.excel_range_selection')
 @endsection

@@ -1305,6 +1305,29 @@
 
         {{-- Right Area: Pinned Summary Statistics --}}
         <div class="excel-sheets-summary">
+            {{-- Pinned Live Selection Statistics (Excel Status Bar) --}}
+            <div id="expensesSelectionBar" class="excel-selection-bar" style="display: none;">
+                <span class="sel-label">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"></rect><path d="M3 9h18"></path><path d="M9 21V9"></path></svg>
+                    <span id="selLabelText">Seçim:</span>
+                </span>
+                <span class="excel-stat-item" id="selCountWrap">
+                    <span class="text-muted font-size-11">Say:</span>
+                    <strong class="sel-val" id="selCountVal">0</strong>
+                </span>
+                <span class="excel-stat-divider" id="selAvgDivider">|</span>
+                <span class="excel-stat-item" id="selAvgWrap">
+                    <span class="text-muted font-size-11">Orta:</span>
+                    <strong class="sel-val" id="selAvgVal">0.00 ₼</strong>
+                </span>
+                <span class="excel-stat-divider" id="selSumDivider">|</span>
+                <span class="excel-stat-item" id="selSumWrap">
+                    <span class="text-muted font-size-11">Cəm:</span>
+                    <strong class="sel-sum" id="selSumVal">0.00 ₼</strong>
+                </span>
+                <button type="button" class="sel-clear" title="Seçimi təmizlə (Esc)">&times;</button>
+            </div>
+
             <span class="excel-stat-item">
                 <span class="text-muted">Sətir sayı:</span>
                 <strong id="rowCountDisplay">{{ count($expenses) }}</strong>
@@ -1450,6 +1473,40 @@
     document.addEventListener('DOMContentLoaded', function () {
         initCellEvents(document);
         initExcelTabs();
+
+        // Excel-like Drag Selection & Live Calculation Engine
+        window.expensesRangeSelector = new ExcelRangeSelector({
+            table: 'expensesTable',
+            tbody: 'expensesTableBody',
+            wrapper: 'excelTableWrapper',
+            statusBar: 'expensesSelectionBar',
+            isNumericCell: function(cell) {
+                const field = cell.dataset.field;
+                if (!field || field === 'date' || field === 'game_name' || field === 'title' || 
+                    field === 'note' || field === 'classification' || cell.classList.contains('row-idx') || 
+                    cell.classList.contains('images-cell') || cell.classList.contains('text-center')) {
+                    return false;
+                }
+                if (field === 'amount_cash' || field === 'amount_card' || cell.classList.contains('row-total-cell')) {
+                    return true;
+                }
+                const text = cell.innerText.trim();
+                if (!text || /^\d{1,4}[.\/-]\d{1,2}[.\/-]\d{2,4}$/.test(text)) return false;
+                return /^[+-]?(\d+(\.\d*)?|\.\d+)$/.test(text.replace(/[₼AZN\s,]/g, ''));
+            },
+            getRowTotal: function(tr) {
+                const totCell = tr.querySelector('.row-total-cell');
+                if (totCell) {
+                    const val = parseFloat(totCell.innerText.replace(/[^0-9.-]/g, ''));
+                    if (!isNaN(val)) return val;
+                }
+                const cashCell = tr.querySelector('[data-field="amount_cash"]');
+                const cardCell = tr.querySelector('[data-field="amount_card"]');
+                const cash = parseFloat(cashCell ? cashCell.innerText.replace(/[^0-9.-]/g, '') : 0) || 0;
+                const card = parseFloat(cardCell ? cardCell.innerText.replace(/[^0-9.-]/g, '') : 0) || 0;
+                return cash + card;
+            }
+        });
 
         // Sətir silmə (event delegation - TƏK BİR DƏFƏ İŞLƏYİR)
         const tableBody = document.getElementById('expensesTableBody');
@@ -1637,6 +1694,10 @@
 
         const bottomGrandTotal = document.getElementById('bottomGrandTotalDisplay');
         if (bottomGrandTotal) bottomGrandTotal.textContent = grandTotal.toFixed(2) + ' ₼';
+
+        if (window.expensesRangeSelector) {
+            window.expensesRangeSelector.calculateAndRenderStats();
+        }
     }
 
     function renumberRows() {
@@ -2074,4 +2135,6 @@
         }
     }
 </script>
+
+@include('layouts.partials.excel_range_selection')
 @endsection
