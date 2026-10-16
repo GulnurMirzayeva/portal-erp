@@ -103,7 +103,8 @@
 
     /* Excel Grid Table */
     .excel-table-wrapper {
-        max-height: 750px;
+        max-height: calc(100vh - 250px);
+        min-height: 420px;
         overflow-x: auto;
         overflow-y: auto;
         position: relative;
@@ -453,11 +454,26 @@
            title="CSV formatında yüklə">
             CSV
         </a>
+
+        {{-- Horizontal Quick Scroll Nav Buttons for Windows --}}
+        <div class="excel-scroll-nav-group ms-1 me-1" title="Cədvəli sola/sağa sürüşdür (Shift + Siçan Təkəri və ya →/← oxlar)">
+            <button type="button" class="excel-scroll-nav-btn" onclick="scrollTableHorizontally(-350)" title="Sola sürüşdür (Shift + Təkər)">
+                ◀ Sola
+            </button>
+            <button type="button" class="excel-scroll-nav-btn" onclick="scrollTableHorizontally(350)" title="Sağa sürüşdür (Shift + Təkər)">
+                Sağa ▶
+            </button>
+        </div>
     </div>
 </div>
 
 {{-- 3. Excel Spreadsheet Grid Container (Standalone Card) --}}
 <div class="excel-container mb-4">
+    {{-- Synchronized Top Horizontal Scrollbar for Windows --}}
+    <div class="excel-top-scrollbar-wrap" id="topScrollWrapper">
+        <div class="excel-top-scrollbar-inner" id="topScrollInner"></div>
+    </div>
+
     {{-- Spreadsheet Grid --}}
     <div class="excel-table-wrapper" id="excelWrapper">
         <table class="excel-table" id="accountingExcelTable">
@@ -730,12 +746,14 @@
         initCellEvents();
         initExcelTabs();
 
-        // Excel-like Drag Selection & Live Calculation Engine
+        // Excel-like Drag Selection, Keyboard Nav & Live Calculation Engine
         window.accountingRangeSelector = new ExcelRangeSelector({
             table: 'accountingExcelTable',
             tbody: 'excelBody',
             wrapper: 'excelWrapper',
             statusBar: 'accountingSelectionBar',
+            topScrollWrap: 'topScrollWrapper',
+            topScrollInner: 'topScrollInner',
             isNumericCell: function(cell) {
                 const field = cell.dataset.field;
                 if (!field || field === 'date' || field === 'time' || field === 'customer_phone' || 

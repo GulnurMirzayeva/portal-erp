@@ -1,4 +1,4 @@
-{{-- Excel-like Multi-Cell Drag Selection & Real-Time Calculation Engine --}}
+{{-- Excel-like Multi-Cell Drag Selection, Keyboard Navigation & Horizontal Scroll Engine --}}
 <style>
     /* Prevent text selection during table drag-selection */
     .excel-table.is-selecting,
@@ -7,6 +7,13 @@
         -webkit-user-select: none !important;
         -moz-user-select: none !important;
         cursor: cell !important;
+    }
+
+    /* Panning / Moving table mode */
+    .excel-table-wrapper.is-panning,
+    .excel-table-wrapper.is-panning * {
+        cursor: grabbing !important;
+        user-select: none !important;
     }
 
     /* Selected cell highlight (Authentic Microsoft Excel green tint) */
@@ -136,6 +143,66 @@
         transform: translate(16px, 16px);
         border: 1px solid rgba(255,255,255,0.15);
     }
+
+    /* Synchronized Top Horizontal Scrollbar for Windows */
+    .excel-top-scrollbar-wrap {
+        overflow-x: auto;
+        overflow-y: hidden;
+        height: 11px;
+        background: #f1f3f4;
+        border-top: 1px solid #d4d4d4;
+        border-bottom: 1px solid #d4d4d4;
+        scrollbar-width: thin;
+        scrollbar-color: #107c41 #f1f3f4;
+        display: none;
+    }
+    .excel-top-scrollbar-wrap::-webkit-scrollbar {
+        height: 8px;
+    }
+    .excel-top-scrollbar-wrap::-webkit-scrollbar-track {
+        background: #f1f3f4;
+    }
+    .excel-top-scrollbar-wrap::-webkit-scrollbar-thumb {
+        background: #a0aec0;
+        border-radius: 4px;
+    }
+    .excel-top-scrollbar-wrap::-webkit-scrollbar-thumb:hover {
+        background: #107c41;
+    }
+    .excel-top-scrollbar-inner {
+        height: 1px;
+    }
+
+    /* Quick Horizontal Scroll Nav Buttons in Ribbon */
+    .excel-scroll-nav-group {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(0, 0, 0, 0.18);
+        border-radius: 5px;
+        padding: 2px 3px;
+        gap: 3px;
+    }
+    .excel-scroll-nav-btn {
+        background: rgba(255, 255, 255, 0.15);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 4px 9px;
+        border-radius: 4px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        transition: all 0.15s ease;
+        line-height: 1.2;
+        user-select: none;
+    }
+    .excel-scroll-nav-btn:hover {
+        background: #ffffff;
+        color: #107c41;
+        border-color: #ffffff;
+    }
 </style>
 
 {{-- Floating Live Drag Tooltip --}}
@@ -145,7 +212,13 @@
 
 <script>
 /**
- * ExcelRangeSelector: Reusable Microsoft Excel Range Selection & Real-Time Calculation Engine
+ * ExcelRangeSelector: Reusable Microsoft Excel Engine
+ * Handles:
+ *  1. Multi-Cell Drag Selection & Real-Time Calculation
+ *  2. Keyboard Navigation across cells (→, ←, ↑, ↓, Tab, Enter) with auto-scroll
+ *  3. Horizontal Mouse Scroll (Shift + Wheel anywhere over table)
+ *  4. Move / Pan table with Mouse (Middle-click drag OR Alt + Left-click drag)
+ *  5. Top Horizontal Scrollbar synchronization
  */
 class ExcelRangeSelector {
     constructor(config) {
@@ -153,6 +226,8 @@ class ExcelRangeSelector {
         this.tbody = typeof config.tbody === 'string' ? document.getElementById(config.tbody) : config.tbody;
         this.wrapper = typeof config.wrapper === 'string' ? document.getElementById(config.wrapper) : config.wrapper;
         this.statusBar = typeof config.statusBar === 'string' ? document.getElementById(config.statusBar) : config.statusBar;
+        this.topScrollWrap = typeof config.topScrollWrap === 'string' ? document.getElementById(config.topScrollWrap) : config.topScrollWrap;
+        this.topScrollInner = typeof config.topScrollInner === 'string' ? document.getElementById(config.topScrollInner) : config.topScrollInner;
         
         // Callbacks & Configs
         this.isNumericCell = config.isNumericCell || this.defaultIsNumericCell.bind(this);
@@ -161,7 +236,7 @@ class ExcelRangeSelector {
         this.isDateCell = config.isDateCell || this.defaultIsDateCell.bind(this);
         this.emptyRowSelector = config.emptyRowSelector || '#emptyRow, #emptyRowPlaceholder';
 
-        // State
+        // Drag Selection State
         this.isMouseDown = false;
         this.isDragging = false;
         this.dragStartX = 0;
@@ -173,6 +248,13 @@ class ExcelRangeSelector {
         this.tooltip = document.getElementById('excelDragTooltip');
         this.tooltipText = document.getElementById('excelDragTooltipText');
 
+        // Pan State (Move tool)
+        this.isPanning = false;
+        this.panStartX = 0;
+        this.panStartY = 0;
+        this.panScrollLeft = 0;
+        this.panScrollTop = 0;
+
         if (this.table && this.tbody) {
             this.init();
         }
@@ -180,6 +262,9 @@ class ExcelRangeSelector {
 
     init() {
         this.bindEvents();
+        this.bindKeyboardNavigation();
+        this.bindWheelAndPan();
+        this.initTopScrollbar();
     }
 
     getRows() {
@@ -203,7 +288,6 @@ class ExcelRangeSelector {
         // If in thead
         const thead = this.table.querySelector('thead');
         if (thead && thead.contains(tr)) {
-            // Ignore spanned category headers (colspan > 1)
             if (cell.getAttribute('colspan') && parseInt(cell.getAttribute('colspan')) > 1) {
                 return null;
             }
@@ -224,6 +308,11 @@ class ExcelRangeSelector {
 
         // Table Mousedown
         this.table.addEventListener('mousedown', function (e) {
+            // Ignore if Middle click or Alt+click (handled by Pan tool)
+            if (e.button === 1 || (e.altKey && e.button === 0)) {
+                return;
+            }
+
             if (e.button !== 0) return; // Only left click
 
             // Ignore action buttons, dropdowns, badges, inputs
@@ -368,7 +457,6 @@ class ExcelRangeSelector {
                 }
             } else {
                 self.isDragging = false;
-                // Finalize range calculation on mouseup
                 self.calculateAndRenderStats();
             }
         });
@@ -407,10 +495,282 @@ class ExcelRangeSelector {
             if (!self.selectedRange) return;
             if (self.table.contains(e.target)) return;
             if (self.statusBar && self.statusBar.contains(e.target)) return;
-            if (e.target.closest('#excelTabsContainer, .branch-pill, .excel-ribbon, .expense-autocomplete-menu')) return;
+            if (e.target.closest('#excelTabsContainer, .branch-pill, .excel-ribbon, .expense-autocomplete-menu, .excel-scroll-nav-group')) return;
 
             self.clearSelection();
         });
+    }
+
+    /**
+     * Keyboard Navigation Across Cells (→, ←, ↑, ↓, Tab, Enter)
+     * Automatically scrolls the table horizontally as user presses → and ←!
+     */
+    bindKeyboardNavigation() {
+        const self = this;
+
+        this.table.addEventListener('keydown', function (e) {
+            // Ignore autocomplete menu navigation
+            const acMenu = document.getElementById('expenseAutocompleteDropdown');
+            if (acMenu && acMenu.style.display === 'block') {
+                return;
+            }
+
+            // If focus is inside an input, textarea, or button
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'BUTTON') {
+                return;
+            }
+
+            const activeTd = document.activeElement ? document.activeElement.closest('td') : null;
+            if (!activeTd || !self.table.contains(activeTd)) return;
+
+            const coords = self.getCellCoords(activeTd);
+            if (!coords || coords.isHeader) return;
+
+            let dRow = 0;
+            let dCol = 0;
+
+            if (e.key === 'ArrowRight') {
+                // If cursor is at the end of cell text, or text is selected
+                if (self.isCaretAtEnd(activeTd)) {
+                    e.preventDefault();
+                    dCol = 1;
+                }
+            } else if (e.key === 'ArrowLeft') {
+                // If cursor is at the start of cell text
+                if (self.isCaretAtStart(activeTd)) {
+                    e.preventDefault();
+                    dCol = -1;
+                }
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                dRow = 1;
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                dRow = -1;
+            } else if (e.key === 'Tab') {
+                e.preventDefault();
+                dCol = e.shiftKey ? -1 : 1;
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                dRow = e.shiftKey ? -1 : 1;
+            }
+
+            if (dRow !== 0 || dCol !== 0) {
+                self.navigateToCell(coords.row, coords.col, dRow, dCol);
+            }
+        });
+    }
+
+    navigateToCell(currRow, currCol, dRow, dCol) {
+        const rows = this.getRows();
+        if (rows.length === 0) return;
+
+        let targetRow = currRow + dRow;
+        let targetCol = currCol + dCol;
+
+        const tr = rows[currRow];
+        if (!tr) return;
+        const cells = Array.from(tr.children);
+
+        if (dCol !== 0) {
+            // Horizontal navigation
+            // Column 0 is row index (#)
+            if (targetCol < 1) {
+                if (targetRow > 0) {
+                    targetRow--;
+                    const prevTr = rows[targetRow];
+                    targetCol = prevTr.children.length - 1;
+                } else {
+                    targetCol = 1;
+                }
+            } else if (targetCol >= cells.length) {
+                if (targetRow < rows.length - 1) {
+                    targetRow++;
+                    targetCol = 1;
+                } else {
+                    targetCol = cells.length - 1;
+                }
+            }
+        }
+
+        if (targetRow < 0) targetRow = 0;
+        if (targetRow >= rows.length) targetRow = rows.length - 1;
+
+        const targetTr = rows[targetRow];
+        if (!targetTr) return;
+
+        let targetCell = targetTr.children[targetCol];
+        if (!targetCell) return;
+
+        // Skip non-navigable cells like row-idx
+        if (targetCell.classList.contains('row-idx') || targetCell.classList.contains('row-idx-header')) {
+            targetCol = 1;
+            targetCell = targetTr.children[targetCol] || targetCell;
+        }
+
+        // Scroll into view horizontally and vertically
+        this.scrollCellIntoView(targetCell);
+
+        // Focus cell
+        targetCell.focus();
+
+        // Place caret at end or select contents so next arrow key moves immediately
+        const range = document.createRange();
+        range.selectNodeContents(targetCell);
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+        sel?.addRange(range);
+
+        // Update selection highlight & stats
+        this.anchorCoords = { row: targetRow, col: targetCol };
+        this.currentCoords = { row: targetRow, col: targetCol };
+        this.applySelection(targetRow, targetRow, targetCol, targetCol);
+    }
+
+    scrollCellIntoView(cell) {
+        if (!cell || !this.wrapper) return;
+        const cellRect = cell.getBoundingClientRect();
+        const wrapRect = this.wrapper.getBoundingClientRect();
+
+        // Horizontal scroll
+        if (cellRect.right > wrapRect.right - 25) {
+            this.wrapper.scrollLeft += (cellRect.right - wrapRect.right + 70);
+        } else if (cellRect.left < wrapRect.left + 25) {
+            this.wrapper.scrollLeft -= (wrapRect.left - cellRect.left + 70);
+        }
+
+        // Vertical scroll
+        if (cellRect.bottom > wrapRect.bottom - 20) {
+            this.wrapper.scrollTop += (cellRect.bottom - wrapRect.bottom + 40);
+        } else if (cellRect.top < wrapRect.top + 70) {
+            this.wrapper.scrollTop -= (wrapRect.top + 70 - cellRect.top);
+        }
+    }
+
+    isCaretAtEnd(element) {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return true;
+        const range = sel.getRangeAt(0);
+        if (!element.contains(range.commonAncestorContainer)) return true;
+        if (!range.collapsed) return true;
+
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(element);
+        preCaretRange.setStart(range.endContainer, range.endOffset);
+        return preCaretRange.toString().length === 0;
+    }
+
+    isCaretAtStart(element) {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return true;
+        const range = sel.getRangeAt(0);
+        if (!element.contains(range.commonAncestorContainer)) return true;
+        if (!range.collapsed) return true;
+
+        const preCaretRange = range.cloneRange();
+        preCaretRange.selectNodeContents(element);
+        preCaretRange.setEnd(range.startContainer, range.startOffset);
+        return preCaretRange.toString().length === 0;
+    }
+
+    /**
+     * Mouse Horizontal Scrolling (Shift + Wheel) & Pan / Move Tool (Alt + Drag or Middle Click)
+     */
+    bindWheelAndPan() {
+        const self = this;
+        if (!this.wrapper) return;
+
+        // 1. Shift + Mouse Wheel for horizontal scroll anywhere over table
+        this.wrapper.addEventListener('wheel', function (e) {
+            if (e.shiftKey) {
+                e.preventDefault();
+                self.wrapper.scrollLeft += (e.deltaY * 1.5);
+            } else if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+                // Native horizontal wheel / trackpad
+                self.wrapper.scrollLeft += e.deltaX;
+            }
+        }, { passive: false });
+
+        // 2. Pan / Move table: Middle click OR Alt + Left click drag
+        this.table.addEventListener('mousedown', function (e) {
+            if (e.button === 1 || (e.altKey && e.button === 0)) {
+                e.preventDefault();
+                self.isPanning = true;
+                self.panStartX = e.clientX;
+                self.panStartY = e.clientY;
+                self.panScrollLeft = self.wrapper.scrollLeft;
+                self.panScrollTop = self.wrapper.scrollTop;
+                self.wrapper.classList.add('is-panning');
+            }
+        });
+
+        document.addEventListener('mousemove', function (e) {
+            if (!self.isPanning) return;
+            e.preventDefault();
+            const dx = e.clientX - self.panStartX;
+            const dy = e.clientY - self.panStartY;
+            self.wrapper.scrollLeft = self.panScrollLeft - dx;
+            self.wrapper.scrollTop = self.panScrollTop - dy;
+        });
+
+        document.addEventListener('mouseup', function (e) {
+            if (self.isPanning) {
+                self.isPanning = false;
+                self.wrapper.classList.remove('is-panning');
+            }
+        });
+    }
+
+    /**
+     * Top Horizontal Scrollbar Synchronization (Mirrors bottom scrollbar right at top of table)
+     */
+    initTopScrollbar() {
+        if (!this.topScrollWrap || !this.topScrollInner || !this.wrapper || !this.table) return;
+
+        const topWrap = this.topScrollWrap;
+        const topInner = this.topScrollInner;
+        const wrapper = this.wrapper;
+        const table = this.table;
+
+        function syncDimensions() {
+            const scrollW = table.scrollWidth;
+            topInner.style.width = scrollW + 'px';
+            if (scrollW > wrapper.clientWidth + 10) {
+                topWrap.style.display = 'block';
+            } else {
+                topWrap.style.display = 'none';
+            }
+        }
+
+        syncDimensions();
+        window.addEventListener('resize', syncDimensions);
+        setTimeout(syncDimensions, 300);
+
+        let isSyncingTop = false;
+        let isSyncingBottom = false;
+
+        topWrap.addEventListener('scroll', function () {
+            if (isSyncingTop) {
+                isSyncingTop = false;
+                return;
+            }
+            isSyncingBottom = true;
+            wrapper.scrollLeft = topWrap.scrollLeft;
+        });
+
+        wrapper.addEventListener('scroll', function () {
+            if (isSyncingBottom) {
+                isSyncingBottom = false;
+                return;
+            }
+            isSyncingTop = true;
+            topWrap.scrollLeft = wrapper.scrollLeft;
+        });
+
+        if (window.ResizeObserver) {
+            const ro = new ResizeObserver(() => syncDimensions());
+            ro.observe(table);
+        }
     }
 
     handleEdgeAutoScroll(e) {
@@ -535,7 +895,6 @@ class ExcelRangeSelector {
         let labelText = 'Seçim:';
 
         if (isWholeRow) {
-            // Whole row selection: sum row totals directly to prevent double counting
             isDateOnly = true;
             selectedRows.forEach(tr => {
                 sum += this.getRowTotal(tr);
@@ -544,7 +903,6 @@ class ExcelRangeSelector {
             avg = count > 0 ? sum / count : 0;
             labelText = 'Seçilən sətirlər:';
         } else if (numericCells.length > 0) {
-            // User selected numeric cells (or multiple columns including numbers)
             numericCells.forEach(cell => {
                 const val = this.getCellNumericValue(cell);
                 sum += val;
@@ -553,8 +911,6 @@ class ExcelRangeSelector {
             avg = count > 0 ? sum / count : 0;
             labelText = 'Seçim:';
         } else {
-            // User selected ONLY non-numeric cells (e.g. Tarix / Date column or Game name)
-            // As requested by user: "meselen ayin 1den 10na qeder secsem hemin tarixlerde olan summani gostersin awagida"
             isDateOnly = true;
             selectedRows.forEach(tr => {
                 sum += this.getRowTotal(tr);
@@ -688,7 +1044,6 @@ class ExcelRangeSelector {
 
         const text = cell.innerText.trim();
         if (!text) return false;
-        // Check if date or time
         if (/^\d{1,4}[.\/-]\d{1,2}[.\/-]\d{2,4}$/.test(text)) return false;
         if (/^\d{1,2}:\d{2}(:\d{2})?$/.test(text)) return false;
 
@@ -715,7 +1070,6 @@ class ExcelRangeSelector {
         if (totalCell) {
             return this.getCellNumericValue(totalCell);
         }
-        // Fallback: cash + card
         const cashCell = tr.querySelector('[data-field="amount_cash"], [data-field="cash_amount"]');
         const cardCell = tr.querySelector('[data-field="amount_card"], [data-field="card_amount"]');
         const cash = cashCell ? this.getCellNumericValue(cashCell) : 0;
@@ -727,4 +1081,14 @@ class ExcelRangeSelector {
         return cell.dataset.field === 'date' || cell.classList.contains('date-cell');
     }
 }
+
+/**
+ * Global helper to scroll the active table wrapper horizontally
+ */
+window.scrollTableHorizontally = function(delta) {
+    const wrapper = document.getElementById('excelWrapper') || document.getElementById('excelTableWrapper');
+    if (wrapper) {
+        wrapper.scrollBy({ left: delta, behavior: 'smooth' });
+    }
+};
 </script>
