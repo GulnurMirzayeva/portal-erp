@@ -413,7 +413,7 @@
         <span>{{ $selectedBranchName }} — Elektron Qaimə ({{ $selectedMonthName ?? $filterMonth }})</span>
     </div>
 
-    <div class="excel-ribbon-actions">
+    <div class="excel-ribbon-actions" id="accountingRibbonActions">
         @can('accounting.edit')
         {{-- Save Edits Button --}}
         <button type="button" class="excel-btn excel-btn-save" id="saveSheetBtn" onclick="saveAccountingSheet()">
@@ -783,6 +783,20 @@
             }
         });
 
+        // Excel-like Column AutoFilter & Sorting Engine
+        window.accountingColumnFilter = new ExcelColumnFilter({
+            table: 'accountingExcelTable',
+            tbody: 'excelBody',
+            headerRowSelector: 'tr.col-name-header',
+            clearAllBtnContainer: 'accountingRibbonActions',
+            onFilterChanged: function() {
+                recalcSheetTotals();
+                if (window.accountingRangeSelector) {
+                    window.accountingRangeSelector.clearSelection();
+                }
+            }
+        });
+
         // Keyboard Shortcut: Ctrl+S or Cmd+S to Save
         document.addEventListener('keydown', function (e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 's') {
@@ -928,6 +942,7 @@
         const rows = document.querySelectorAll('#excelBody tr');
         rows.forEach(tr => {
             if (tr.id === 'emptyRow') return;
+            if (tr.style.display === 'none') return;
             count++;
             const cashVal = parseFloat(tr.querySelector('[data-field="cash_amount"]')?.innerText.replace(/[^0-9.-]/g, '') || 0);
             const cardVal = parseFloat(tr.querySelector('[data-field="card_amount"]')?.innerText.replace(/[^0-9.-]/g, '') || 0);
@@ -1091,4 +1106,5 @@
 </script>
 
 @include('layouts.partials.excel_range_selection')
+@include('layouts.partials.excel_column_filter')
 @endsection

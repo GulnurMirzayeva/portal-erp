@@ -1069,7 +1069,7 @@
         @endif
     </div>
 
-    <div class="excel-ribbon-actions">
+    <div class="excel-ribbon-actions" id="expensesRibbonActions">
         @can('expenses.edit')
         {{-- Yadda Saxla Button --}}
         <button type="button" class="excel-btn excel-btn-save" id="saveBtn">
@@ -1526,6 +1526,20 @@
             }
         });
 
+        // Excel-like Column AutoFilter & Sorting Engine
+        window.expensesColumnFilter = new ExcelColumnFilter({
+            table: 'expensesTable',
+            tbody: 'expensesTableBody',
+            headerRowSelector: 'tr.pink-header',
+            clearAllBtnContainer: 'expensesRibbonActions',
+            onFilterChanged: function() {
+                recalcTotals();
+                if (window.expensesRangeSelector) {
+                    window.expensesRangeSelector.clearSelection();
+                }
+            }
+        });
+
         // Sətir silmə (event delegation - TƏK BİR DƏFƏ İŞLƏYİR)
         const tableBody = document.getElementById('expensesTableBody');
         if (tableBody) {
@@ -1680,6 +1694,7 @@
 
         const rows = document.querySelectorAll('#expensesTableBody tr:not(#emptyRowPlaceholder)');
         rows.forEach(tr => {
+            if (tr.style.display === 'none') return;
             const cashCell = tr.querySelector('[data-field="amount_cash"]');
             const cardCell = tr.querySelector('[data-field="amount_card"]');
 
@@ -2155,4 +2170,5 @@
 </script>
 
 @include('layouts.partials.excel_range_selection')
+@include('layouts.partials.excel_column_filter')
 @endsection
