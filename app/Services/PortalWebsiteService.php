@@ -233,8 +233,9 @@ class PortalWebsiteService
 
         $saleIdsToFetch = [];
         foreach ($sales as $s) {
-            $hasInd = isset($s['individual_discounts']) && is_array($s['individual_discounts']);
-            if (!$hasInd && !empty($s['id'])) {
+            $hasInd = !empty($s['individual_discounts']) && is_array($s['individual_discounts']);
+            $hasGrp = !empty($s['group_discount_image_urls']);
+            if ((!$hasInd || !$hasGrp) && !empty($s['id'])) {
                 $saleIdsToFetch[] = (int)$s['id'];
             }
         }
@@ -295,8 +296,8 @@ class PortalWebsiteService
                 $s['group_discount_image_urls'] = array_values(array_filter(array_map($resolveImageUrl, $cleanGrp)));
             }
 
-            // Əgər artıq individual_discounts mövcuddursa, şəkil URL-lərini təmin edirik
-            if (isset($s['individual_discounts']) && is_array($s['individual_discounts'])) {
+            // Əgər artıq qeyri-boş individual_discounts mövcuddursa, şəkil URL-lərini təmin edirik
+            if (!empty($s['individual_discounts']) && is_array($s['individual_discounts'])) {
                 foreach ($s['individual_discounts'] as &$ind) {
                     if (empty($ind['image_urls']) && !empty($ind['images'])) {
                         $rawImgs = $ind['images'];

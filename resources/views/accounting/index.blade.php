@@ -752,6 +752,7 @@
                         <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="player_count" data-col="E" oninput="recalcRow(this)">{{ $row['player_count'] ?? 0 }}</td>
                         <td class="excel-cell align-right" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="price_per_person" data-col="F" oninput="recalcRow(this)">{{ $row['price_per_person'] ? number_format($row['price_per_person'], 2, '.', '') : '0.00' }}</td>
                         <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="cash_amount" data-col="G" oninput="recalcRow(this)">{{ number_format($cash, 2, '.', '') }}</td>
+                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="card_amount" data-col="H" oninput="recalcRow(this)">{{ number_format($card, 2, '.', '') }}</td>
                         <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="discount_note" data-col="I">
                             <div class="d-flex align-items-center justify-content-between gap-1">
                                 <span>{{ $row['discount_note'] ?? '' }}</span>
