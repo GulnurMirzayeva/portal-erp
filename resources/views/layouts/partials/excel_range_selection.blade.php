@@ -1032,6 +1032,7 @@ class ExcelRangeSelector {
         const field = cell.dataset.field;
         if (field === 'date' || field === 'time' || field === 'customer_phone' || field === 'game_name' || 
             field === 'title' || field === 'note' || field === 'discount_note' || field === 'customer_name' || 
+            field === 'individual_discounts_display' || field === 'individual_discounts' || cell.classList.contains('ind-discounts-cell') ||
             field === 'classification' || cell.classList.contains('row-idx') || cell.classList.contains('row-idx-header')) {
             return false;
         }

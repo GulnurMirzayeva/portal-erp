@@ -368,6 +368,177 @@
         border-color: #107c41;
         box-shadow: 0 2px 6px rgba(16, 124, 65, 0.25);
     }
+
+    /* Individual Discounts Column & Items */
+    .ind-discounts-cell {
+        white-space: normal !important;
+        vertical-align: middle;
+        min-width: 200px;
+        max-width: 320px;
+        padding: 4px 6px !important;
+    }
+    .ind-discounts-list {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+    }
+    .ind-discount-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 6px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 4px;
+        padding: 2px 6px;
+        font-size: 11px;
+        line-height: 1.25;
+    }
+    .ind-discount-text {
+        color: #334155;
+        flex: 1 1 auto;
+        word-break: break-word;
+    }
+    .ind-discount-text strong {
+        color: #0f172a;
+        font-weight: 600;
+    }
+    .btn-ind-discount-img {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+        background: #e0f2fe;
+        color: #0284c7;
+        border: 1px solid #bae6fd;
+        border-radius: 3px;
+        padding: 1px 6px;
+        font-size: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        flex-shrink: 0;
+        line-height: 1.3;
+    }
+    .btn-ind-discount-img:hover {
+        background: #0284c7;
+        color: #ffffff;
+        border-color: #0284c7;
+    }
+
+    /* Individual Discount Image Preview Modal */
+    .discount-modal-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: rgba(15, 23, 42, 0.72);
+        backdrop-filter: blur(4px);
+        z-index: 99999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        animation: discountModalFadeIn 0.2s ease-out;
+    }
+    @keyframes discountModalFadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+    }
+    .discount-modal-dialog {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 20px 45px rgba(0,0,0,0.3);
+        max-width: 680px;
+        width: 100%;
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+        animation: discountModalScaleUp 0.2s ease-out;
+    }
+    @keyframes discountModalScaleUp {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    .discount-modal-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 18px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .discount-modal-title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .discount-modal-icon {
+        font-size: 22px;
+        display: inline-flex;
+    }
+    .discount-modal-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1e293b;
+        margin: 0;
+    }
+    .discount-modal-subtitle {
+        font-size: 12px;
+        color: #64748b;
+        display: block;
+    }
+    .discount-modal-close {
+        background: transparent;
+        border: none;
+        font-size: 24px;
+        line-height: 1;
+        color: #94a3b8;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.15s;
+    }
+    .discount-modal-close:hover {
+        color: #ef4444;
+        background: #fee2e2;
+    }
+    .discount-modal-body {
+        padding: 18px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        background: #f1f5f9;
+        min-height: 260px;
+    }
+    .discount-modal-img-card {
+        background: #ffffff;
+        border-radius: 8px;
+        padding: 8px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+        max-width: 100%;
+        text-align: center;
+    }
+    .discount-modal-img-card img {
+        max-width: 100%;
+        max-height: 60vh;
+        border-radius: 6px;
+        object-fit: contain;
+        display: block;
+    }
+    .discount-modal-footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+        padding: 12px 18px;
+        background: #ffffff;
+        border-top: 1px solid #e2e8f0;
+    }
 </style>
 
 {{-- Toast Notification Box --}}
@@ -481,7 +652,7 @@
                 {{-- 1. Category Headers --}}
                 <tr class="cat-header">
                     <th style="background: #e9ecef; border-right: 2px solid #ced4da; width: 38px; border-bottom: 2px solid #ffffff;"></th>
-                    <th colspan="9" style="background: #1e5631; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff;">SATIŞ MƏLUMATLARI</th>
+                    <th colspan="10" style="background: #1e5631; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff;">SATIŞ MƏLUMATLARI</th>
                     <th colspan="3" style="background: #3b4252; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff;">RESEPŞN</th>
                     <th colspan="3" style="background: #2e3440; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff;">HOSTES</th>
                     <th colspan="3" style="background: #0f5b99; border-right: 2px solid #ffffff; border-bottom: 2px solid #ffffff;">AKTYOR 1</th>
@@ -495,15 +666,15 @@
                 {{-- 2. Excel Column Letter Headers (A, B, C, D...) --}}
                 <tr class="col-letter-header">
                     <th class="row-idx-header"></th>
-                    <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th>
-                    <th>J</th><th>K</th><th>L</th>
-                    <th>M</th><th>N</th><th>O</th>
-                    <th>P</th><th>Q</th><th>R</th>
-                    <th>S</th><th>T</th><th>U</th>
-                    <th>V</th><th>W</th><th>X</th>
-                    <th>Y</th><th>Z</th>
-                    <th>AA</th><th>AB</th>
-                    <th>AC</th><th>AD</th><th>AE</th><th>AF</th>
+                    <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th><th>H</th><th>I</th><th>J</th>
+                    <th>K</th><th>L</th><th>M</th>
+                    <th>N</th><th>O</th><th>P</th>
+                    <th>Q</th><th>R</th><th>S</th>
+                    <th>T</th><th>U</th><th>V</th>
+                    <th>W</th><th>X</th><th>Y</th>
+                    <th>Z</th><th>AA</th>
+                    <th>AB</th><th>AC</th>
+                    <th>AD</th><th>AE</th><th>AF</th><th>AG</th>
                 </tr>
 
                 {{-- 3. Column Name Headers --}}
@@ -517,7 +688,8 @@
                     <th style="min-width: 75px;">Qiymət</th>
                     <th style="min-width: 85px;">Nağd (₼)</th>
                     <th style="min-width: 85px;">Terminal (₼)</th>
-                    <th style="min-width: 130px;">Qeyd / Endirim</th>
+                    <th style="min-width: 130px;">Qrup endirimi</th>
+                    <th style="min-width: 180px;">Fərdi endirimlər</th>
 
                     {{-- Resepşn --}}
                     <th style="min-width: 130px;">İşçi</th>
@@ -569,8 +741,9 @@
                         $cash = (float)($row['cash_amount'] ?? 0);
                         $card = (float)($row['card_amount'] ?? 0);
                         $total = (float)($row['total_price'] ?? ($cash + $card));
+                        $indDiscounts = $row['individual_discounts'] ?? [];
                     @endphp
-                    <tr data-row-index="{{ $index }}" data-sale-id="{{ $row['id'] ?? '' }}">
+                    <tr data-row-index="{{ $index }}" data-sale-id="{{ $row['id'] ?? '' }}" data-individual-discounts="{{ json_encode($indDiscounts) }}">
                         <td class="row-idx-header">{{ $index + 1 }}</td>
                         <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="row_number" data-col="A">{{ $row['row_number'] ?? ($index + 1) }}</td>
                         <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="date" data-col="B">{{ $row['date'] ?? '' }}</td>
@@ -582,48 +755,73 @@
                         <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="card_amount" data-col="H" oninput="recalcRow(this)">{{ number_format($card, 2, '.', '') }}</td>
                         <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="discount_note" data-col="I">{{ $row['discount_note'] ?? '' }}</td>
 
+                        {{-- Fərdi Endirimlər (Yalnız endirim almış iştirakçılar və şəkil düyməsi) --}}
+                        <td class="excel-cell align-left ind-discounts-cell" data-field="individual_discounts_display" data-col="J">
+                            @if(!empty($indDiscounts) && count($indDiscounts) > 0)
+                                <div class="ind-discounts-list">
+                                    @foreach($indDiscounts as $ind)
+                                        <div class="ind-discount-item">
+                                            <div class="ind-discount-text">
+                                                <strong>{{ $ind['user_name'] ?? 'İstifadəçi' }}:</strong> {{ $ind['discount_name'] ?? '' }}
+                                            </div>
+                                            @if(!empty($ind['image_urls']) && count($ind['image_urls']) > 0)
+                                                <button type="button" 
+                                                        class="btn-ind-discount-img" 
+                                                        onclick='openDiscountImageModal(@json($ind["image_urls"]), @json(($ind["user_name"] ?? "İstifadəçi") . " — " . ($ind["discount_name"] ?? "Fərdi Endirim")), event)'
+                                                        title="Endirim sənədinə / şəklinə bax">
+                                                    <span>📷 Şəkil</span>
+                                                </button>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <span class="text-muted" style="display: block; text-align: center;">—</span>
+                            @endif
+                        </td>
+
                         {{-- Resepşn --}}
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="receptionist_name" data-col="J">{{ $row['receptionist_name'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="receptionist_count" data-col="K">{{ $row['receptionist_count'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="receptionist_bonus_00" data-col="L">{{ !empty($row['receptionist_bonus_00']) ? '1' : '0' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="receptionist_name" data-col="K">{{ $row['receptionist_name'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="receptionist_count" data-col="L">{{ $row['receptionist_count'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="receptionist_bonus_00" data-col="M">{{ !empty($row['receptionist_bonus_00']) ? '1' : '0' }}</td>
 
                         {{-- Hostes --}}
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="hostess_name" data-col="M">{{ $row['hostess_name'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="hostess_count" data-col="N">{{ $row['hostess_count'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="hostess_bonus_00" data-col="O">{{ !empty($row['hostess_bonus_00']) ? '1' : '0' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="hostess_name" data-col="N">{{ $row['hostess_name'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="hostess_count" data-col="O">{{ $row['hostess_count'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="hostess_bonus_00" data-col="P">{{ !empty($row['hostess_bonus_00']) ? '1' : '0' }}</td>
 
                         {{-- Aktyor 1 --}}
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor1_name" data-col="P">{{ $row['actor1_name'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor1_count" data-col="Q">{{ $row['actor1_count'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor1_bonus_00" data-col="R">{{ !empty($row['actor1_bonus_00']) ? '1' : '0' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor1_name" data-col="Q">{{ $row['actor1_name'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor1_count" data-col="R">{{ $row['actor1_count'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor1_bonus_00" data-col="S">{{ !empty($row['actor1_bonus_00']) ? '1' : '0' }}</td>
 
                         {{-- Aktyor 2 --}}
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor2_name" data-col="S">{{ $row['actor2_name'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor2_count" data-col="T">{{ $row['actor2_count'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor2_bonus_00" data-col="U">{{ !empty($row['actor2_bonus_00']) ? '1' : '0' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor2_name" data-col="T">{{ $row['actor2_name'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor2_count" data-col="U">{{ $row['actor2_count'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="actor2_bonus_00" data-col="V">{{ !empty($row['actor2_bonus_00']) ? '1' : '0' }}</td>
 
                         {{-- Operator --}}
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="operator_name" data-col="V">{{ $row['operator_name'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="operator_count" data-col="W">{{ $row['operator_count'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="operator_bonus_00" data-col="X">{{ !empty($row['operator_bonus_00']) ? '1' : '0' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="operator_name" data-col="W">{{ $row['operator_name'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="operator_count" data-col="X">{{ $row['operator_count'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="operator_bonus_00" data-col="Y">{{ !empty($row['operator_bonus_00']) ? '1' : '0' }}</td>
 
                         {{-- PlusBir Aktyor --}}
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_actor" data-col="Y">{{ $row['plus_one_actor'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_actor_count" data-col="Z">{{ $row['plus_one_actor_count'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_actor" data-col="Z">{{ $row['plus_one_actor'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_actor_count" data-col="AA">{{ $row['plus_one_actor_count'] ?? '' }}</td>
 
                         {{-- PlusBir Resepşn --}}
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_receptionist" data-col="AA">{{ $row['plus_one_receptionist'] ?? '' }}</td>
-                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_receptionist_count" data-col="AB">{{ $row['plus_one_receptionist_count'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_receptionist" data-col="AB">{{ $row['plus_one_receptionist'] ?? '' }}</td>
+                        <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="plus_one_receptionist_count" data-col="AC">{{ $row['plus_one_receptionist_count'] ?? '' }}</td>
 
                         {{-- Müştəri & Yekun --}}
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="customer_name" data-col="AC">{{ $row['customer_name'] ?? '' }}</td>
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="customer_phone" data-col="AD">{{ $row['customer_phone'] ?? '' }}</td>
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="note" data-col="AE">{{ $row['note'] ?? '' }}</td>
-                        <td class="excel-cell align-right font-weight-700 text-success total-price-cell" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="total_price" data-col="AF" oninput="recalcSheetTotals()">{{ number_format($total, 2, '.', '') }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="customer_name" data-col="AD">{{ $row['customer_name'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="customer_phone" data-col="AE">{{ $row['customer_phone'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="note" data-col="AF">{{ $row['note'] ?? '' }}</td>
+                        <td class="excel-cell align-right font-weight-700 text-success total-price-cell" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="total_price" data-col="AG" oninput="recalcSheetTotals()">{{ number_format($total, 2, '.', '') }}</td>
                     </tr>
                 @empty
                     <tr id="emptyRow">
-                        <td colspan="33" class="text-center py-5 text-muted">
+                        <td colspan="34" class="text-center py-5 text-muted">
                             <p class="font-size-14 mb-1">Bu filial üçün seçilmiş ayda heç bir satış tapılmadı.</p>
                             @if($canEditAccounting)
                             <button type="button" class="btn btn-sm btn-outline-success mt-2" onclick="addNewRow()">
@@ -643,6 +841,7 @@
                     <td class="align-right">—</td>
                     <td class="align-right font-weight-700" id="totalCashSum">{{ number_format($summary['total_cash'] ?? 0, 2, '.', '') }} ₼</td>
                     <td class="align-right font-weight-700" id="totalCardSum">{{ number_format($summary['total_card'] ?? 0, 2, '.', '') }} ₼</td>
+                    <td></td>
                     <td></td>
                     <td></td>
                     <td class="align-center font-weight-700" id="totalRecSum">{{ $summary['total_sales'] ?? 0 }}</td>
@@ -977,6 +1176,7 @@
         const tr = document.createElement('tr');
         tr.dataset.rowIndex = currentCount;
         tr.dataset.saleId = '';
+        tr.dataset.individualDiscounts = '[]';
 
         tr.innerHTML = `
             <td class="row-idx-header">${newIdx}</td>
@@ -989,29 +1189,30 @@
             <td class="excel-cell align-right font-weight-600 is-dirty" contenteditable="true" data-field="cash_amount" data-col="G" oninput="recalcRow(this)">60.00</td>
             <td class="excel-cell align-right font-weight-600 is-dirty" contenteditable="true" data-field="card_amount" data-col="H" oninput="recalcRow(this)">0.00</td>
             <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="discount_note" data-col="I"></td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="receptionist_name" data-col="J"></td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="receptionist_count" data-col="K">1</td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="receptionist_bonus_00" data-col="L">0</td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="hostess_name" data-col="M"></td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="hostess_count" data-col="N">1</td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="hostess_bonus_00" data-col="O">0</td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="actor1_name" data-col="P"></td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="actor1_count" data-col="Q">1</td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="actor1_bonus_00" data-col="R">0</td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="actor2_name" data-col="S"></td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="actor2_count" data-col="T">0</td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="actor2_bonus_00" data-col="U">0</td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="operator_name" data-col="V"></td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="operator_count" data-col="W">1</td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="operator_bonus_00" data-col="X">0</td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="plus_one_actor" data-col="Y"></td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="plus_one_actor_count" data-col="Z">0</td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="plus_one_receptionist" data-col="AA"></td>
-            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="plus_one_receptionist_count" data-col="AB">0</td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="customer_name" data-col="AC">Müştəri</td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="customer_phone" data-col="AD"></td>
-            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="note" data-col="AE"></td>
-            <td class="excel-cell align-right font-weight-700 text-success total-price-cell is-dirty" contenteditable="true" data-field="total_price" data-col="AF" oninput="recalcSheetTotals()">60.00</td>
+            <td class="excel-cell align-center text-muted" data-field="individual_discounts_display" data-col="J" style="font-size: 11px;">—</td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="receptionist_name" data-col="K"></td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="receptionist_count" data-col="L">1</td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="receptionist_bonus_00" data-col="M">0</td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="hostess_name" data-col="N"></td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="hostess_count" data-col="O">1</td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="hostess_bonus_00" data-col="P">0</td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="actor1_name" data-col="Q"></td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="actor1_count" data-col="R">1</td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="actor1_bonus_00" data-col="S">0</td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="actor2_name" data-col="T"></td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="actor2_count" data-col="U">0</td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="actor2_bonus_00" data-col="V">0</td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="operator_name" data-col="W"></td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="operator_count" data-col="X">1</td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="operator_bonus_00" data-col="Y">0</td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="plus_one_actor" data-col="Z"></td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="plus_one_actor_count" data-col="AA">0</td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="plus_one_receptionist" data-col="AB"></td>
+            <td class="excel-cell align-center is-dirty" contenteditable="true" data-field="plus_one_receptionist_count" data-col="AC">0</td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="customer_name" data-col="AD">Müştəri</td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="customer_phone" data-col="AE"></td>
+            <td class="excel-cell align-left is-dirty" contenteditable="true" data-field="note" data-col="AF"></td>
+            <td class="excel-cell align-right font-weight-700 text-success total-price-cell is-dirty" contenteditable="true" data-field="total_price" data-col="AG" oninput="recalcSheetTotals()">60.00</td>
         `;
 
         tbody.appendChild(tr);
@@ -1031,10 +1232,15 @@
             if (tr.id === 'emptyRow') return;
             const rowObj = {};
             rowObj['id'] = tr.dataset.saleId || '';
+            if (tr.dataset.individualDiscounts) {
+                try {
+                    rowObj['individual_discounts'] = JSON.parse(tr.dataset.individualDiscounts);
+                } catch(e) {}
+            }
             const cells = tr.querySelectorAll('td.excel-cell');
             cells.forEach(c => {
                 const field = c.dataset.field;
-                if (field) {
+                if (field && field !== 'individual_discounts_display') {
                     let val = c.innerText.trim();
                     if (field === 'cash_amount' || field === 'card_amount' || field === 'price_per_person' || field === 'total_price') {
                         val = parseFloat(val.replace(/[^0-9.-]/g, '')) || 0;
@@ -1103,7 +1309,99 @@
             toast.style.display = 'none';
         }, 3500);
     }
+
+    // Modal Image Preview Handlers
+    function openDiscountImageModal(images, titleText, event) {
+        if (event) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+
+        const modal = document.getElementById('discountImageModal');
+        const modalTitle = document.getElementById('discountModalTitle');
+        const modalSubtitle = document.getElementById('discountModalSubtitle');
+        const modalBody = document.getElementById('discountModalBody');
+        const downloadBtn = document.getElementById('discountModalDownloadBtn');
+
+        modalTitle.innerText = titleText || 'Fərdi Endirim Sənədi';
+        modalSubtitle.innerText = 'Təsdiqedici sənəd / şəkil';
+        modalBody.innerHTML = '';
+
+        const imgArray = Array.isArray(images) ? images : (images ? [images] : []);
+        
+        if (imgArray.length === 0) {
+            modalBody.innerHTML = '<div class="text-muted p-4">Heç bir şəkil tapılmadı.</div>';
+            downloadBtn.style.display = 'none';
+        } else {
+            imgArray.forEach((imgUrl, i) => {
+                const card = document.createElement('div');
+                card.className = 'discount-modal-img-card';
+                card.innerHTML = `
+                    <a href="${imgUrl}" target="_blank" title="Böyük formatda açmaq üçün klikləyin">
+                        <img src="${imgUrl}" alt="Endirim sənədi ${i + 1}" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\\'text-danger p-3 d-block\\'>Şəkil yüklənə bilmədi və ya ünvan əlçatmazdır.</span>';" />
+                    </a>
+                `;
+                modalBody.appendChild(card);
+            });
+
+            downloadBtn.href = imgArray[0];
+            downloadBtn.style.display = 'inline-flex';
+        }
+
+        modal.style.display = 'flex';
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeDiscountImageModal() {
+        const modal = document.getElementById('discountImageModal');
+        if (modal) {
+            modal.style.display = 'none';
+            document.body.style.overflow = '';
+        }
+    }
+
+    function handleDiscountModalBackdrop(e) {
+        if (e.target.id === 'discountImageModal') {
+            closeDiscountImageModal();
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') {
+            closeDiscountImageModal();
+        }
+    });
 </script>
+
+{{-- Individual Discount Image Preview Modal Markup --}}
+<div id="discountImageModal" class="discount-modal-overlay" style="display: none;" onclick="handleDiscountModalBackdrop(event)">
+    <div class="discount-modal-dialog" onclick="event.stopPropagation()">
+        <div class="discount-modal-header">
+            <div class="discount-modal-title-wrap">
+                <span class="discount-modal-icon">📷</span>
+                <div>
+                    <h5 class="discount-modal-title" id="discountModalTitle">Fərdi Endirim Sənədi</h5>
+                    <span class="discount-modal-subtitle" id="discountModalSubtitle">Təsdiqedici sənəd / şəkil</span>
+                </div>
+            </div>
+            <button type="button" class="discount-modal-close" onclick="closeDiscountImageModal()" aria-label="Bağla">×</button>
+        </div>
+        <div class="discount-modal-body" id="discountModalBody">
+            <!-- Dynamic Images Injected Here -->
+        </div>
+        <div class="discount-modal-footer">
+            <a id="discountModalDownloadBtn" href="#" target="_blank" download class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="7 10 12 15 17 10"></polyline>
+                    <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>Şəkli Tam Ölçüdə Aç / Yüklə</span>
+            </a>
+            <button type="button" class="btn btn-sm btn-secondary" onclick="closeDiscountImageModal()">Bağla</button>
+        </div>
+    </div>
+</div>
 
 @include('layouts.partials.excel_range_selection')
 @include('layouts.partials.excel_column_filter')

@@ -115,7 +115,7 @@ class PortalWebsiteService
                         'connected' => true,
                         'summary' => $data['summary'] ?? $defaultSummary,
                         'branches' => $data['branches'] ?? [],
-                        'sales' => $data['sales'] ?? [],
+                        'sales' => $this->enrichSalesWithIndividualDiscounts($data['sales'] ?? []),
                     ];
                 }
 
@@ -135,7 +135,7 @@ class PortalWebsiteService
                     'connected' => true,
                     'summary' => $summary,
                     'branches' => [],
-                    'sales' => $dbSales,
+                    'sales' => $this->enrichSalesWithIndividualDiscounts($dbSales),
                 ];
             }
         } catch (Exception $dbEx) {
@@ -219,7 +219,131 @@ class PortalWebsiteService
             ];
         }
 
-        return $formatted;
+        return $this->enrichSalesWithIndividualDiscounts($formatted);
+    }
+
+    /**
+     * Satışlara qrup üzvlərinin fərdi endirimlərini əlavə edir.
+     */
+    public function enrichSalesWithIndividualDiscounts(array $sales): array
+    {
+        if (empty($sales)) {
+            return [];
+        }
+
+        $saleIdsToFetch = [];
+        foreach ($sales as $s) {
+            $hasInd = isset($s['individual_discounts']) && is_array($s['individual_discounts']);
+            if (!$hasInd && !empty($s['id'])) {
+                $saleIdsToFetch[] = (int)$s['id'];
+            }
+        }
+
+        $dbSales = [];
+        $participants = [];
+        $adminDiscountsMap = [];
+
+        if (!empty($saleIdsToFetch)) {
+            try {
+                $dbSales = DB::connection('portal_website')->table('sales')
+                    ->whereIn('id', $saleIdsToFetch)
+                    ->whereNotNull('users_info')
+                    ->where('users_info', '!=', '')
+                    ->where('users_info', '!=', '[]')
+                    ->select(['id', 'users_info'])
+                    ->get()
+                    ->keyBy('id');
+
+                $participants = DB::connection('portal_website')->table('sale_participants')
+                    ->whereIn('sale_id', $saleIdsToFetch)
+                    ->get()
+                    ->groupBy('sale_id');
+
+                $adminDiscountsMap = DB::connection('portal_website')->table('admin_discounts')
+                    ->pluck('name', 'id')
+                    ->toArray();
+            } catch (\Exception $e) {
+                Log::warning("enrichSalesWithIndividualDiscounts db fetch error: " . $e->getMessage());
+            }
+        }
+
+        $portalBaseUrl = rtrim(config('services.portal_website.url', 'https://portal.land'), '/');
+
+        foreach ($sales as &$s) {
+            // Əgər artıq individual_discounts mövcuddursa, şəkil URL-lərini təmin edirik
+            if (isset($s['individual_discounts']) && is_array($s['individual_discounts'])) {
+                foreach ($s['individual_discounts'] as &$ind) {
+                    if (empty($ind['image_urls']) && !empty($ind['images'])) {
+                        $ind['image_urls'] = array_map(function ($img) use ($portalBaseUrl) {
+                            if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
+                                return $img;
+                            }
+                            return $portalBaseUrl . '/storage/' . ltrim($img, '/');
+                        }, (array)$ind['images']);
+                    }
+                }
+                unset($ind);
+                continue;
+            }
+
+            $sId = !empty($s['id']) ? (int)$s['id'] : null;
+            $indList = [];
+
+            if ($sId && isset($dbSales[$sId]) && !empty($dbSales[$sId]->users_info)) {
+                $uInfo = is_string($dbSales[$sId]->users_info)
+                    ? (json_decode($dbSales[$sId]->users_info, true) ?: [])
+                    : (array)$dbSales[$sId]->users_info;
+
+                $pList = ($participants[$sId] ?? collect())->keyBy('slot_index');
+
+                foreach ($uInfo as $idx => $u) {
+                    if (!empty($u['discount_id']) || !empty($u['discount_name'])) {
+                        $slot = $idx + 1;
+                        $name = trim($u['name'] ?? '');
+                        if (empty($name) && isset($pList[$slot])) {
+                            $name = trim(($pList[$slot]->name ?? '') . ' ' . ($pList[$slot]->surname ?? ''));
+                        }
+                        if (empty($name)) {
+                            $name = 'Üzv #' . $slot;
+                        }
+
+                        $dName = $u['discount_name'] ?? null;
+                        if (empty($dName) && !empty($u['discount_id']) && isset($adminDiscountsMap[$u['discount_id']])) {
+                            $dName = $adminDiscountsMap[$u['discount_id']];
+                        }
+                        if (empty($dName)) {
+                            $dName = 'Fərdi Endirim';
+                        }
+
+                        $rawImgs = $u['images'] ?? [];
+                        if (is_string($rawImgs)) {
+                            $rawImgs = json_decode($rawImgs, true) ?: [];
+                        }
+                        $cleanImgs = is_array($rawImgs) ? array_values(array_filter($rawImgs)) : [];
+                        $imageUrls = array_map(function ($img) use ($portalBaseUrl) {
+                            if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
+                                return $img;
+                            }
+                            return $portalBaseUrl . '/storage/' . ltrim($img, '/');
+                        }, $cleanImgs);
+
+                        $indList[] = [
+                            'slot' => $slot,
+                            'user_name' => $name,
+                            'discount_name' => $dName,
+                            'discount_percent' => $u['discount_percent'] ?? 0,
+                            'images' => $cleanImgs,
+                            'image_urls' => $imageUrls,
+                        ];
+                    }
+                }
+            }
+
+            $s['individual_discounts'] = $indList;
+        }
+        unset($s);
+
+        return $sales;
     }
 
     protected function summarizeSalesList(array $sales, array $filters): array

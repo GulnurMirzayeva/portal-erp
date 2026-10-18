@@ -135,12 +135,12 @@ class AccountingController extends Controller
                 }
             }
 
-            $sales = $mergedSales;
+            $sales = $portalService->enrichSalesWithIndividualDiscounts($mergedSales);
             $summary = $this->calculateSummary($sales);
             $hasCustomEdits = true;
             $lastSavedAt = $savedRecord->updated_at ? $savedRecord->updated_at->format('d.m.Y H:i') : null;
         } else {
-            $sales = $liveSales;
+            $sales = $portalService->enrichSalesWithIndividualDiscounts($liveSales);
             $summary = $result['summary'] ?? $this->calculateSummary($sales);
             $hasCustomEdits = false;
             $lastSavedAt = null;
@@ -379,9 +379,9 @@ class AccountingController extends Controller
                     $mergedSales[] = $s;
                 }
             }
-            $sales = $mergedSales;
+            $sales = $portalService->enrichSalesWithIndividualDiscounts($mergedSales);
         } else {
-            $sales = $liveSales;
+            $sales = $portalService->enrichSalesWithIndividualDiscounts($liveSales);
         }
 
         // CSV ixrac (Windows Excel və Mac üçün 100% uyğun)
@@ -403,13 +403,22 @@ class AccountingController extends Controller
             fwrite($handle, "sep=;\r\n");
 
             fputcsv($handle, [
-                '№', 'Tarix', 'Oyun', 'Saat', 'Say', 'Qiymət', 'Nağd', 'Terminal', 'Qeyd / Endirim',
+                '№', 'Tarix', 'Oyun', 'Saat', 'Say', 'Qiymət', 'Nağd', 'Terminal', 'Qrup endirimi', 'Fərdi endirimlər',
                 'Resepşn', 'Say', '00:00', 'Hostes', 'Say', '00:00', 'Aktyor 1', 'Say', '00:00',
                 'Aktyor 2', 'Say', '00:00', 'Operator', 'Say', '00:00', 'PlusBir Aktyor', 'Say',
                 'PlusBir Resepşn', 'Say', 'Müştəri', 'Telefon', 'Qeyd', 'Ümumi Gəlir'
             ], ';', '"', "\\");
 
             foreach ($sales as $r) {
+                $indDiscountsText = '';
+                if (!empty($r['individual_discounts']) && is_array($r['individual_discounts'])) {
+                    $parts = [];
+                    foreach ($r['individual_discounts'] as $ind) {
+                        $parts[] = ($ind['user_name'] ?? 'İstifadəçi') . ': ' . ($ind['discount_name'] ?? '');
+                    }
+                    $indDiscountsText = implode(', ', $parts);
+                }
+
                 fputcsv($handle, [
                     $r['row_number'] ?? '',
                     $r['date'] ?? '',
@@ -420,6 +429,7 @@ class AccountingController extends Controller
                     $r['cash_amount'] ?? '0.00',
                     $r['card_amount'] ?? '0.00',
                     $r['discount_note'] ?? '',
+                    $indDiscountsText,
                     $r['receptionist_name'] ?? '',
                     $r['receptionist_count'] ?? '',
                     $r['receptionist_bonus_00'] ?? '',
@@ -477,7 +487,7 @@ class AccountingController extends Controller
         $sheet->setShowGridLines(true);
 
         // 1. Sənəd Başlığı
-        $sheet->mergeCells('A1:AF1');
+        $sheet->mergeCells('A1:AG1');
         $sheet->setCellValue('A1', 'PORTAL GAMES — ELEKTRON SATIŞ QAİMƏSİ');
         $sheet->getStyle('A1')->getFont()->setSize(16)->setBold(true)->getColor()->setRGB('FFFFFF');
         $sheet->getStyle('A1')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('107C41'); // Excel Green
@@ -485,7 +495,7 @@ class AccountingController extends Controller
         $sheet->getRowDimension(1)->setRowHeight(36);
 
         // 2. Filial & Tarix Məlumatları
-        $sheet->mergeCells('A2:AF2');
+        $sheet->mergeCells('A2:AG2');
         $periodName = Carbon::parse($filterMonth . '-01')->translatedFormat('F Y');
         $sheet->setCellValue('A2', "Filial: {$branchLabel}   |   Hesabat Dövrü: {$periodName}   |   Çıxarış Tarixi: " . Carbon::now()->format('d.m.Y H:i'));
         $sheet->getStyle('A2')->getFont()->setSize(11)->setItalic(true)->getColor()->setRGB('333333');
@@ -494,57 +504,57 @@ class AccountingController extends Controller
         $sheet->getRowDimension(2)->setRowHeight(24);
 
         // 3. Kateqoriya Başlıqları (Sətir 3)
-        $sheet->mergeCells('A3:I3');
+        $sheet->mergeCells('A3:J3');
         $sheet->setCellValue('A3', 'SATIŞ MƏLUMATLARI');
         $sheet->getStyle('A3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('107C41');
         $sheet->getStyle('A3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
 
-        $sheet->mergeCells('J3:L3');
-        $sheet->setCellValue('J3', 'RESEPŞN');
-        $sheet->getStyle('J3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('4B546A');
-        $sheet->getStyle('J3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->mergeCells('K3:M3');
+        $sheet->setCellValue('K3', 'RESEPŞN');
+        $sheet->getStyle('K3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('4B546A');
+        $sheet->getStyle('K3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
 
-        $sheet->mergeCells('M3:O3');
-        $sheet->setCellValue('M3', 'HOSTES');
-        $sheet->getStyle('M3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('343A40');
-        $sheet->getStyle('M3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->mergeCells('N3:P3');
+        $sheet->setCellValue('N3', 'HOSTES');
+        $sheet->getStyle('N3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('343A40');
+        $sheet->getStyle('N3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
 
-        $sheet->mergeCells('P3:R3');
-        $sheet->setCellValue('P3', 'AKTYOR 1');
-        $sheet->getStyle('P3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('17A2B8');
-        $sheet->getStyle('P3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->mergeCells('Q3:S3');
+        $sheet->setCellValue('Q3', 'AKTYOR 1');
+        $sheet->getStyle('Q3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('17A2B8');
+        $sheet->getStyle('Q3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
 
-        $sheet->mergeCells('S3:U3');
-        $sheet->setCellValue('S3', 'AKTYOR 2');
-        $sheet->getStyle('S3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('138496');
-        $sheet->getStyle('S3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->mergeCells('T3:V3');
+        $sheet->setCellValue('T3', 'AKTYOR 2');
+        $sheet->getStyle('T3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('138496');
+        $sheet->getStyle('T3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
 
-        $sheet->mergeCells('V3:X3');
-        $sheet->setCellValue('V3', 'OPERATOR');
-        $sheet->getStyle('V3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('4B546A');
-        $sheet->getStyle('V3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->mergeCells('W3:Y3');
+        $sheet->setCellValue('W3', 'OPERATOR');
+        $sheet->getStyle('W3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('4B546A');
+        $sheet->getStyle('W3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
 
-        $sheet->mergeCells('Y3:Z3');
-        $sheet->setCellValue('Y3', 'PLUS-BİR AKTYOR');
-        $sheet->getStyle('Y3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D39E00');
-        $sheet->getStyle('Y3')->getFont()->setBold(true)->getColor()->setRGB('000000');
+        $sheet->mergeCells('Z3:AA3');
+        $sheet->setCellValue('Z3', 'PLUS-BİR AKTYOR');
+        $sheet->getStyle('Z3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D39E00');
+        $sheet->getStyle('Z3')->getFont()->setBold(true)->getColor()->setRGB('000000');
 
-        $sheet->mergeCells('AA3:AB3');
-        $sheet->setCellValue('AA3', 'PLUS-BİR RESEPŞN');
-        $sheet->getStyle('AA3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D39E00');
-        $sheet->getStyle('AA3')->getFont()->setBold(true)->getColor()->setRGB('000000');
+        $sheet->mergeCells('AB3:AC3');
+        $sheet->setCellValue('AB3', 'PLUS-BİR RESEPŞN');
+        $sheet->getStyle('AB3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D39E00');
+        $sheet->getStyle('AB3')->getFont()->setBold(true)->getColor()->setRGB('000000');
 
-        $sheet->mergeCells('AC3:AF3');
-        $sheet->setCellValue('AC3', 'MÜŞTƏRİ VƏ YEKUN');
-        $sheet->getStyle('AC3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('1E7E34');
-        $sheet->getStyle('AC3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
+        $sheet->mergeCells('AD3:AG3');
+        $sheet->setCellValue('AD3', 'MÜŞTƏRİ VƏ YEKUN');
+        $sheet->getStyle('AD3')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('1E7E34');
+        $sheet->getStyle('AD3')->getFont()->setBold(true)->getColor()->setRGB('FFFFFF');
 
-        $sheet->getStyle('A3:AF3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A3:AG3')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
         $sheet->getRowDimension(3)->setRowHeight(22);
 
         // 4. Sütun Başlıqları (Sətir 4)
         $columns = [
-            '№', 'Tarix', 'Oyun', 'Saat', 'Say', 'Qiymət', 'Nağd', 'Terminal', 'Qeyd / Endirim',
+            '№', 'Tarix', 'Oyun', 'Saat', 'Say', 'Qiymət', 'Nağd', 'Terminal', 'Qrup endirimi', 'Fərdi endirimlər',
             'İşçi', 'Sayı', '00:00',
             'İşçi', 'Sayı', '00:00',
             'İşçi', 'Sayı', '00:00',
@@ -561,9 +571,9 @@ class AccountingController extends Controller
             $colIndex++;
         }
 
-        $sheet->getStyle('A4:AF4')->getFont()->setBold(true)->setSize(10);
-        $sheet->getStyle('A4:AF4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F1F3F5');
-        $sheet->getStyle('A4:AF4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
+        $sheet->getStyle('A4:AG4')->getFont()->setBold(true)->setSize(10);
+        $sheet->getStyle('A4:AG4')->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('F1F3F5');
+        $sheet->getStyle('A4:AG4')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
         $sheet->getRowDimension(4)->setRowHeight(26);
 
         // 5. Məlumat Sətirləri
@@ -574,6 +584,15 @@ class AccountingController extends Controller
             $price = (float)($r['price_per_person'] ?? 0);
             $total = (float)($r['total_price'] ?? ($cash + $card));
 
+            $indDiscountsText = '';
+            if (!empty($r['individual_discounts']) && is_array($r['individual_discounts'])) {
+                $parts = [];
+                foreach ($r['individual_discounts'] as $ind) {
+                    $parts[] = ($ind['user_name'] ?? 'İstifadəçi') . ': ' . ($ind['discount_name'] ?? '');
+                }
+                $indDiscountsText = implode(', ', $parts);
+            }
+
             $sheet->setCellValue('A' . $rowNum, $r['row_number'] ?? ($rowNum - 4));
             $sheet->setCellValue('B' . $rowNum, $r['date'] ?? '');
             $sheet->setCellValue('C' . $rowNum, $r['game_name'] ?? '');
@@ -583,64 +602,65 @@ class AccountingController extends Controller
             $sheet->setCellValue('G' . $rowNum, $cash);
             $sheet->setCellValue('H' . $rowNum, $card);
             $sheet->setCellValue('I' . $rowNum, $r['discount_note'] ?? '');
+            $sheet->setCellValue('J' . $rowNum, $indDiscountsText);
 
             // Resepşn
-            $sheet->setCellValue('J' . $rowNum, $r['receptionist_name'] ?? '');
-            $sheet->setCellValue('K' . $rowNum, (int)($r['receptionist_count'] ?? 0));
-            $sheet->setCellValue('L' . $rowNum, !empty($r['receptionist_bonus_00']) ? 1 : 0);
+            $sheet->setCellValue('K' . $rowNum, $r['receptionist_name'] ?? '');
+            $sheet->setCellValue('L' . $rowNum, (int)($r['receptionist_count'] ?? 0));
+            $sheet->setCellValue('M' . $rowNum, !empty($r['receptionist_bonus_00']) ? 1 : 0);
 
             // Hostes
-            $sheet->setCellValue('M' . $rowNum, $r['hostess_name'] ?? '');
-            $sheet->setCellValue('N' . $rowNum, (int)($r['hostess_count'] ?? 0));
-            $sheet->setCellValue('O' . $rowNum, !empty($r['hostess_bonus_00']) ? 1 : 0);
+            $sheet->setCellValue('N' . $rowNum, $r['hostess_name'] ?? '');
+            $sheet->setCellValue('O' . $rowNum, (int)($r['hostess_count'] ?? 0));
+            $sheet->setCellValue('P' . $rowNum, !empty($r['hostess_bonus_00']) ? 1 : 0);
 
             // Aktyor 1
-            $sheet->setCellValue('P' . $rowNum, $r['actor1_name'] ?? '');
-            $sheet->setCellValue('Q' . $rowNum, (int)($r['actor1_count'] ?? 0));
-            $sheet->setCellValue('R' . $rowNum, !empty($r['actor1_bonus_00']) ? 1 : 0);
+            $sheet->setCellValue('Q' . $rowNum, $r['actor1_name'] ?? '');
+            $sheet->setCellValue('R' . $rowNum, (int)($r['actor1_count'] ?? 0));
+            $sheet->setCellValue('S' . $rowNum, !empty($r['actor1_bonus_00']) ? 1 : 0);
 
             // Aktyor 2
-            $sheet->setCellValue('S' . $rowNum, $r['actor2_name'] ?? '');
-            $sheet->setCellValue('T' . $rowNum, (int)($r['actor2_count'] ?? 0));
-            $sheet->setCellValue('U' . $rowNum, !empty($r['actor2_bonus_00']) ? 1 : 0);
+            $sheet->setCellValue('T' . $rowNum, $r['actor2_name'] ?? '');
+            $sheet->setCellValue('U' . $rowNum, (int)($r['actor2_count'] ?? 0));
+            $sheet->setCellValue('V' . $rowNum, !empty($r['actor2_bonus_00']) ? 1 : 0);
 
             // Operator
-            $sheet->setCellValue('V' . $rowNum, $r['operator_name'] ?? '');
-            $sheet->setCellValue('W' . $rowNum, (int)($r['operator_count'] ?? 0));
-            $sheet->setCellValue('X' . $rowNum, !empty($r['operator_bonus_00']) ? 1 : 0);
+            $sheet->setCellValue('W' . $rowNum, $r['operator_name'] ?? '');
+            $sheet->setCellValue('X' . $rowNum, (int)($r['operator_count'] ?? 0));
+            $sheet->setCellValue('Y' . $rowNum, !empty($r['operator_bonus_00']) ? 1 : 0);
 
             // PlusBir
-            $sheet->setCellValue('Y' . $rowNum, $r['plus_one_actor'] ?? '');
-            $sheet->setCellValue('Z' . $rowNum, (int)($r['plus_one_actor_count'] ?? 0));
-            $sheet->setCellValue('AA' . $rowNum, $r['plus_one_receptionist'] ?? '');
-            $sheet->setCellValue('AB' . $rowNum, (int)($r['plus_one_receptionist_count'] ?? 0));
+            $sheet->setCellValue('Z' . $rowNum, $r['plus_one_actor'] ?? '');
+            $sheet->setCellValue('AA' . $rowNum, (int)($r['plus_one_actor_count'] ?? 0));
+            $sheet->setCellValue('AB' . $rowNum, $r['plus_one_receptionist'] ?? '');
+            $sheet->setCellValue('AC' . $rowNum, (int)($r['plus_one_receptionist_count'] ?? 0));
 
             // Müştəri & Yekun
-            $sheet->setCellValue('AC' . $rowNum, $r['customer_name'] ?? '');
-            $sheet->setCellValue('AD' . $rowNum, $r['customer_phone'] ?? '');
-            $sheet->setCellValue('AE' . $rowNum, $r['note'] ?? '');
-            $sheet->setCellValue('AF' . $rowNum, $total);
+            $sheet->setCellValue('AD' . $rowNum, $r['customer_name'] ?? '');
+            $sheet->setCellValue('AE' . $rowNum, $r['customer_phone'] ?? '');
+            $sheet->setCellValue('AF' . $rowNum, $r['note'] ?? '');
+            $sheet->setCellValue('AG' . $rowNum, $total);
 
             // Qiymət və məbləğ formatları (Windows və Mac Excel-in bütün versiyaları ilə 100% uyğun standart format)
             $sheet->getStyle('F' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00');
             $sheet->getStyle('G' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00');
             $sheet->getStyle('H' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00');
-            $sheet->getStyle('AF' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00');
+            $sheet->getStyle('AG' . $rowNum)->getNumberFormat()->setFormatCode('#,##0.00');
 
             // Alignment
             $sheet->getStyle('A' . $rowNum . ':D' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
             $sheet->getStyle('E' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('K' . $rowNum . ':L' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('N' . $rowNum . ':O' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('Q' . $rowNum . ':R' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('T' . $rowNum . ':U' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('W' . $rowNum . ':X' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('Z' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
-            $sheet->getStyle('AB' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('L' . $rowNum . ':M' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('O' . $rowNum . ':P' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('R' . $rowNum . ':S' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('U' . $rowNum . ':V' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('X' . $rowNum . ':Y' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('AA' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
+            $sheet->getStyle('AC' . $rowNum)->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
             // Alternating row background
             if ($rowNum % 2 == 0) {
-                $sheet->getStyle('A' . $rowNum . ':AF' . $rowNum)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FBFBFB');
+                $sheet->getStyle('A' . $rowNum . ':AG' . $rowNum)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('FBFBFB');
             }
 
             $sheet->getRowDimension($rowNum)->setRowHeight(21);
@@ -660,31 +680,31 @@ class AccountingController extends Controller
             $sheet->setCellValue('E' . $totalRow, "=SUM(E5:E{$lastDataRow})");
             $sheet->setCellValue('G' . $totalRow, "=SUM(G5:G{$lastDataRow})");
             $sheet->setCellValue('H' . $totalRow, "=SUM(H5:H{$lastDataRow})");
-            $sheet->setCellValue('K' . $totalRow, "=SUM(K5:K{$lastDataRow})");
             $sheet->setCellValue('L' . $totalRow, "=SUM(L5:L{$lastDataRow})");
-            $sheet->setCellValue('N' . $totalRow, "=SUM(N5:N{$lastDataRow})");
+            $sheet->setCellValue('M' . $totalRow, "=SUM(M5:M{$lastDataRow})");
             $sheet->setCellValue('O' . $totalRow, "=SUM(O5:O{$lastDataRow})");
-            $sheet->setCellValue('Q' . $totalRow, "=SUM(Q5:Q{$lastDataRow})");
+            $sheet->setCellValue('P' . $totalRow, "=SUM(P5:P{$lastDataRow})");
             $sheet->setCellValue('R' . $totalRow, "=SUM(R5:R{$lastDataRow})");
-            $sheet->setCellValue('T' . $totalRow, "=SUM(T5:T{$lastDataRow})");
+            $sheet->setCellValue('S' . $totalRow, "=SUM(S5:S{$lastDataRow})");
             $sheet->setCellValue('U' . $totalRow, "=SUM(U5:U{$lastDataRow})");
-            $sheet->setCellValue('W' . $totalRow, "=SUM(W5:W{$lastDataRow})");
+            $sheet->setCellValue('V' . $totalRow, "=SUM(V5:V{$lastDataRow})");
             $sheet->setCellValue('X' . $totalRow, "=SUM(X5:X{$lastDataRow})");
-            $sheet->setCellValue('Z' . $totalRow, "=SUM(Z5:Z{$lastDataRow})");
-            $sheet->setCellValue('AB' . $totalRow, "=SUM(AB5:AB{$lastDataRow})");
-            $sheet->setCellValue('AF' . $totalRow, "=SUM(AF5:AF{$lastDataRow})");
+            $sheet->setCellValue('Y' . $totalRow, "=SUM(Y5:Y{$lastDataRow})");
+            $sheet->setCellValue('AA' . $totalRow, "=SUM(AA5:AA{$lastDataRow})");
+            $sheet->setCellValue('AC' . $totalRow, "=SUM(AC5:AC{$lastDataRow})");
+            $sheet->setCellValue('AG' . $totalRow, "=SUM(AG5:AG{$lastDataRow})");
         } else {
             $sheet->setCellValue('G' . $totalRow, 0);
             $sheet->setCellValue('H' . $totalRow, 0);
-            $sheet->setCellValue('AF' . $totalRow, 0);
+            $sheet->setCellValue('AG' . $totalRow, 0);
         }
 
         $sheet->getStyle('G' . $totalRow)->getNumberFormat()->setFormatCode('#,##0.00');
         $sheet->getStyle('H' . $totalRow)->getNumberFormat()->setFormatCode('#,##0.00');
-        $sheet->getStyle('AF' . $totalRow)->getNumberFormat()->setFormatCode('#,##0.00');
+        $sheet->getStyle('AG' . $totalRow)->getNumberFormat()->setFormatCode('#,##0.00');
 
-        $sheet->getStyle('A' . $totalRow . ':AF' . $totalRow)->getFont()->setBold(true)->setSize(11);
-        $sheet->getStyle('A' . $totalRow . ':AF' . $totalRow)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D4EDDA'); // Light green total
+        $sheet->getStyle('A' . $totalRow . ':AG' . $totalRow)->getFont()->setBold(true)->setSize(11);
+        $sheet->getStyle('A' . $totalRow . ':AG' . $totalRow)->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB('D4EDDA'); // Light green total
         $sheet->getRowDimension($totalRow)->setRowHeight(26);
 
         // 7. Borders (Bütün cədvələ səliqəli incə xətlər çəkirik)
@@ -696,7 +716,7 @@ class AccountingController extends Controller
                 ],
             ],
         ];
-        $sheet->getStyle('A3:AF' . $totalRow)->applyFromArray($styleArray);
+        $sheet->getStyle('A3:AG' . $totalRow)->applyFromArray($styleArray);
 
         // Freeze Panes (Yuxarı 4 sətri dondururuq ki aşağı sürüşdürəndə başlıq sabit qalsın)
         $sheet->freezePane('A5');
@@ -705,7 +725,7 @@ class AccountingController extends Controller
         foreach (range('A', 'Z') as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
-        foreach (['AA', 'AB', 'AC', 'AD', 'AE', 'AF'] as $col) {
+        foreach (['AA', 'AB', 'AC', 'AD', 'AE', 'AF', 'AG'] as $col) {
             $sheet->getColumnDimension($col)->setAutoSize(true);
         }
 
