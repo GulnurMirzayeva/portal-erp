@@ -247,10 +247,7 @@ class PortalWebsiteService
             try {
                 $dbSales = DB::connection('portal_website')->table('sales')
                     ->whereIn('id', $saleIdsToFetch)
-                    ->whereNotNull('users_info')
-                    ->where('users_info', '!=', '')
-                    ->where('users_info', '!=', '[]')
-                    ->select(['id', 'users_info'])
+                    ->select(['id', 'users_info', 'group_discount_images'])
                     ->get()
                     ->keyBy('id');
 
@@ -269,17 +266,46 @@ class PortalWebsiteService
 
         $portalBaseUrl = rtrim(config('services.portal_website.url', 'https://portal.land'), '/');
 
+        $resolveImageUrl = function ($img) use ($portalBaseUrl) {
+            if (empty($img)) return null;
+            if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
+                return $img;
+            }
+            $clean = ltrim($img, '/');
+            // Əgər lokal PortalWebsite storage qovluğunda mövcuddursa, ERP marşrutu vasitəsilə təqdim edirik
+            $localWebsitePath = base_path("../../PortalWebsite/storage/app/public/{$clean}");
+            if (file_exists($localWebsitePath)) {
+                return url('/portal-storage/' . $clean);
+            }
+            return $portalBaseUrl . '/storage/' . $clean;
+        };
+
         foreach ($sales as &$s) {
+            $sId = !empty($s['id']) ? (int)$s['id'] : null;
+
+            // Əgər qrup endirimi üçün şəkil varsa, URL-lərini təyin edirik
+            $grpImgs = $s['group_discount_images'] ?? ($sId && isset($dbSales[$sId]) ? ($dbSales[$sId]->group_discount_images ?? null) : null);
+            if (!empty($grpImgs) && empty($s['group_discount_image_urls'])) {
+                $rawGrp = $grpImgs;
+                if (is_string($rawGrp)) {
+                    $decoded = json_decode($rawGrp, true);
+                    $rawGrp = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [$rawGrp];
+                }
+                $cleanGrp = is_array($rawGrp) ? array_values(array_filter($rawGrp)) : [];
+                $s['group_discount_image_urls'] = array_values(array_filter(array_map($resolveImageUrl, $cleanGrp)));
+            }
+
             // Əgər artıq individual_discounts mövcuddursa, şəkil URL-lərini təmin edirik
             if (isset($s['individual_discounts']) && is_array($s['individual_discounts'])) {
                 foreach ($s['individual_discounts'] as &$ind) {
                     if (empty($ind['image_urls']) && !empty($ind['images'])) {
-                        $ind['image_urls'] = array_map(function ($img) use ($portalBaseUrl) {
-                            if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
-                                return $img;
-                            }
-                            return $portalBaseUrl . '/storage/' . ltrim($img, '/');
-                        }, (array)$ind['images']);
+                        $rawImgs = $ind['images'];
+                        if (is_string($rawImgs)) {
+                            $decoded = json_decode($rawImgs, true);
+                            $rawImgs = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [$rawImgs];
+                        }
+                        $cleanImgs = is_array($rawImgs) ? array_values(array_filter($rawImgs)) : [];
+                        $ind['image_urls'] = array_values(array_filter(array_map($resolveImageUrl, $cleanImgs)));
                     }
                 }
                 unset($ind);
@@ -315,17 +341,13 @@ class PortalWebsiteService
                             $dName = 'Fərdi Endirim';
                         }
 
-                        $rawImgs = $u['images'] ?? [];
+                        $rawImgs = $u['images'] ?? ($u['image'] ?? []);
                         if (is_string($rawImgs)) {
-                            $rawImgs = json_decode($rawImgs, true) ?: [];
+                            $decoded = json_decode($rawImgs, true);
+                            $rawImgs = (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) ? $decoded : [$rawImgs];
                         }
                         $cleanImgs = is_array($rawImgs) ? array_values(array_filter($rawImgs)) : [];
-                        $imageUrls = array_map(function ($img) use ($portalBaseUrl) {
-                            if (str_starts_with($img, 'http://') || str_starts_with($img, 'https://')) {
-                                return $img;
-                            }
-                            return $portalBaseUrl . '/storage/' . ltrim($img, '/');
-                        }, $cleanImgs);
+                        $imageUrls = array_values(array_filter(array_map($resolveImageUrl, $cleanImgs)));
 
                         $indList[] = [
                             'slot' => $slot,

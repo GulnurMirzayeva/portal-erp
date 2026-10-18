@@ -752,8 +752,20 @@
                         <td class="excel-cell align-center" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="player_count" data-col="E" oninput="recalcRow(this)">{{ $row['player_count'] ?? 0 }}</td>
                         <td class="excel-cell align-right" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="price_per_person" data-col="F" oninput="recalcRow(this)">{{ $row['price_per_person'] ? number_format($row['price_per_person'], 2, '.', '') : '0.00' }}</td>
                         <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="cash_amount" data-col="G" oninput="recalcRow(this)">{{ number_format($cash, 2, '.', '') }}</td>
-                        <td class="excel-cell align-right font-weight-600 text-dark" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="card_amount" data-col="H" oninput="recalcRow(this)">{{ number_format($card, 2, '.', '') }}</td>
-                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="discount_note" data-col="I">{{ $row['discount_note'] ?? '' }}</td>
+                        <td class="excel-cell align-left" contenteditable="{{ $canEditAccounting ? 'true' : 'false' }}" data-field="discount_note" data-col="I">
+                            <div class="d-flex align-items-center justify-content-between gap-1">
+                                <span>{{ $row['discount_note'] ?? '' }}</span>
+                                @if(!empty($row['group_discount_image_urls']) && count($row['group_discount_image_urls']) > 0)
+                                    <button type="button" 
+                                            class="btn-ind-discount-img" 
+                                            contenteditable="false"
+                                            onclick='openDiscountImageModal(@json($row["group_discount_image_urls"]), @json("Qrup Endirimi — " . ($row["discount_note"] ?? "Sənəd")), event)'
+                                            title="Qrup endirimi sənədinə / şəklinə bax">
+                                        <span>📷 Şəkil</span>
+                                    </button>
+                                @endif
+                            </div>
+                        </td>
 
                         {{-- Fərdi Endirimlər (Yalnız endirim almış iştirakçılar və şəkil düyməsi) --}}
                         <td class="excel-cell align-left ind-discounts-cell" data-field="individual_discounts_display" data-col="J">

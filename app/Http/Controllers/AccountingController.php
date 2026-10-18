@@ -860,4 +860,32 @@ class AccountingController extends Controller
             ];
         })->all();
     }
+
+    /**
+     * PortalWebsite və ya lokal storage-da olan şəkilləri təhlükəsiz təqdim edir (həm lokal həm canlı mühit üçün).
+     */
+    public function portalStorage(string $path)
+    {
+        $cleanPath = ltrim($path, '/');
+        if (str_contains($cleanPath, '..')) {
+            abort(403);
+        }
+
+        // 1. Lokal qonşu PortalWebsite storage qovluğuna baxırıq
+        $localWebsitePath = base_path("../../PortalWebsite/storage/app/public/{$cleanPath}");
+        if (file_exists($localWebsitePath)) {
+            return response()->file($localWebsitePath);
+        }
+
+        // 2. Lokal PortalErp storage qovluğuna baxırıq
+        $localErpPath = storage_path("app/public/{$cleanPath}");
+        if (file_exists($localErpPath)) {
+            return response()->file($localErpPath);
+        }
+
+        // 3. Canlı portal.land serverinə yönləndiririk
+        $portalBaseUrl = rtrim(config('services.portal_website.url', 'https://portal.land'), '/');
+        return redirect()->away("{$portalBaseUrl}/storage/{$cleanPath}");
+    }
 }
+

@@ -72,6 +72,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/accounting/export', [AccountingController::class, 'export'])->name('accounting.export');
     });
 
+    // Portal Şəkillərini göstərmək üçün proxy/stream marşrutu
+    Route::get('/portal-storage/{path}', [AccountingController::class, 'portalStorage'])
+        ->where('path', '.*')
+        ->name('portal.storage');
+
     // Mühasibatlıq: Xərclər Cədvəli
     Route::middleware('permission:expenses.view')->group(function () {
         Route::get('/expenses', [ExpenseController::class, 'index'])->name('expenses.index');
