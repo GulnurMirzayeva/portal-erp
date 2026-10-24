@@ -845,21 +845,23 @@
             </div>
         </div>
 
-        <h3 class="result-title" style="margin-top: 14px; font-size: 19px;">Məkan İcazəsi Tələb Olunur</h3>
-        <p class="result-desc" id="gpsPromptDesc" style="margin-bottom: 22px; font-size: 13.5px; color: #94a3b8;">
+        <h3 class="result-title" id="gpsPromptTitle" style="margin-top: 14px; font-size: 19px;">Məkan İcazəsi Tələb Olunur</h3>
+        <p class="result-desc" id="gpsPromptDesc" style="margin-bottom: 16px; font-size: 13.5px; color: #94a3b8;">
             Filialda olduğunuzu təsdiqləmək üçün zəhmət olmasa GPS məkan icazəsini aktivləşdirin.
         </p>
+
+        {{-- Brauzer bloklayıbsa birbaşa çıxan bələdçi qutusu --}}
+        <div id="gpsDeniedBox" style="display: none; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; text-align: left; font-size: 13px; color: #fecaca; line-height: 1.55;">
+            <div style="font-weight: 800; color: #f87171; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-size: 13.5px;">
+                <span>⚠️</span> <span id="gpsDeniedDeviceTitle">Brauzerinizdə Məkan Bloklanıb</span>
+            </div>
+            <div id="gpsDeniedSteps" style="color: #e2e8f0;"></div>
+        </div>
 
         <button type="button" class="btn-activate-gps" id="btnActivateGps" onclick="requestLocationExplicitly()">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
             <span id="btnActivateGpsText">Məkanı Aktivləşdir (İcazə Ver)</span>
         </button>
-
-        <div>
-            <button type="button" class="btn-guide-link" onclick="openGpsGuide()">
-                ⚙️ İcazə pəncərəsi açılmırsa bələdçiyə baxın
-            </button>
-        </div>
     </div>
 </div>
 
@@ -1137,15 +1139,39 @@
     function openGpsPrompt(isDenied = false) {
         if (currentLat && currentLng) return;
         const modal = document.getElementById('gpsPromptModal');
+        const title = document.getElementById('gpsPromptTitle');
         const desc = document.getElementById('gpsPromptDesc');
         const btnText = document.getElementById('btnActivateGpsText');
+        const deniedBox = document.getElementById('gpsDeniedBox');
+        const deniedSteps = document.getElementById('gpsDeniedSteps');
+        const deniedDeviceTitle = document.getElementById('gpsDeniedDeviceTitle');
+
+        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 
         if (isDenied) {
-            if (desc) desc.textContent = 'Məkan icazəsi verilməyib. Aşağıdakı düyməyə toxunaraq və ya ünvan sətrindəki işarədən "İcazə Ver" seçin.';
-            if (btnText) btnText.textContent = 'İcazə Sorğusunu Təkrarla';
+            if (title) title.textContent = 'Brauzerdə Məkan Bloklanıb';
+            if (desc) desc.textContent = 'Telefonunuz bu sayt üçün məkanı bloklayıb. Kilidi açmaq üçün:';
+            if (btnText) btnText.textContent = '✓ Ayarı Dəyişdim, Yenidən Yoxla';
+
+            if (deniedBox) deniedBox.style.display = 'block';
+            if (isIos) {
+                if (deniedDeviceTitle) deniedDeviceTitle.textContent = 'iPhone (Safari) üçün 2 saniyəlik addım:';
+                if (deniedSteps) {
+                    deniedSteps.innerHTML = '1. Ünvan sətrindəki <strong>"aA"</strong> (və ya ⚙️) işarəsinə vurun.<br>' +
+                                           '2. <strong>"Veb-sayt Tənzimləmələri" (Website Settings)</strong> ➔ <strong>"Məkan" (Location)</strong> ➔ <strong>"Həmişə soruş" (Ask)</strong> və ya <strong>"İcazə ver" (Allow)</strong> seçin.';
+                }
+            } else {
+                if (deniedDeviceTitle) deniedDeviceTitle.textContent = 'Android (Chrome) üçün 2 saniyəlik addım:';
+                if (deniedSteps) {
+                    deniedSteps.innerHTML = '1. Ünvan sətrindəki <strong>Qıfıl (🔒)</strong> işarəsinə vurun.<br>' +
+                                           '2. <strong>"İcazələr"</strong> ➔ <strong>"Məkan"</strong> ➔ <strong>"İcazə ver" (Allow)</strong> seçin.';
+                }
+            }
         } else {
+            if (title) title.textContent = 'Məkan İcazəsi Tələb Olunur';
             if (desc) desc.textContent = 'Filialda olduğunuzu təsdiqləmək üçün zəhmət olmasa GPS məkan icazəsini aktivləşdirin.';
             if (btnText) btnText.textContent = 'Məkanı Aktivləşdir (İcazə Ver)';
+            if (deniedBox) deniedBox.style.display = 'none';
         }
 
         if (modal) modal.style.display = 'flex';
