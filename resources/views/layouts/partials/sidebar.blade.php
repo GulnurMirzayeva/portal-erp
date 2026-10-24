@@ -147,6 +147,55 @@
                 </ul>
             </li>
             @endcan
+
+            {{-- Davamiyyət (QR Giriş-Çıxış) --}}
+            @can('attendance.view')
+            @php
+                $isAttendanceActive = request()->routeIs('attendance.*');
+            @endphp
+            <li class="{{ $isAttendanceActive ? 'mm-active' : '' }}">
+                <a href="javascript:void(0);" class="waves-effect has-arrow {{ $isAttendanceActive ? 'active' : '' }}" data-toggle="sub-menu" data-target="#menuAttendance" title="Davamiyyət">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="menu-icon">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                        <path d="m9 16 2 2 4-4"></path>
+                    </svg>
+                    <span class="menu-text">Davamiyyət (QR)</span>
+                    <span class="menu-arrow">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                    </span>
+                </a>
+                <ul class="sub-menu {{ $isAttendanceActive ? 'show' : '' }}" id="menuAttendance">
+                    <li>
+                        <a href="{{ route('attendance.index') }}" class="{{ request()->routeIs('attendance.index') ? 'active' : '' }}">
+                            <span class="sub-bullet"></span> Giriş-Çıxış Jurnalı
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('attendance.violations') }}" class="{{ request()->routeIs('attendance.violations') ? 'active' : '' }}">
+                            <span class="sub-bullet"></span> Şübhəli / Yanlış Cəhdlər
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('attendance.branches') }}" class="{{ request()->routeIs('attendance.branches') ? 'active' : '' }}">
+                            <span class="sub-bullet"></span> Filiallar & QR Kodlar
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('attendance.workers') }}" class="{{ request()->routeIs('attendance.workers') ? 'active' : '' }}">
+                            <span class="sub-bullet"></span> İşçilər & PIN Kodlar
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ route('attendance.settings') }}" class="{{ request()->routeIs('attendance.settings') ? 'active' : '' }}">
+                            <span class="sub-bullet"></span> Tənzimləmələr
+                        </a>
+                    </li>
+                </ul>
+            </li>
+            @endcan
         </ul>
     </div>
 </aside>

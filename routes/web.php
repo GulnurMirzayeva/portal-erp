@@ -21,6 +21,8 @@ Route::post('/logout', [LoginController::class, 'logout'])
     ->name('logout');
 
 use App\Http\Controllers\AccountingController;
+use App\Http\Controllers\AttendanceController;
+use App\Http\Controllers\AttendanceScanController;
 use App\Http\Controllers\CrmController;
 use App\Http\Controllers\CrmInquiryController;
 use App\Http\Controllers\CrmTrafficController;
@@ -28,6 +30,15 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseClassificationController;
 use App\Http\Controllers\ExpenseController;
 use App\Services\PortalWebsiteService;
+
+// QR Davamiyyət: Mobil Skan və Çap (Açıq Marşrutlar)
+Route::prefix('attendance')->name('attendance.')->group(function () {
+    Route::get('/scan/{token}', [AttendanceScanController::class, 'showScanPage'])->name('scan');
+    Route::post('/scan/{token}/submit', [AttendanceScanController::class, 'submitAttendance'])->name('scan.submit');
+    Route::get('/branch/{token}/qr-image', [AttendanceScanController::class, 'qrImage'])->name('qr.image');
+    Route::get('/branch/{token}/qr-download', [AttendanceScanController::class, 'qrDownload'])->name('qr.download');
+    Route::get('/branch/{token}/qr-print', [AttendanceScanController::class, 'qrPrint'])->name('qr.print');
+});
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
@@ -96,6 +107,23 @@ Route::middleware('auth')->group(function () {
         Route::patch('/expense-classifications/{id}/toggle', [ExpenseClassificationController::class, 'toggleStatus'])
             ->middleware('permission:expense-classifications.edit')
             ->name('expense-classifications.toggle');
+    });
+
+    // Davamiyyət İdarəetməsi (ERP Admin)
+    Route::middleware('permission:attendance.view')->prefix('attendance')->name('attendance.')->group(function () {
+        Route::get('/', [AttendanceController::class, 'index'])->name('index');
+        Route::get('/violations', [AttendanceController::class, 'violations'])->name('violations');
+        Route::get('/branches', [AttendanceController::class, 'branches'])->name('branches');
+        Route::post('/branches', [AttendanceController::class, 'storeBranch'])->name('branches.store');
+        Route::post('/branches/{id}', [AttendanceController::class, 'updateBranch'])->name('branches.update');
+        Route::delete('/branches/{id}', [AttendanceController::class, 'destroyBranch'])->name('branches.destroy');
+        Route::get('/workers', [AttendanceController::class, 'workers'])->name('workers');
+        Route::post('/workers/{id}/pin', [AttendanceController::class, 'updateWorkerPin'])->name('workers.pin');
+        Route::post('/workers/{id}/reset-device', [AttendanceController::class, 'resetWorkerDevice'])->name('workers.resetDevice');
+        Route::post('/workers/sync', [AttendanceController::class, 'syncFromPortal'])->name('workers.sync');
+        Route::get('/settings', [AttendanceController::class, 'settings'])->name('settings');
+        Route::post('/settings', [AttendanceController::class, 'updateSettings'])->name('settings.update');
+        Route::get('/export', [AttendanceController::class, 'exportExcel'])->name('export');
     });
 });
 
