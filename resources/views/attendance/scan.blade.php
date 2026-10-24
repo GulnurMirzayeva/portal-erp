@@ -113,20 +113,14 @@
         }
 
         .gps-banner.loading {
-            background: rgba(59, 130, 246, 0.12);
-            border: 1px solid rgba(59, 130, 246, 0.35);
-            color: #60a5fa;
-        }
-
-        .gps-banner.prompt {
-            background: rgba(245, 158, 11, 0.14);
-            border: 1px solid rgba(245, 158, 11, 0.4);
+            background: rgba(245, 158, 11, 0.12);
+            border: 1px solid rgba(245, 158, 11, 0.3);
             color: #fbbf24;
         }
 
         .gps-banner.success {
-            background: rgba(16, 185, 129, 0.14);
-            border: 1px solid rgba(16, 185, 129, 0.35);
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
             color: #34d399;
         }
 
@@ -134,245 +128,6 @@
             background: rgba(239, 68, 68, 0.12);
             border: 1px solid rgba(239, 68, 68, 0.3);
             color: #f87171;
-        }
-
-        .gps-banner-text-box {
-            flex: 1;
-            min-width: 0;
-            display: flex;
-            align-items: center;
-        }
-
-        .gps-banner-btn {
-            background: linear-gradient(135deg, #10b981, #059669);
-            border: none;
-            color: #ffffff;
-            padding: 7px 14px;
-            border-radius: 10px;
-            font-size: 12.5px;
-            font-weight: 800;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            flex-shrink: 0;
-            box-shadow: 0 2px 10px rgba(16, 185, 129, 0.4);
-            animation: pulseBtn 1.8s infinite;
-            transition: all 0.2s;
-        }
-        .gps-banner-btn:active {
-            transform: scale(0.96);
-        }
-
-        /* GPS Birbaşa İcazə Modalı */
-        .gps-prompt-card {
-            max-width: 390px;
-            padding: 30px 22px;
-            text-align: center;
-            background: #0f172a;
-            border: 1px solid rgba(59, 130, 246, 0.35);
-            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 40px rgba(37, 99, 235, 0.15);
-            border-radius: 24px;
-        }
-
-        .gps-radar-box {
-            position: relative;
-            width: 84px;
-            height: 84px;
-            margin: 0 auto 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .gps-radar-pin {
-            width: 58px;
-            height: 58px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, #2563eb, #1d4ed8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.5);
-            z-index: 2;
-            position: relative;
-        }
-
-        .gps-radar-ring {
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 2px solid rgba(59, 130, 246, 0.6);
-            animation: radarRipple 2s ease-out infinite;
-            pointer-events: none;
-        }
-        .gps-radar-ring.ring-delay {
-            animation-delay: 1s;
-        }
-
-        @keyframes radarRipple {
-            0% { transform: scale(0.6); opacity: 1; }
-            100% { transform: scale(1.6); opacity: 0; }
-        }
-
-        .btn-activate-gps {
-            width: 100%;
-            background: linear-gradient(135deg, #10b981, #059669);
-            border: none;
-            color: #ffffff;
-            padding: 15px 20px;
-            border-radius: 16px;
-            font-size: 15px;
-            font-weight: 800;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
-            animation: pulseBtn 2s infinite;
-            transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .btn-activate-gps:active {
-            transform: scale(0.97);
-        }
-        .btn-activate-gps.loading {
-            background: #2563eb;
-            pointer-events: none;
-            opacity: 0.85;
-            animation: none;
-        }
-
-        .btn-guide-link {
-            background: transparent;
-            border: none;
-            color: #94a3b8;
-            font-size: 12px;
-            margin-top: 14px;
-            cursor: pointer;
-            text-decoration: underline;
-            transition: color 0.2s;
-            display: inline-block;
-        }
-        .btn-guide-link:hover {
-            color: #e2e8f0;
-        }
-
-        @keyframes pulseBtn {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
-            70% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-
-        /* GPS Guide Modal Styles */
-        .gps-guide-card {
-            max-width: 440px;
-            text-align: left;
-            padding: 24px;
-        }
-        .gps-os-tabs {
-            display: flex;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-color);
-            padding: 4px;
-            border-radius: 12px;
-            gap: 6px;
-            margin-bottom: 16px;
-        }
-        .gps-os-tab {
-            flex: 1;
-            padding: 9px 12px;
-            font-size: 13px;
-            font-weight: 700;
-            border-radius: 9px;
-            border: none;
-            background: transparent;
-            color: var(--text-muted);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            transition: all 0.2s;
-        }
-        .gps-os-tab.active {
-            background: #2563eb;
-            color: #ffffff;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
-        }
-        .gps-guide-step {
-            display: flex;
-            align-items: flex-start;
-            gap: 12px;
-            margin-bottom: 12px;
-            font-size: 13px;
-            color: #e2e8f0;
-            line-height: 1.45;
-        }
-        .gps-step-num {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            background: rgba(59, 130, 246, 0.25);
-            color: #60a5fa;
-            border: 1px solid rgba(59, 130, 246, 0.5);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-            font-weight: 800;
-            flex-shrink: 0;
-            margin-top: 1px;
-        }
-        .gps-guide-note {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 10px 14px;
-            border-radius: 12px;
-            font-size: 12px;
-            color: var(--text-muted);
-            line-height: 1.45;
-            margin-top: 14px;
-        }
-        .btn-android-intent {
-            width: 100%;
-            margin-top: 12px;
-            background: rgba(59, 130, 246, 0.15);
-            border: 1px solid rgba(59, 130, 246, 0.4);
-            color: #93c5fd;
-            padding: 10px 14px;
-            border-radius: 10px;
-            font-size: 12.5px;
-            font-weight: 700;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.2s;
-        }
-        .btn-android-intent:hover {
-            background: rgba(59, 130, 246, 0.25);
-        }
-        .btn-check-gps-now {
-            width: 100%;
-            margin-top: 18px;
-            background: #10b981;
-            border: none;
-            color: #ffffff;
-            padding: 13px 20px;
-            border-radius: 14px;
-            font-size: 14.5px;
-            font-weight: 800;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 4px 16px rgba(16, 185, 129, 0.35);
-            transition: all 0.2s;
-        }
-        .btn-check-gps-now:hover {
-            background: #059669;
-            transform: translateY(-1px);
         }
 
         .pulse-dot {
@@ -718,13 +473,7 @@
     {{-- GPS Status Banner --}}
     <div class="gps-banner loading" id="gpsBanner">
         <div class="pulse-dot"></div>
-        <div class="gps-banner-text-box">
-            <div id="gpsText">📍 GPS məkanınız yoxlanılır...</div>
-        </div>
-        <button type="button" class="gps-banner-btn" id="gpsBannerBtn" style="display: none;" onclick="requestLocationExplicitly()">
-            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
-            <span>İcazə Ver</span>
-        </button>
+        <span id="gpsText">GPS məkanınız yoxlanılır...</span>
     </div>
 
     {{-- Workers Section --}}
@@ -831,116 +580,6 @@
     </div>
 </div>
 
-{{-- GPS Birbaşa İcazə Modalı (Aktiv Alert) --}}
-<div class="result-overlay" id="gpsPromptModal" style="display: none;">
-    <div class="result-card gps-prompt-card">
-        <div class="gps-radar-box">
-            <div class="gps-radar-ring"></div>
-            <div class="gps-radar-ring ring-delay"></div>
-            <div class="gps-radar-pin">
-                <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
-                    <circle cx="12" cy="10" r="3"></circle>
-                </svg>
-            </div>
-        </div>
-
-        <h3 class="result-title" id="gpsPromptTitle" style="margin-top: 14px; font-size: 19px;">Məkan İcazəsi Tələb Olunur</h3>
-        <p class="result-desc" id="gpsPromptDesc" style="margin-bottom: 16px; font-size: 13.5px; color: #94a3b8;">
-            Filialda olduğunuzu təsdiqləmək üçün zəhmət olmasa GPS məkan icazəsini aktivləşdirin.
-        </p>
-
-        {{-- Brauzer bloklayıbsa birbaşa çıxan bələdçi qutusu --}}
-        <div id="gpsDeniedBox" style="display: none; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 14px; padding: 14px 16px; margin-bottom: 18px; text-align: left; font-size: 13px; color: #fecaca; line-height: 1.55;">
-            <div style="font-weight: 800; color: #f87171; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; font-size: 13.5px;">
-                <span>⚠️</span> <span id="gpsDeniedDeviceTitle">Brauzerinizdə Məkan Bloklanıb</span>
-            </div>
-            <div id="gpsDeniedSteps" style="color: #e2e8f0;"></div>
-        </div>
-
-        <button type="button" class="btn-activate-gps" id="btnActivateGps" onclick="requestLocationExplicitly()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
-            <span id="btnActivateGpsText">Məkanı Aktivləşdir (İcazə Ver)</span>
-        </button>
-    </div>
-</div>
-
-{{-- GPS Ayarları və Kömək Modalı --}}
-<div class="result-overlay" id="gpsGuideModal" style="display: none;">
-    <div class="result-card gps-guide-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-            <div style="display: flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 800; color: #fff;">
-                <span style="font-size: 20px;">📍</span> Məkan (GPS) İcazəsi
-            </div>
-            <button type="button" onclick="closeGpsGuide()" style="background: rgba(255,255,255,0.1); border: none; color: #94a3b8; font-size: 20px; border-radius: 8px; width: 32px; height: 32px; cursor: pointer; display: flex; align-items: center; justify-content: center;">&times;</button>
-        </div>
-
-        {{-- Cihaz Seçim Tabları (iOS vs Android) --}}
-        <div class="gps-os-tabs">
-            <button type="button" class="gps-os-tab active" id="tabIosBtn" onclick="selectGpsOs('ios')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 1.01-2.87-.96.04-2.12.64-2.8 1.43-.59.68-1.11 1.76-.97 2.8.03.01.08.01.12.01.99 0 2.02-.62 2.64-1.37z"/></svg>
-                iPhone (iOS)
-            </button>
-            <button type="button" class="gps-os-tab" id="tabAndroidBtn" onclick="selectGpsOs('android')">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M17.523 15.3414c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.551 0 .9993.4482.9993.9993.0001.5511-.4483.9997-.9993.9997m-11.046 0c-.5511 0-.9993-.4486-.9993-.9997s.4482-.9993.9993-.9993c.5511 0 .9993.4482.9993.9993 0 .5511-.4482.9997-.9993.9997m11.4045-6.02l1.9973-3.4592a.416.416 0 00-.1521-.5676.416.416 0 00-.5676.1521l-2.0223 3.503C15.5902 8.4116 13.8533 8.083 12 8.083c-1.8534 0-3.5902.3286-5.1368.8667L4.841 5.4467a.416.416 0 00-.5677-.1521.4157.4157 0 00-.152 5676l1.9972 3.4592C2.6889 11.1867.3432 14.6589 0 18.761h24c-.3432-4.1021-2.6889-7.5743-6.1185-9.4396"/></svg>
-                Android
-            </button>
-        </div>
-
-        {{-- iOS Təlimatları --}}
-        <div id="guideIos" class="gps-guide-content">
-            <div class="gps-guide-step">
-                <div class="gps-step-num">1</div>
-                <div class="gps-step-text">
-                    Safari-də ünvan sətrindəki <strong>"aA"</strong> və ya <strong>"⚙️ / Gizlilik"</strong> işarəsinə vurun.
-                </div>
-            </div>
-            <div class="gps-guide-step">
-                <div class="gps-step-num">2</div>
-                <div class="gps-step-text">
-                    <strong>"Veb-sayt Tənzimləmələri" (Website Settings)</strong> bölməsinə daxil olun.
-                </div>
-            </div>
-            <div class="gps-guide-step">
-                <div class="gps-step-num">3</div>
-                <div class="gps-step-text">
-                    <strong>"Məkan" (Location) ➔ "İcazə Ver" (Allow)</strong> seçin.
-                </div>
-            </div>
-            <div class="gps-guide-note">
-                💡 <em>Əgər sistemdə bağlıdırsa:</em> Telefonun <strong>Ayarlar ➔ Məxfilik və Təhlükəsizlik ➔ Məkan Xidmətləri</strong>ni aktiv edin və Safari üçün icazə verin.
-            </div>
-        </div>
-
-        {{-- Android Təlimatları --}}
-        <div id="guideAndroid" class="gps-guide-content" style="display: none;">
-            <div class="gps-guide-step">
-                <div class="gps-step-num">1</div>
-                <div class="gps-step-text">
-                    Brauzerin ünvan sətrindəki <strong>Qıfıl (🔒)</strong> və ya <strong>Tənzimləmə</strong> işarəsinə vurun.
-                </div>
-            </div>
-            <div class="gps-guide-step">
-                <div class="gps-step-num">2</div>
-                <div class="gps-step-text">
-                    <strong>"İcazələr" (Permissions) ➔ "Məkan" (Location) ➔ "İcazə ver" (Allow)</strong> seçin.
-                </div>
-            </div>
-            <div class="gps-guide-step">
-                <div class="gps-step-num">3</div>
-                <div class="gps-step-text">
-                    Telefonun yuxarı pərdəsini aşağı çəkərək <strong>Məkan (GPS / Konum)</strong> xidmətinin açıq olduğundan əmin olun.
-                </div>
-            </div>
-            <button type="button" class="btn-android-intent" onclick="tryOpenAndroidSettings()">
-                ⚙️ Telefon Məkan Ayarlarını Açmağa Cəhd Et
-            </button>
-        </div>
-
-        <button type="button" class="btn-check-gps-now" onclick="retryGpsFromModal()">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-            Məkanı Aktiv Etdim, Yenidən Yoxla
-        </button>
     </div>
 </div>
 
@@ -1008,228 +647,54 @@
         return Math.round(R * c);
     }
 
-    // Geolocation yoxlanışı və avtomatik aktivləşdirmə
+    // Geolocation yoxlanışı (Avtomatik olaraq birbaşa brauzerdən sistem icazəsi istənilir)
     const gpsBanner = document.getElementById('gpsBanner');
     const gpsText = document.getElementById('gpsText');
-    const gpsBannerBtn = document.getElementById('gpsBannerBtn');
-    const gpsPromptModal = document.getElementById('gpsPromptModal');
-    const gpsGuideModal = document.getElementById('gpsGuideModal');
-    let isLocationChecking = false;
 
-    // Hər girişdə yenidən sorğu göndərir (heç vaxt 'deaktiv' yadda saxlanılmır)
     function checkLocation() {
         if (!navigator.geolocation) {
-            if (gpsBanner) {
-                gpsBanner.className = 'gps-banner danger';
-                gpsText.textContent = 'Brauzeriniz GPS məkan xidmətini dəstəkləmir.';
-            }
+            gpsBanner.className = 'gps-banner danger';
+            gpsText.textContent = 'Brauzeriniz GPS məkan xidmətini dəstəkləmir.';
             return;
         }
 
-        if (currentLat && currentLng) return;
-        if (isLocationChecking) return;
-        isLocationChecking = true;
+        gpsBanner.className = 'gps-banner loading';
+        gpsText.textContent = 'GPS məkanınız yoxlanılır...';
 
-        if (gpsBanner) {
-            gpsBanner.className = 'gps-banner loading';
-            gpsText.textContent = '📍 GPS məkanınız yoxlanılır...';
-            if (gpsBannerBtn) gpsBannerBtn.style.display = 'none';
-        }
-
-        // 1-ci mərhələ: Yüksək dəqiqlikli GPS sorğusu
         navigator.geolocation.getCurrentPosition(
             (pos) => {
-                isLocationChecking = false;
-                onLocationSuccess(pos);
+                currentLat = pos.coords.latitude;
+                currentLng = pos.coords.longitude;
+
+                if (branchLat && branchLng) {
+                    const dist = calculateDistance(currentLat, currentLng, branchLat, branchLng);
+                    if (dist <= branchRadius) {
+                        gpsBanner.className = 'gps-banner success';
+                        gpsText.textContent = 'Məkan təsdiqləndi! Filialdan ' + dist + 'm məsafədəsiniz (İcazə: ' + branchRadius + 'm).';
+                    } else {
+                        gpsBanner.className = 'gps-banner danger';
+                        gpsText.textContent = 'Filialdan kənardasınız! Məsafə: ' + dist + 'm (Maksimal icazə: ' + branchRadius + 'm).';
+                    }
+                } else {
+                    gpsBanner.className = 'gps-banner success';
+                    gpsText.textContent = 'Məkan aktivdir.';
+                }
+                updateSubmitButtonState();
             },
             (err) => {
-                // Əgər 1-ci cəhd gecikibsə, dərhal daha sürətli şəbəkə/Wi-Fi ilə 2-ci fallback cəhdi edirik
-                navigator.geolocation.getCurrentPosition(
-                    (posFallback) => {
-                        isLocationChecking = false;
-                        onLocationSuccess(posFallback);
-                    },
-                    (errFinal) => {
-                        isLocationChecking = false;
-                        onLocationFailed(errFinal);
-                    },
-                    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
-                );
-            },
-            { enableHighAccuracy: true, timeout: 14000, maximumAge: 0 }
-        );
-    }
-
-    function onLocationSuccess(pos) {
-        currentLat = pos.coords.latitude;
-        currentLng = pos.coords.longitude;
-
-        closeGpsPrompt();
-        closeGpsGuide();
-
-        if (branchLat && branchLng) {
-            const dist = calculateDistance(currentLat, currentLng, branchLat, branchLng);
-            if (dist <= branchRadius) {
-                gpsBanner.className = 'gps-banner success';
-                gpsText.textContent = '✓ Məkan təsdiqləndi! Filialdan ' + dist + 'm məsafədəsiniz (İcazə: ' + branchRadius + 'm).';
-            } else {
                 gpsBanner.className = 'gps-banner danger';
-                gpsText.textContent = '⚠️ Filialdan kənardasınız! Məsafə: ' + dist + 'm (Maksimal icazə: ' + branchRadius + 'm).';
-            }
-        } else {
-            gpsBanner.className = 'gps-banner success';
-            gpsText.textContent = '✓ Məkan aktivdir.';
-        }
-
-        if (gpsBannerBtn) gpsBannerBtn.style.display = 'none';
-        updateSubmitButtonState();
-    }
-
-    function onLocationFailed(err) {
-        // Əsla başdan "deaktiv" kimi qalmır — həmişə aktiv "İcazə Ver" düyməsi ilə qalır
-        gpsBanner.className = 'gps-banner prompt';
-        gpsText.textContent = '📍 GPS icazəsi tələb olunur';
-        if (gpsBannerBtn) {
-            gpsBannerBtn.style.display = 'inline-flex';
-            gpsBannerBtn.textContent = 'İcazə Ver';
-        }
-
-        openGpsPrompt(err && err.code === 1);
-        updateSubmitButtonState();
-    }
-
-    // Birbaşa istifadəçi toxunuşu ilə icazə istəmək (bütün mobil brauzerlərdə native popup açır)
-    window.requestLocationExplicitly = function() {
-        const btn = document.getElementById('btnActivateGps');
-        const btnText = document.getElementById('btnActivateGpsText');
-        if (btn) btn.classList.add('loading');
-        if (btnText) btnText.textContent = 'Məkan təsdiqlənir...';
-
-        if (!navigator.geolocation) {
-            alert('Brauzeriniz GPS dəstəkləmir.');
-            if (btn) btn.classList.remove('loading');
-            return;
-        }
-
-        navigator.geolocation.getCurrentPosition(
-            (pos) => {
-                if (btn) btn.classList.remove('loading');
-                if (btnText) btnText.textContent = 'Məkanı Aktivləşdir (İcazə Ver)';
-                onLocationSuccess(pos);
-            },
-            (err) => {
-                navigator.geolocation.getCurrentPosition(
-                    (pos2) => {
-                        if (btn) btn.classList.remove('loading');
-                        if (btnText) btnText.textContent = 'Məkanı Aktivləşdir (İcazə Ver)';
-                        onLocationSuccess(pos2);
-                    },
-                    (finalErr) => {
-                        if (btn) btn.classList.remove('loading');
-                        if (btnText) btnText.textContent = 'Yenidən Cəhd Et';
-                        onLocationFailed(finalErr);
-                    },
-                    { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
-                );
+                if (err.code === 1) {
+                    gpsText.textContent = 'Məkan icazəsi verilmədi! Zəhmət olmasa ekrandakı icazəni təsdiqləyin.';
+                } else {
+                    gpsText.textContent = 'Məkan koordinatları müəyyən edilmədi. GPS-i açıb yenidən cəhd edin.';
+                }
+                updateSubmitButtonState();
             },
             { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
         );
-    };
-
-    function openGpsPrompt(isDenied = false) {
-        if (currentLat && currentLng) return;
-        const modal = document.getElementById('gpsPromptModal');
-        const title = document.getElementById('gpsPromptTitle');
-        const desc = document.getElementById('gpsPromptDesc');
-        const btnText = document.getElementById('btnActivateGpsText');
-        const deniedBox = document.getElementById('gpsDeniedBox');
-        const deniedSteps = document.getElementById('gpsDeniedSteps');
-        const deniedDeviceTitle = document.getElementById('gpsDeniedDeviceTitle');
-
-        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-        if (isDenied) {
-            if (title) title.textContent = 'Brauzerdə Məkan Bloklanıb';
-            if (desc) desc.textContent = 'Telefonunuz bu sayt üçün məkanı bloklayıb. Kilidi açmaq üçün:';
-            if (btnText) btnText.textContent = '✓ Ayarı Dəyişdim, Yenidən Yoxla';
-
-            if (deniedBox) deniedBox.style.display = 'block';
-            if (isIos) {
-                if (deniedDeviceTitle) deniedDeviceTitle.textContent = 'iPhone (Safari) üçün 2 saniyəlik addım:';
-                if (deniedSteps) {
-                    deniedSteps.innerHTML = '1. Ünvan sətrindəki <strong>"aA"</strong> (və ya ⚙️) işarəsinə vurun.<br>' +
-                                           '2. <strong>"Veb-sayt Tənzimləmələri" (Website Settings)</strong> ➔ <strong>"Məkan" (Location)</strong> ➔ <strong>"Həmişə soruş" (Ask)</strong> və ya <strong>"İcazə ver" (Allow)</strong> seçin.';
-                }
-            } else {
-                if (deniedDeviceTitle) deniedDeviceTitle.textContent = 'Android (Chrome) üçün 2 saniyəlik addım:';
-                if (deniedSteps) {
-                    deniedSteps.innerHTML = '1. Ünvan sətrindəki <strong>Qıfıl (🔒)</strong> işarəsinə vurun.<br>' +
-                                           '2. <strong>"İcazələr"</strong> ➔ <strong>"Məkan"</strong> ➔ <strong>"İcazə ver" (Allow)</strong> seçin.';
-                }
-            }
-        } else {
-            if (title) title.textContent = 'Məkan İcazəsi Tələb Olunur';
-            if (desc) desc.textContent = 'Filialda olduğunuzu təsdiqləmək üçün zəhmət olmasa GPS məkan icazəsini aktivləşdirin.';
-            if (btnText) btnText.textContent = 'Məkanı Aktivləşdir (İcazə Ver)';
-            if (deniedBox) deniedBox.style.display = 'none';
-        }
-
-        if (modal) modal.style.display = 'flex';
     }
 
-    function closeGpsPrompt() {
-        if (gpsPromptModal) gpsPromptModal.style.display = 'none';
-    }
-
-    // Kömək Modalı
-    function openGpsGuide() {
-        closeGpsPrompt();
-        detectGpsOs();
-        if (gpsGuideModal) gpsGuideModal.style.display = 'flex';
-    }
-
-    function closeGpsGuide() {
-        if (gpsGuideModal) gpsGuideModal.style.display = 'none';
-    }
-
-    function retryGpsFromModal() {
-        closeGpsGuide();
-        requestLocationExplicitly();
-    }
-
-    function selectGpsOs(os) {
-        const tabIos = document.getElementById('tabIosBtn');
-        const tabAndroid = document.getElementById('tabAndroidBtn');
-        const guideIos = document.getElementById('guideIos');
-        const guideAndroid = document.getElementById('guideAndroid');
-
-        if (os === 'ios') {
-            if (tabIos) tabIos.classList.add('active');
-            if (tabAndroid) tabAndroid.classList.remove('active');
-            if (guideIos) guideIos.style.display = 'block';
-            if (guideAndroid) guideAndroid.style.display = 'none';
-        } else {
-            if (tabAndroid) tabAndroid.classList.add('active');
-            if (tabIos) tabIos.classList.remove('active');
-            if (guideAndroid) guideAndroid.style.display = 'block';
-            if (guideIos) guideIos.style.display = 'none';
-        }
-    }
-
-    function detectGpsOs() {
-        const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-        selectGpsOs(isIos ? 'ios' : 'android');
-    }
-
-    function tryOpenAndroidSettings() {
-        try {
-            window.location.href = "intent:#Intent;action=android.settings.LOCATION_SOURCE_SETTINGS;end";
-        } catch (e) {
-            console.warn(e);
-        }
-    }
-
-    // İstifadəçi tənzimləmələrdən qayıdanda avtomatik yenidən yoxlama
+    // İstifadəçi brauzerə qayıtdıqda avtomatik yenidən yoxlama
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && (!currentLat || !currentLng)) {
             checkLocation();
@@ -1242,30 +707,15 @@
         }
     });
 
-    if (navigator.permissions && navigator.permissions.query) {
-        navigator.permissions.query({ name: 'geolocation' }).then(permissionStatus => {
-            permissionStatus.onchange = () => {
-                checkLocation();
-            };
-        }).catch(() => {});
-    }
-
-    // Səhifə açılan kimi dərhal yoxlayır və 1.2 saniyəyə məkan gəlməsə alert modalını təqdim edir
+    // Səhifə açılan kimi birbaşa sistem icazəsi sorğusunu işə sal
     checkLocation();
-    setTimeout(() => {
-        if (!currentLat || !currentLng) {
-            openGpsPrompt();
-        }
-    }, 1200);
 
     // İşçi seçimi
     function attachWorkerListeners() {
         document.querySelectorAll('.worker-card').forEach(card => {
             card.addEventListener('click', function() {
-                // Əgər hələ GPS təsdiqlənməyibsə, birbaşa icazə istəyir
                 if (!currentLat || !currentLng) {
-                    openGpsPrompt();
-                    requestLocationExplicitly();
+                    checkLocation();
                 }
 
                 document.querySelectorAll('.worker-card').forEach(c => c.classList.remove('selected'));
@@ -1359,8 +809,8 @@
         if (!selectedWorkerId || isSubmitting) return;
 
         if (!currentLat || !currentLng) {
-            openGpsPrompt();
-            requestLocationExplicitly();
+            alert('Davamiyyəti təsdiqləmək üçün zəhmət olmasa ekrandakı məkan (GPS) icazəsini təsdiqləyin.');
+            checkLocation();
             return;
         }
 
