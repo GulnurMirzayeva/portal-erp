@@ -109,21 +109,37 @@ Route::middleware('auth')->group(function () {
             ->name('expense-classifications.toggle');
     });
 
-    // Davamiyyət İdarəetməsi (ERP Admin)
+    // Davamiyyət İdarəetməsi (Admin və Direktor üçün)
     Route::middleware('permission:attendance.view')->prefix('attendance')->name('attendance.')->group(function () {
         Route::get('/', [AttendanceController::class, 'index'])->name('index');
         Route::get('/violations', [AttendanceController::class, 'violations'])->name('violations');
         Route::get('/branches', [AttendanceController::class, 'branches'])->name('branches');
-        Route::post('/branches', [AttendanceController::class, 'storeBranch'])->name('branches.store');
-        Route::post('/branches/{id}', [AttendanceController::class, 'updateBranch'])->name('branches.update');
-        Route::delete('/branches/{id}', [AttendanceController::class, 'destroyBranch'])->name('branches.destroy');
         Route::get('/workers', [AttendanceController::class, 'workers'])->name('workers');
-        Route::post('/workers/{id}/pin', [AttendanceController::class, 'updateWorkerPin'])->name('workers.pin');
-        Route::post('/workers/{id}/reset-device', [AttendanceController::class, 'resetWorkerDevice'])->name('workers.resetDevice');
-        Route::post('/workers/sync', [AttendanceController::class, 'syncFromPortal'])->name('workers.sync');
+        Route::get('/export', [AttendanceController::class, 'exportExcel'])
+            ->middleware('permission:attendance.export')
+            ->name('export');
+
+        // Yalnız Admin: Sinxronizasiya
+        Route::post('/workers/sync', [AttendanceController::class, 'syncFromPortal'])
+            ->middleware('permission:attendance.sync')
+            ->name('workers.sync');
+
+        // Tənzimləmələr (Admin və Direktor üçün limitsiz)
         Route::get('/settings', [AttendanceController::class, 'settings'])->name('settings');
         Route::post('/settings', [AttendanceController::class, 'updateSettings'])->name('settings.update');
-        Route::get('/export', [AttendanceController::class, 'exportExcel'])->name('export');
+
+        // Yalnız Admin: Filial İdarəetməsi
+        Route::middleware('permission:attendance.manage-branches')->group(function () {
+            Route::post('/branches', [AttendanceController::class, 'storeBranch'])->name('branches.store');
+            Route::post('/branches/{id}', [AttendanceController::class, 'updateBranch'])->name('branches.update');
+            Route::delete('/branches/{id}', [AttendanceController::class, 'destroyBranch'])->name('branches.destroy');
+        });
+
+        // Yalnız Admin: İşçi PIN və Cihaz İdarəetməsi
+        Route::middleware('permission:attendance.manage-workers')->group(function () {
+            Route::post('/workers/{id}/pin', [AttendanceController::class, 'updateWorkerPin'])->name('workers.pin');
+            Route::post('/workers/{id}/reset-device', [AttendanceController::class, 'resetWorkerDevice'])->name('workers.resetDevice');
+        });
     });
 });
 

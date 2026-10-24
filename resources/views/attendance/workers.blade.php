@@ -743,6 +743,7 @@
 
                             {{-- Əməliyyatlar --}}
                             <td>
+                                @can('attendance.manage-workers')
                                 <div class="d-flex align-items-center gap-2">
                                     <button type="button" class="worker-btn-action worker-btn-pin btn-change-pin"
                                         data-id="{{ $w->id }}"
@@ -762,6 +763,9 @@
                                         </button>
                                     @endif
                                 </div>
+                                @else
+                                <span class="text-muted small">—</span>
+                                @endcan
                             </td>
                         </tr>
                     @empty

@@ -48,6 +48,13 @@ class PermissionSeeder extends Seeder
             'employees.create',
             'employees.edit',
             'employees.delete',
+
+            // Davamiyyət (QR)
+            'attendance.view',
+            'attendance.export',
+            'attendance.sync',
+            'attendance.manage-branches',
+            'attendance.manage-workers',
         ];
 
         foreach ($permissions as $permission) {

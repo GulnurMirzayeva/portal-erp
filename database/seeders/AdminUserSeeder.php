@@ -18,7 +18,7 @@ class AdminUserSeeder extends Seeder
             ['email' => 'admin@portal.land'],
             [
                 'name' => 'ERP Admin',
-                'password' => Hash::make('Admin12345!'),
+                'password' => Hash::make(env('ADMIN_SEED_PASSWORD', 'PortalAdmin2026!')),
             ]
         );
         $admin->syncRoles(['Admin']);
