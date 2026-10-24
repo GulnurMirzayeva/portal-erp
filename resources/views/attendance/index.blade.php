@@ -618,18 +618,18 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            @can('attendance.export')
+            @if(auth()->user()->hasAnyRole(['Admin', 'Director']) || auth()->user()->can('attendance.export'))
             <a href="{{ route('attendance.export', request()->all()) }}" class="att-btn att-btn-outline att-btn-sm" title="Jurnalı Excel sənədi kimi yüklə">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 Excel İxrac
             </a>
-            @endcan
-            @can('attendance.sync')
+            @endif
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('attendance.sync'))
             <button type="button" id="btnSyncWorkers" class="att-btn att-btn-outline att-btn-sm" title="Vebsaytdan yeni filial və işçiləri çək">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
                 Portal-dan Sinxron et
             </button>
-            @endcan
+            @endif
             <a href="{{ route('attendance.branches') }}" class="att-btn att-btn-primary att-btn-sm">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
                 Filiallar & QR-lar

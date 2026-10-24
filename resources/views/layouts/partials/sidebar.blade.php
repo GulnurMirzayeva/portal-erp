@@ -149,7 +149,7 @@
             @endcan
 
             {{-- Davamiyyət (QR Giriş-Çıxış) --}}
-            @can('attendance.view')
+            @if(auth()->user()->hasAnyRole(['Admin', 'Director']) || auth()->user()->can('attendance.view'))
             @php
                 $isAttendanceActive = request()->routeIs('attendance.*');
             @endphp
@@ -195,7 +195,7 @@
                     </li>
                 </ul>
             </li>
-            @endcan
+            @endif
         </ul>
     </div>
 </aside>

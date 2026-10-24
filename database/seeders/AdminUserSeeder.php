@@ -13,6 +13,13 @@ class AdminUserSeeder extends Seeder
      */
     public function run(): void
     {
+        // 0. Bütün icazələri və rolları sinxronlaşdır
+        $this->call([
+            PermissionSeeder::class,
+            RoleSeeder::class,
+        ]);
+        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
         // 1. Admin: Tam hüquqlu
         $admin = User::updateOrCreate(
             ['email' => 'admin@portal.land'],
@@ -29,7 +36,7 @@ class AdminUserSeeder extends Seeder
             \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $admin->id)->delete();
         }
 
-        // 2. Director: Yalnız baxış hüquqlu (view-only)
+        // 2. Director: Yalnız baxış hüquqlu (view-only + settings)
         $director = User::updateOrCreate(
             ['email' => 'director@portal.land'],
             [

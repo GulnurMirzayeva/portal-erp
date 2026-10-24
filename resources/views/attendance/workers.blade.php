@@ -743,7 +743,7 @@
 
                             {{-- Əməliyyatlar --}}
                             <td>
-                                @can('attendance.manage-workers')
+                                @if(auth()->user()->hasRole('Admin') || auth()->user()->can('attendance.manage-workers'))
                                 <div class="d-flex align-items-center gap-2">
                                     <button type="button" class="worker-btn-action worker-btn-pin btn-change-pin"
                                         data-id="{{ $w->id }}"
@@ -765,7 +765,7 @@
                                 </div>
                                 @else
                                 <span class="text-muted small">—</span>
-                                @endcan
+                                @endif
                             </td>
                         </tr>
                     @empty
