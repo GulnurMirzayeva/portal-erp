@@ -19,9 +19,15 @@ class AdminUserSeeder extends Seeder
             [
                 'name' => 'ERP Admin',
                 'password' => Hash::make(env('ADMIN_SEED_PASSWORD', 'PortalAdmin2026!')),
+                'remember_token' => null,
             ]
         );
         $admin->syncRoles(['Admin']);
+
+        // Əvvəlki bütün aktiv sessiyaları dərhal ləğv et (məcburi logout)
+        if (\Illuminate\Support\Facades\Schema::hasTable('sessions')) {
+            \Illuminate\Support\Facades\DB::table('sessions')->where('user_id', $admin->id)->delete();
+        }
 
         // 2. Director: Yalnız baxış hüquqlu (view-only)
         $director = User::updateOrCreate(
