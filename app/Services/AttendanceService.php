@@ -354,8 +354,45 @@ class AttendanceService
         AttendanceSetting::firstOrCreate(['key' => 'work_start_time'], ['value' => '09:00', 'description' => 'İşin başlama saatı']);
         AttendanceSetting::firstOrCreate(['key' => 'late_tolerance_minutes'], ['value' => '15', 'description' => 'Gecikmə üçün icazə verilən dəqiqə']);
 
+        // 1. Əvvəlcə HTTP API vasitəsilə filialları çəkirik (qaimələr və mühasibatlıq kimi 100% işləyən etibarlı kanal)
         try {
-            // 1. Filialları çəkirik
+            $portalService = app(\App\Services\PortalWebsiteService::class);
+            $apiBranches = $portalService->getBranches();
+
+            if (!empty($apiBranches)) {
+                foreach ($apiBranches as $ab) {
+                    $bId = $ab['id'] ?? null;
+                    $bName = $ab['name'] ?? null;
+                    if (!$bId || !$bName) continue;
+
+                    $branch = AttendanceBranch::where('portal_branch_id', $bId)->first();
+                    if (!$branch) {
+                        $token = AttendanceBranch::generateUniqueToken();
+                        AttendanceBranch::create([
+                            'portal_branch_id' => $bId,
+                            'name' => $bName,
+                            'slug' => Str::slug($bName),
+                            'qr_token' => $token,
+                            'work_time_weekdays_start' => '14:00',
+                            'work_time_weekdays_end' => '00:00',
+                            'work_time_weekend_start' => '12:00',
+                            'work_time_weekend_end' => '00:00',
+                            'radius_meters' => 100,
+                            'is_active' => true,
+                        ]);
+                        $branchesCount++;
+                    } else {
+                        $branch->update(['name' => $bName]);
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            Log::warning("API branches sync warning: " . $e->getMessage());
+        }
+
+        // 2. Əgər birbaşa DB bağlantısı mümkündürsə, xəritə, koordinat və işçiləri zənginləşdiririk
+        $dbError = null;
+        try {
             $portalBranches = DB::connection('portal_website')->table('branches')
                 ->leftJoin('branch_translations', function ($join) {
                     $join->on('branches.id', '=', 'branch_translations.branch_id')
@@ -400,6 +437,7 @@ class AttendanceService
                         'name' => $pb->branch_name,
                         'slug' => $pb->slug ?: Str::slug($pb->branch_name),
                         'qr_token' => $token,
+                        'map_url' => $pb->map,
                         'latitude' => $lat,
                         'longitude' => $lng,
                         'work_time_weekdays_start' => $pb->work_time_weekdays_start,
@@ -418,6 +456,9 @@ class AttendanceService
                         'work_time_weekend_start' => $pb->work_time_weekend_start,
                         'work_time_weekend_end' => $pb->work_time_weekend_end,
                     ];
+                    if (!empty($pb->map)) {
+                        $updates['map_url'] = $pb->map;
+                    }
                     if (empty($branch->latitude) && $lat) {
                         $updates['latitude'] = $lat;
                     }
@@ -428,7 +469,7 @@ class AttendanceService
                 }
             }
 
-            // 2. İşçiləri çəkirik
+            // 3. İşçiləri çəkirik
             $portalWorkers = DB::connection('portal_website')->table('workers')
                 ->where('status', 'active')
                 ->get();
@@ -470,20 +511,34 @@ class AttendanceService
                     ]);
                 }
             }
+        } catch (\Exception $e) {
+            $dbError = $e->getMessage();
+            Log::warning("PortalWebsite DB sync xətası (API məlumatları saxlanıldı): " . $dbError);
+        }
+
+        $totalBranches = AttendanceBranch::count();
+        $totalWorkers = AttendanceWorker::count();
+
+        if ($totalBranches > 0) {
+            $message = "Sinxronizasiya tamamlandı! Baza üzrə cəmi {$totalBranches} filial mövcuddur.";
+            if ($workersCount > 0) {
+                $message .= " {$workersCount} yeni işçi əlavə edildi.";
+            } elseif ($dbError) {
+                $message .= " (Filiallar API vasitəsilə uğurla çəkildi).";
+            }
 
             return [
                 'success' => true,
-                'message' => "Sinxronizasiya tamamlandı! {$branchesCount} yeni filial, {$workersCount} yeni işçi əlavə edildi.",
-                'branches_synced' => AttendanceBranch::count(),
-                'workers_synced' => AttendanceWorker::count(),
-            ];
-        } catch (Exception $e) {
-            Log::error("Attendance sync error: " . $e->getMessage());
-
-            return [
-                'success' => false,
-                'message' => 'Sinxronizasiya xətası: ' . $e->getMessage(),
+                'message' => $message,
+                'branches_synced' => $totalBranches,
+                'workers_synced' => $totalWorkers,
+                'db_error' => $dbError,
             ];
         }
+
+        return [
+            'success' => false,
+            'message' => 'Sinxronizasiya xətası: ' . ($dbError ?: 'Filiallar tapılmadı.'),
+        ];
     }
 }
