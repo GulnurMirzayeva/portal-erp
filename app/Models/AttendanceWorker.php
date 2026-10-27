@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -56,6 +57,28 @@ class AttendanceWorker extends Model
         $lastLog = $this->todayLastLog();
 
         if (!$lastLog) {
+            // Əgər bu gün hələ log yoxdursa, amma əvvəldən açıq qalmış qeydiyyat varsa:
+            $latestOverall = $this->logs()
+                ->where('status', 'success')
+                ->latest('scanned_at')
+                ->first();
+
+            if ($latestOverall && $latestOverall->type === 'check_in') {
+                if (AttendanceSetting::isAutoCheckoutEnabled()) {
+                    $autoCheckoutTime = AttendanceSetting::getAutoCheckoutTime();
+                    $checkInTime = Carbon::parse($latestOverall->scanned_at);
+                    $sameDayCutoff = $checkInTime->copy()->setTimeFromTimeString($autoCheckoutTime);
+                    $targetCheckoutAt = $checkInTime->greaterThanOrEqualTo($sameDayCutoff)
+                        ? $sameDayCutoff->copy()->addDay()
+                        : $sameDayCutoff->copy();
+
+                    if (Carbon::now()->greaterThanOrEqualTo($targetCheckoutAt)) {
+                        return 'check_in';
+                    }
+                }
+                return 'check_out';
+            }
+
             return 'check_in';
         }
 

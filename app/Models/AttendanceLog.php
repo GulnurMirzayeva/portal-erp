@@ -70,4 +70,14 @@ class AttendanceLog extends Model
             default => $this->rejection_reason ?? 'Bilinməyən xəta',
         };
     }
+
+    /**
+     * Qeydiyyatın avtomatik sistem çıxışı olub-olmadığını yoxlayır.
+     */
+    public function isAutoCheckout(): bool
+    {
+        return $this->rejection_reason === 'auto_checkout'
+            || ($this->rejection_details && str_contains($this->rejection_details, 'Avtomatik'))
+            || ($this->device_model && str_contains($this->device_model, 'Avtomatik'));
+    }
 }

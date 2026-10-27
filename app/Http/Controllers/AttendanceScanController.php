@@ -24,6 +24,9 @@ class AttendanceScanController extends Controller
      */
     public function showScanPage(string $token)
     {
+        // Əvvəlki günlərdən açıq qalmış unudulmuş girişləri avtomatik çıxış edirik
+        $this->attendanceService->performAutoCheckout();
+
         $branch = AttendanceBranch::where('qr_token', $token)
             ->where('is_active', true)
             ->firstOrFail();

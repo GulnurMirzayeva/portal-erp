@@ -50,4 +50,20 @@ class AttendanceSetting extends Model
     {
         return static::get('allow_device_reuse', '0') === '0';
     }
+
+    /**
+     * Avtomatik çıxışın aktiv olub-olmadığını qaytarır.
+     */
+    public static function isAutoCheckoutEnabled(): bool
+    {
+        return static::get('auto_checkout_enabled', '1') === '1';
+    }
+
+    /**
+     * Avtomatik çıxış saatını qaytarır (məsələn: '06:00').
+     */
+    public static function getAutoCheckoutTime(): string
+    {
+        return (string) static::get('auto_checkout_time', '06:00');
+    }
 }

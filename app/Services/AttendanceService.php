@@ -50,6 +50,9 @@ class AttendanceService
         ?string $userAgent,
         ?string $forceType = null
     ): array {
+        // Unudulmuş girişlər üçün vaxtı çatmış avtomatik çıxışları icra edirik
+        $this->performAutoCheckout();
+
         $now = Carbon::now();
         $today = $now->toDateString();
 
@@ -353,6 +356,8 @@ class AttendanceService
         AttendanceSetting::firstOrCreate(['key' => 'allow_device_reuse'], ['value' => '0', 'description' => 'Bir telefondan bir neçə işçiyə icazə (0=Xeyr, 1=Bəli)']);
         AttendanceSetting::firstOrCreate(['key' => 'work_start_time'], ['value' => '09:00', 'description' => 'İşin başlama saatı']);
         AttendanceSetting::firstOrCreate(['key' => 'late_tolerance_minutes'], ['value' => '15', 'description' => 'Gecikmə üçün icazə verilən dəqiqə']);
+        AttendanceSetting::firstOrCreate(['key' => 'auto_checkout_enabled'], ['value' => '1', 'description' => 'Unudulmuş girişlər üçün təyin edilən saatda avtomatik çıxış (1/0)']);
+        AttendanceSetting::firstOrCreate(['key' => 'auto_checkout_time'], ['value' => '06:00', 'description' => 'Avtomatik çıxışın icra saatı']);
 
         // 1. Əvvəlcə HTTP API vasitəsilə filialları çəkirik (qaimələr və mühasibatlıq kimi 100% işləyən etibarlı kanal)
         try {
@@ -540,5 +545,90 @@ class AttendanceService
             'success' => false,
             'message' => 'Sinxronizasiya xətası: ' . ($dbError ?: 'Filiallar tapılmadı.'),
         ];
+    }
+
+    /**
+     * Unudulmuş girişləri təyin olunmuş saatda (məs: 06:00) avtomatik çıxış edir.
+     * Həm Cron (Artisan command), həm də real vaxtda skan və ya jurnal açıldıqda icra olunur.
+     */
+    public function performAutoCheckout(): int
+    {
+        if (!AttendanceSetting::isAutoCheckoutEnabled()) {
+            return 0;
+        }
+
+        $autoCheckoutTime = AttendanceSetting::getAutoCheckoutTime();
+        $now = Carbon::now();
+        $closedCount = 0;
+
+        // Bütün aktiv işçiləri yoxlayırıq
+        $workers = AttendanceWorker::where('is_active', true)->get();
+
+        foreach ($workers as $worker) {
+            // İşçinin ən son uğurlu qeydiyyatı
+            $lastLog = AttendanceLog::where('worker_id', $worker->id)
+                ->where('status', 'success')
+                ->latest('scanned_at')
+                ->first();
+
+            // Əgər ən son qeydiyyat yoxdursa və ya artıq çıxış edibsə, keçirik
+            if (!$lastLog || $lastLog->type !== 'check_in') {
+                continue;
+            }
+
+            // Giriş vaxtı
+            $checkInTime = Carbon::parse($lastLog->scanned_at);
+            $sameDayCutoff = $checkInTime->copy()->setTimeFromTimeString($autoCheckoutTime);
+
+            // Əgər giriş saatı 06:00-dan sonra olubsa (məs: 09:00), avtomatik çıxış növbəti günün 06:00-dadır.
+            // Əgər gecə növbəsi olub 06:00-dan əvvəl daxil olubsa (məs: 02:00), elə həmin günün 06:00-dadır.
+            if ($checkInTime->greaterThanOrEqualTo($sameDayCutoff)) {
+                $targetCheckoutAt = $sameDayCutoff->copy()->addDay();
+            } else {
+                $targetCheckoutAt = $sameDayCutoff->copy();
+            }
+
+            // Əgər cari vaxt bu hədəf çıxış saatına çatıbsa və ya keçibsə:
+            if ($now->greaterThanOrEqualTo($targetCheckoutAt)) {
+                // Təkrar eyni qeydin düşməməsi üçün yoxlayırıq
+                $exists = AttendanceLog::where('worker_id', $worker->id)
+                    ->where('type', 'check_out')
+                    ->where('date', $targetCheckoutAt->toDateString())
+                    ->where('scanned_at', $targetCheckoutAt)
+                    ->exists();
+
+                if (!$exists) {
+                    AttendanceLog::create([
+                        'worker_id' => $worker->id,
+                        'worker_name' => $worker->name,
+                        'branch_id' => $lastLog->branch_id,
+                        'branch_name' => $lastLog->branch_name,
+                        'date' => $targetCheckoutAt->toDateString(),
+                        'type' => 'check_out',
+                        'scanned_at' => $targetCheckoutAt,
+                        'latitude' => null,
+                        'longitude' => null,
+                        'distance_meters' => null,
+                        'late_minutes' => null,
+                        'device_uuid' => null,
+                        'device_model' => 'Avtomatik Sistem',
+                        'ip_address' => null,
+                        'user_agent' => 'System Auto-Checkout Daemon',
+                        'status' => 'success',
+                        'rejection_reason' => 'auto_checkout',
+                        'rejection_details' => "Avtomatik Sistem Çıxışı — Unudulmuş çıxış",
+                        'is_violation' => false,
+                    ]);
+
+                    $closedCount++;
+                }
+            }
+        }
+
+        if ($closedCount > 0) {
+            Log::info("Attendance Auto-Checkout: {$closedCount} işçi üçün sistem tərəfindən avtomatik çıxış (logout) qeydə alındı.");
+        }
+
+        return $closedCount;
     }
 }

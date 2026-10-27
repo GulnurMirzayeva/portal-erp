@@ -477,6 +477,61 @@
         margin-top: 4px;
     }
 
+    /* Auto-Checkout Note Badge */
+    .badge-auto-checkout-main {
+        background: #f5f3ff;
+        color: #6d28d9;
+        border: 1px solid #ddd6fe;
+        padding: 5px 11px;
+        border-radius: 8px;
+        font-size: 11.5px;
+        font-weight: 800;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        letter-spacing: 0.3px;
+        white-space: nowrap;
+    }
+    .badge-auto-time-pill {
+        background: #f1f5f9;
+        color: #475569;
+        border: 1px solid #cbd5e1;
+        padding: 3px 9px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+    .badge-system-auto {
+        background: #eef2ff;
+        color: #4f46e5;
+        border: 1px solid #c7d2fe;
+        padding: 3px 8px;
+        border-radius: 6px;
+        font-size: 11.5px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+    }
+    .badge-status-auto {
+        background: #eef2ff;
+        color: #4338ca;
+        border: 1px solid #c7d2fe;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        white-space: nowrap;
+    }
+
     /* Distance Badges */
     .badge-dist-ok {
         background: #ecfdf5;
@@ -823,9 +878,18 @@
                                 </span>
                             </td>
 
+                            @php
+                                $isAuto = $log->isAutoCheckout();
+                            @endphp
+
                             {{-- Hərəkət Növü --}}
                             <td>
-                                @if($log->type === 'check_in')
+                                @if($isAuto)
+                                    <span class="badge-auto-checkout-main" title="{{ $log->rejection_details ?: 'Sistem tərəfindən avtomatik çıxış' }}">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"></path><line x1="12" y1="2" x2="12" y2="12"></line></svg>
+                                        AVTOMATİK ÇIXIŞ
+                                    </span>
+                                @elseif($log->type === 'check_in')
                                     <span class="badge-in">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
                                         GİRİŞ
@@ -842,25 +906,39 @@
 
                             {{-- Saat & Tarix --}}
                             <td>
-                                <div class="fw-bold text-dark" style="font-size: 13.5px;">
-                                    {{ $log->scanned_at ? $log->scanned_at->format('H:i:s') : '—' }}
-                                </div>
-                                <div class="small text-muted" style="font-size: 11.5px;">
-                                    {{ $log->date ? $log->date->format('d.m.Y') : '—' }}
-                                </div>
-                                @if($log->late_minutes && $log->late_minutes > 0)
+                                @if($isAuto)
                                     <div>
-                                        <span class="badge-late-warning">
+                                        <span class="badge-auto-time-pill" title="İşçi çıxış vurmadığı üçün saat qeydə alınmayıb, sistem tərəfindən avtomatik bağlanıb">
                                             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-                                            Gecikmə: {{ $log->late_minutes }} dəq
+                                            Saat qeydə alınmayıb
                                         </span>
                                     </div>
+                                    <div class="small text-muted mt-1" style="font-size: 11.5px; font-weight: 600;">
+                                        {{ $log->date ? $log->date->format('d.m.Y') : '—' }}
+                                    </div>
+                                @else
+                                    <div class="fw-bold text-dark" style="font-size: 13.5px;">
+                                        {{ $log->scanned_at ? $log->scanned_at->format('H:i:s') : '—' }}
+                                    </div>
+                                    <div class="small text-muted" style="font-size: 11.5px;">
+                                        {{ $log->date ? $log->date->format('d.m.Y') : '—' }}
+                                    </div>
+                                    @if($log->late_minutes && $log->late_minutes > 0)
+                                        <div>
+                                            <span class="badge-late-warning">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                                Gecikmə: {{ $log->late_minutes }} dəq
+                                            </span>
+                                        </div>
+                                    @endif
                                 @endif
                             </td>
 
                             {{-- Məsafə --}}
                             <td>
-                                @if($log->distance_meters !== null)
+                                @if($isAuto)
+                                    <span class="text-muted small" title="Fiziki QR oxunmadığı üçün məsafə yoxdur">— (Sistem)</span>
+                                @elseif($log->distance_meters !== null)
                                     @php
                                         $radius = $log->branch?->radius_meters ?: \App\Models\AttendanceSetting::get('default_radius_meters', 100);
                                         $isOk = $log->distance_meters <= $radius;
@@ -876,18 +954,30 @@
 
                             {{-- Cihaz & IP --}}
                             <td>
-                                <div class="fw-semibold text-dark" style="font-size: 12.5px; display: flex; align-items: center; gap: 5px;">
-                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #64748b;"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
-                                    {{ $log->device_model ?: 'Mobil Cihaz' }}
-                                </div>
-                                <div style="font-family: monospace; font-size: 11px; color: #64748b; margin-top: 2px;">
-                                    IP: {{ $log->ip_address ?: '—' }}
-                                </div>
+                                @if($isAuto)
+                                    <span class="badge-system-auto">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                                        Sistem Logout
+                                    </span>
+                                @else
+                                    <div class="fw-semibold text-dark" style="font-size: 12.5px; display: flex; align-items: center; gap: 5px;">
+                                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: #64748b;"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                                        {{ $log->device_model ?: 'Mobil Cihaz' }}
+                                    </div>
+                                    <div style="font-family: monospace; font-size: 11px; color: #64748b; margin-top: 2px;">
+                                        IP: {{ $log->ip_address ?: '—' }}
+                                    </div>
+                                @endif
                             </td>
 
                             {{-- Status --}}
                             <td>
-                                @if($log->status === 'success')
+                                @if($isAuto)
+                                    <span class="badge-status-auto" title="Çıxış edilmədiyi üçün sistem tərəfindən avtomatik logout edilib">
+                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                        Avtomatik Bağlanıb
+                                    </span>
+                                @elseif($log->status === 'success')
                                     <span class="badge-status-ok">
                                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                                         Uğurlu

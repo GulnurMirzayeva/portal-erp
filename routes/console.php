@@ -23,3 +23,10 @@ Artisan::command('inspire', function () {
     ->withoutOverlapping()
     ->appendOutputTo(storage_path('logs/ga4-sync.log'));
 
+// Çıxış etməyi unudan işçiləri təyin edilmiş vaxtda (məs: 06:00) avtomatik çıxış (logout) edir
+\Illuminate\Support\Facades\Schedule::command('attendance:auto-checkout')
+    ->everyTenMinutes()
+    ->withoutOverlapping()
+    ->appendOutputTo(storage_path('logs/attendance-auto-checkout.log'));
+
+

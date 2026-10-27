@@ -73,6 +73,7 @@
     .summary-chip-icon.blue { background: #eff6ff; color: #2563eb; }
     .summary-chip-icon.rose { background: #fff1f2; color: #e11d48; }
     .summary-chip-icon.amber { background: #fffbeb; color: #d97706; }
+    .summary-chip-icon.indigo { background: #eef2ff; color: #4f46e5; }
     .summary-chip-label {
         font-size: 11.5px;
         font-weight: 600;
@@ -114,6 +115,7 @@
     .badge-blue { background: #eff6ff; color: #2563eb; border: 1.5px solid #bfdbfe; }
     .badge-rose { background: #fff1f2; color: #e11d48; border: 1.5px solid #fecdd3; }
     .badge-amber { background: #fffbeb; color: #d97706; border: 1.5px solid #fde68a; }
+    .badge-indigo { background: #eef2ff; color: #4f46e5; border: 1.5px solid #c7d2fe; }
 
     .settings-title {
         font-size: 16px;
@@ -505,6 +507,17 @@
                 </span>
             </div>
         </div>
+        <div class="summary-chip">
+            <div class="summary-chip-icon indigo">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline><path d="M16 16l4 4"></path></svg>
+            </div>
+            <div>
+                <span class="summary-chip-label">Avtomatik Çıxış</span>
+                <span class="summary-chip-val" id="summaryAutoCheckoutText">
+                    {{ ($settings['auto_checkout_enabled'] ?? '1') === '1' ? 'Aktiv (' . ($settings['auto_checkout_time'] ?? '06:00') . ')' : 'Deaktiv' }}
+                </span>
+            </div>
+        </div>
     </div>
 
     {{-- Success Message --}}
@@ -733,6 +746,82 @@
             </div>
         </div>
 
+        {{-- 5. AVTOMATİK ÇIXIŞ (AUTO-CHECKOUT) QAYDASI --}}
+        <div class="settings-card">
+            <div class="settings-card-header">
+                <div class="settings-icon-badge badge-indigo">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline><path d="M16 16l4 4"></path></svg>
+                </div>
+                <div>
+                    <h5 class="settings-title">Avtomatik Çıxış Qaydası (Auto-Checkout)</h5>
+                    <p class="settings-desc">İşçi işə giriş edib çıxış etməyi unudarsa, təyin edilmiş saatda (məs: 06:00) sistem tərəfindən avtomatik çıxış (logout) verilsinmi?</p>
+                </div>
+            </div>
+
+            <div class="option-card-group">
+                {{-- Avtomatik Çıxış Deaktiv --}}
+                <label class="option-card {{ ($settings['auto_checkout_enabled'] ?? '1') === '0' ? 'active' : '' }}" onclick="selectOption(this); toggleAutoCheckoutFields(false);">
+                    <input type="radio" name="auto_checkout_enabled" value="0" {{ ($settings['auto_checkout_enabled'] ?? '1') === '0' ? 'checked' : '' }}>
+                    <div class="custom-radio-indicator">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div>
+                        <div class="opt-header-row">
+                            <span class="opt-title">Avtomatik Çıxış DEAKTİV Olsun</span>
+                            <span class="opt-badge opt-badge-neutral">Əl İlə İdarə</span>
+                        </div>
+                        <p class="opt-desc">İşçi çıxış etməyi unutsa belə, sistem müdaxilə etmir və onun statusu çıxış edilənədək açıq qalır.</p>
+                    </div>
+                </label>
+
+                {{-- Avtomatik Çıxış Aktiv --}}
+                <label class="option-card {{ ($settings['auto_checkout_enabled'] ?? '1') === '1' ? 'active' : '' }}" onclick="selectOption(this); toggleAutoCheckoutFields(true);">
+                    <input type="radio" name="auto_checkout_enabled" value="1" {{ ($settings['auto_checkout_enabled'] ?? '1') === '1' ? 'checked' : '' }}>
+                    <div class="custom-radio-indicator">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <div>
+                        <div class="opt-header-row">
+                            <span class="opt-title">Avtomatik Çıxış AKTİV Olsun</span>
+                            <span class="opt-badge opt-badge-recommended">Tövsiyə Olunan</span>
+                        </div>
+                        <p class="opt-desc">İşçinin çıxış etmək yadından çıxıbsa, təyin olunan saatda avtomatik sistem çıxışı qeydə alınır. Növbəti gün səhər gəldikdə QR kodu oxudanda maneəsiz birbaşa <strong>"İşə Giriş"</strong> edə bilir.</p>
+                    </div>
+                </label>
+            </div>
+
+            {{-- Əlavə Tənzimləmə Qutusu (Saat və Presetlər) --}}
+            <div class="sub-fields-box {{ ($settings['auto_checkout_enabled'] ?? '1') === '0' ? 'dimmed' : '' }}" id="autoCheckoutFieldsBox">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label small fw-bold text-dark mb-1">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="me-1"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                            Avtomatik Çıxış Saatı (HH:mm)
+                        </label>
+                        <input type="time" name="auto_checkout_time" id="autoCheckoutTimeInput" class="att-input-standard" value="{{ $settings['auto_checkout_time'] ?? '06:00' }}" required onchange="updateAutoCheckoutSummary()">
+                        <div class="preset-chips-row mt-2">
+                            <span class="preset-label">Tez seçim:</span>
+                            <span class="preset-chip {{ ($settings['auto_checkout_time'] ?? '06:00') == '04:00' ? 'active' : '' }}" onclick="setAutoCheckoutPreset('04:00')">04:00</span>
+                            <span class="preset-chip {{ ($settings['auto_checkout_time'] ?? '06:00') == '05:00' ? 'active' : '' }}" onclick="setAutoCheckoutPreset('05:00')">05:00</span>
+                            <span class="preset-chip {{ ($settings['auto_checkout_time'] ?? '06:00') == '06:00' ? 'active' : '' }}" onclick="setAutoCheckoutPreset('06:00')">06:00 (Tövsiyə)</span>
+                            <span class="preset-chip {{ ($settings['auto_checkout_time'] ?? '06:00') == '07:00' ? 'active' : '' }}" onclick="setAutoCheckoutPreset('07:00')">07:00</span>
+                            <span class="preset-chip {{ ($settings['auto_checkout_time'] ?? '06:00') == '08:00' ? 'active' : '' }}" onclick="setAutoCheckoutPreset('08:00')">08:00</span>
+                        </div>
+                    </div>
+                    <div class="col-md-6 d-flex align-items-center">
+                        <div class="att-info-box mb-0" style="margin-top: 14px;">
+                            <div class="att-info-box-icon">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            </div>
+                            <div style="font-size: 12px; line-height: 1.45;">
+                                <strong>Qeyd:</strong> Məsələn, <strong>06:00</strong> seçildikdə, dünən daxil olub çıxış etməyən işçilər səhər saat 06:00-da sistem tərəfindən çıxış edilmiş qeyd olunur. Səhər növbəti dəfə QR kodu oxutduqda işçinin kartı avtomatik <strong>"GİRİŞ"</strong> üçün hazır olur.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         {{-- Aşağı Təsdiq Paneli --}}
         <div class="settings-bottom-bar">
             <div class="d-flex align-items-center gap-2 text-muted" style="font-size: 13px;">
@@ -783,6 +872,10 @@
         } else if (name === 'track_late_arrivals') {
             const el = document.getElementById('summaryLateText');
             if (el) el.textContent = value === '1' ? 'Aktiv (Dinamik)' : 'Deaktiv';
+        } else if (name === 'auto_checkout_enabled') {
+            const timeVal = document.getElementById('autoCheckoutTimeInput')?.value || '06:00';
+            const el = document.getElementById('summaryAutoCheckoutText');
+            if (el) el.textContent = value === '1' ? 'Aktiv (' + timeVal + ')' : 'Deaktiv';
         }
     }
 
@@ -811,6 +904,26 @@
         event.target.classList.add('active');
     }
 
+    // Avtomatik çıxış üçün Preset Düymələri
+    function setAutoCheckoutPreset(val) {
+        const input = document.getElementById('autoCheckoutTimeInput');
+        if (input) {
+            input.value = val;
+            updateAutoCheckoutSummary();
+        }
+
+        event.target.closest('.preset-chips-row').querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
+        event.target.classList.add('active');
+    }
+
+    // Avtomatik çıxış icmalını yeniləmək
+    function updateAutoCheckoutSummary() {
+        const isEnabled = document.querySelector('input[name="auto_checkout_enabled"]:checked')?.value === '1';
+        const timeVal = document.getElementById('autoCheckoutTimeInput')?.value || '06:00';
+        const el = document.getElementById('summaryAutoCheckoutText');
+        if (el) el.textContent = isEnabled ? 'Aktiv (' + timeVal + ')' : 'Deaktiv';
+    }
+
     // Radius inputu əllə yazıldıqda icmal zolağını yeniləmək
     document.getElementById('radiusInput')?.addEventListener('input', function() {
         const summary = document.getElementById('summaryRadiusText');
@@ -827,6 +940,19 @@
                 box.classList.add('dimmed');
             }
         }
+    }
+
+    // Avtomatik çıxış sahələrini aktiv/deaktiv göstərmək
+    function toggleAutoCheckoutFields(isActive) {
+        const box = document.getElementById('autoCheckoutFieldsBox');
+        if (box) {
+            if (isActive) {
+                box.classList.remove('dimmed');
+            } else {
+                box.classList.add('dimmed');
+            }
+        }
+        updateAutoCheckoutSummary();
     }
 
     // Yadda saxla düyməsinə klik zamanı feedback
