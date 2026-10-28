@@ -471,30 +471,6 @@
         box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
         transform: translateY(-1px);
     }
-    .worker-btn-deactivate {
-        background: #fff1f2;
-        border: 1.5px solid #fecdd3;
-        color: #e11d48;
-    }
-    .worker-btn-deactivate:hover {
-        background: #ffe4e6;
-        border-color: #f43f5e;
-        color: #be123c;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(225, 29, 72, 0.15);
-    }
-    .worker-btn-activate {
-        background: #ecfdf5;
-        border: 1.5px solid #a7f3d0;
-        color: #059669;
-    }
-    .worker-btn-activate:hover {
-        background: #d1fae5;
-        border-color: #34d399;
-        color: #047857;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(5, 150, 105, 0.15);
-    }
 
     /* Status Badges */
     .status-badge-active {
@@ -798,7 +774,7 @@
                         <th>Status</th>
                         <th>4 Rəqəmli PIN Kod</th>
                         <th>Bağlanmış Cihaz</th>
-                        <th style="width: 250px;">Əməliyyatlar</th>
+                        <th style="width: 180px;">Əməliyyatlar</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -868,29 +844,14 @@
                             {{-- Əməliyyatlar --}}
                             <td>
                                 @if(auth()->user()->hasRole('Admin') || auth()->user()->can('attendance.manage-workers'))
-                                <div class="d-flex align-items-center gap-2 flex-wrap">
+                                <div class="d-flex align-items-center gap-2">
                                     <button type="button" class="worker-btn-action worker-btn-pin btn-change-pin"
                                         data-id="{{ $w->id }}"
                                         data-name="{{ $w->name }}"
                                         data-pin="{{ $w->pin_code }}"
                                         title="Fərdi 4 rəqəmli PIN kodu dəyiş">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                        PIN
-                                    </button>
-
-                                    <button type="button" class="worker-btn-action {{ $w->is_active ? 'worker-btn-deactivate' : 'worker-btn-activate' }} btn-toggle-status"
-                                        id="btnToggleStatus_{{ $w->id }}"
-                                        data-id="{{ $w->id }}"
-                                        data-name="{{ $w->name }}"
-                                        data-active="{{ $w->is_active ? '1' : '0' }}"
-                                        title="{{ $w->is_active ? 'İşçini deaktiv et (QR səhifəsində görünməyəcək)' : 'İşçini yenidən aktiv et' }}">
-                                        @if($w->is_active)
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-                                            <span>Deaktiv et</span>
-                                        @else
-                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
-                                            <span>Aktiv et</span>
-                                        @endif
+                                        PIN Dəyiş
                                     </button>
 
                                     @if($w->registered_device_uuid)
@@ -1079,80 +1040,9 @@
         });
     });
 
-    // Status Dəyişdir (Aktiv <-> Deaktiv)
-    document.querySelectorAll('.btn-toggle-status').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const id = this.dataset.id;
-            const name = this.dataset.name;
-            const currentActive = this.dataset.active === '1';
-            const actionText = currentActive ? 'DEAKTİV etmək' : 'AKTİV etmək';
-            const consequenceText = currentActive 
-                ? 'İşçi deaktiv edildikdə filialın QR skan səhifəsində artıq GÖRÜNMƏYƏCƏK və qeydiyyat apara bilməyəcək.'
-                : 'İşçi aktiv edildikdə yenidən filialın QR skan səhifəsində görünəcək.';
-
-            if (!confirm(`'${name}' adlı işçini ${actionText} istədiyinizdən əminsiniz?\n\n${consequenceText}`)) {
-                return;
-            }
-
-            this.disabled = true;
-            const originalContent = this.innerHTML;
-            this.innerHTML = '<span style="font-size: 11px;">Gözləyin...</span>';
-
-            fetch(`/attendance/workers/${id}/toggle-status`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
-                    'Accept': 'application/json'
-                }
-            })
-            .then(r => r.json())
-            .then(data => {
-                if (data.success) {
-                    const badge = document.getElementById('statusBadge_' + id);
-                    if (data.is_active) {
-                        if (badge) {
-                            badge.className = 'status-badge-active';
-                            badge.innerHTML = '<span class="status-dot"></span> Aktiv';
-                        }
-                        btn.className = 'worker-btn-action worker-btn-deactivate btn-toggle-status';
-                        btn.dataset.active = '1';
-                        btn.title = 'İşçini deaktiv et (QR skanda görünməsin)';
-                        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg><span>Deaktiv et</span>`;
-                    } else {
-                        if (badge) {
-                            badge.className = 'status-badge-inactive';
-                            badge.innerHTML = '<span class="status-dot"></span> Deaktiv';
-                        }
-                        btn.className = 'worker-btn-action worker-btn-activate btn-toggle-status';
-                        btn.dataset.active = '0';
-                        btn.title = 'İşçini yenidən aktiv et';
-                        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg><span>Aktiv et</span>`;
-                    }
-                    alert(data.message);
-                    
-                    const urlParams = new URLSearchParams(window.location.search);
-                    const currentStatusFilter = urlParams.get('status') || 'active';
-                    if ((currentStatusFilter === 'active' && !data.is_active) || (currentStatusFilter === 'inactive' && data.is_active)) {
-                        window.location.reload();
-                    }
-                } else {
-                    alert('Xəta: ' + (data.message || 'Bilinməyən xəta'));
-                    this.innerHTML = originalContent;
-                    this.disabled = false;
-                }
-            })
-            .catch(err => {
-                alert('Serverlə əlaqə xətası baş verdi.');
-                this.innerHTML = originalContent;
-                this.disabled = false;
-            });
-        });
-    });
-
     // Portal-dan Sinxron etmə
     document.getElementById('btnSyncWorkers')?.addEventListener('click', function() {
-        if (!confirm('PortalWebsite-dan yeni filiallar və işçilər sinxronizasiya edilsin?\n\nDeaktiv edilmiş işçilər qorunacaq və yenidən aktiv olmayacaq.')) return;
+        if (!confirm('PortalWebsite-dan filiallar və işçilər sinxronizasiya edilsin?\n\nVebsaytda aktiv olan işçilər aktivləşəcək, arxivlənmiş/silinmiş işçilər isə avtomatik deaktiv ediləcək.')) return;
         const btn = this;
         btn.disabled = true;
         btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="spinner-border spinner-border-sm me-1"></svg> Sinxron edilir...`;

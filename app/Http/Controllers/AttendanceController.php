@@ -413,43 +413,6 @@ class AttendanceController extends Controller
     }
 
     /**
-     * İşçinin statusunu aktiv/deaktiv edir və PortalWebsite DB ilə sinxron saxlayır.
-     */
-    public function toggleWorkerStatus(int $id): JsonResponse
-    {
-        $worker = AttendanceWorker::findOrFail($id);
-        $newStatus = !$worker->is_active;
-        $worker->is_active = $newStatus;
-        $worker->save();
-
-        $portalUpdated = false;
-        if ($worker->portal_worker_id) {
-            try {
-                $portalStatus = $newStatus ? 'active' : 'archived';
-                DB::connection('portal_website')->table('workers')
-                    ->where('id', $worker->portal_worker_id)
-                    ->update([
-                        'status' => $portalStatus,
-                        'updated_at' => now(),
-                    ]);
-                $portalUpdated = true;
-            } catch (\Exception $e) {
-                Log::warning("PortalWebsite DB worker status sync error: " . $e->getMessage());
-            }
-        }
-
-        $statusText = $newStatus ? 'aktiv edildi' : 'deaktiv edildi';
-        $syncNote = $portalUpdated ? ' (Portal Website-da da yeniləndi)' : '';
-
-        return response()->json([
-            'success' => true,
-            'is_active' => $newStatus,
-            'status_label' => $newStatus ? 'Aktiv' : 'Deaktiv',
-            'message' => "İşçi '{$worker->name}' uğurla {$statusText}{$syncNote}.",
-        ]);
-    }
-
-    /**
      * PortalWebsite-dan işçiləri və filialları yenidən çəkir.
      */
     public function syncFromPortal(): JsonResponse

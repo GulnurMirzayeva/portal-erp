@@ -513,6 +513,7 @@ class AttendanceService
                         'phone' => $pw->phone,
                         'portal_branch_id' => $pw->branch_id,
                         'attendance_branch_id' => $attBranchId,
+                        'is_active' => true,
                     ]);
                 }
             }
