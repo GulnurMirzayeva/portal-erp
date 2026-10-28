@@ -96,4 +96,12 @@ class AttendanceBranch extends Model
     {
         return route('attendance.scan', ['token' => $this->qr_token]);
     }
+
+    /**
+     * Tənzimləmələrdəki vahid filial radiusunu qaytarır.
+     */
+    public function getRadiusMetersAttribute($value): int
+    {
+        return (int) AttendanceSetting::get('default_radius_meters', $value ?: 100);
+    }
 }

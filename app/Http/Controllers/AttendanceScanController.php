@@ -48,8 +48,9 @@ class AttendanceScanController extends Controller
 
         $isPinRequired = AttendanceSetting::isPinRequired();
         $isSingleDevice = AttendanceSetting::isSingleDeviceEnforced();
+        $allowedRadius = (int) AttendanceSetting::get('default_radius_meters', 100);
 
-        return view('attendance.scan', compact('branch', 'workers', 'allWorkers', 'isPinRequired', 'isSingleDevice'));
+        return view('attendance.scan', compact('branch', 'workers', 'allWorkers', 'isPinRequired', 'isSingleDevice', 'allowedRadius'));
     }
 
     /**

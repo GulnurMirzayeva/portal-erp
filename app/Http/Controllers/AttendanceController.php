@@ -457,7 +457,9 @@ class AttendanceController extends Controller
         ]);
 
         AttendanceSetting::set('require_pin', $request->input('require_pin'), 'PIN kod tələb olunsun');
-        AttendanceSetting::set('default_radius_meters', $request->input('default_radius_meters'), 'Bütün filiallar üçün vahid radius');
+        $radius = (int) $request->input('default_radius_meters');
+        AttendanceSetting::set('default_radius_meters', (string) $radius, 'Bütün filiallar üçün vahid radius');
+        AttendanceBranch::query()->update(['radius_meters' => $radius]);
         AttendanceSetting::set('allow_device_reuse', $request->input('allow_device_reuse'), 'Bir telefondan bir neçə işçiyə icazə');
         AttendanceSetting::set('track_late_arrivals', $request->input('track_late_arrivals'), 'Gecikmə vaxtının izlənməsi');
         AttendanceSetting::set('work_start_time', $request->input('work_start_time'), 'İşin başlama saatı');

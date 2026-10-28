@@ -588,7 +588,7 @@
     const branchToken = "{{ $branch->qr_token }}";
     const branchLat = {{ $branch->latitude ?: 'null' }};
     const branchLng = {{ $branch->longitude ?: 'null' }};
-    const branchRadius = {{ $branch->radius_meters ?: 100 }};
+    const branchRadius = {{ $allowedRadius ?? ($branch->radius_meters ?: 100) }};
     const isPinRequired = {{ $isPinRequired ? 'true' : 'false' }};
     const submitUrl = "{{ route('attendance.scan.submit', ['token' => $branch->qr_token]) }}";
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');

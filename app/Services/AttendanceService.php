@@ -382,7 +382,7 @@ class AttendanceService
                             'work_time_weekdays_end' => '00:00',
                             'work_time_weekend_start' => '12:00',
                             'work_time_weekend_end' => '00:00',
-                            'radius_meters' => 100,
+                            'radius_meters' => (int) AttendanceSetting::get('default_radius_meters', 100),
                             'is_active' => true,
                         ]);
                         $branchesCount++;
@@ -449,7 +449,7 @@ class AttendanceService
                         'work_time_weekdays_end' => $pb->work_time_weekdays_end,
                         'work_time_weekend_start' => $pb->work_time_weekend_start,
                         'work_time_weekend_end' => $pb->work_time_weekend_end,
-                        'radius_meters' => 100,
+                        'radius_meters' => (int) AttendanceSetting::get('default_radius_meters', 100),
                         'is_active' => true,
                     ]);
                     $branchesCount++;
