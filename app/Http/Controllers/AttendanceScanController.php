@@ -37,8 +37,14 @@ class AttendanceScanController extends Controller
             ->orderBy('name')
             ->get();
 
-        // Əgər filialın xüsusi işçisi yoxdursa və ya ümumi siyahı lazımdırsa
-        $allWorkers = AttendanceWorker::where('is_active', true)->orderBy('name')->get();
+        // Digər filiallardan əvəzedici işçilər (Yalnız aktiv işçilər)
+        $allWorkers = AttendanceWorker::where('is_active', true)
+            ->where(function ($q) use ($branch) {
+                $q->whereNull('attendance_branch_id')
+                  ->orWhere('attendance_branch_id', '!=', $branch->id);
+            })
+            ->orderBy('name')
+            ->get();
 
         $isPinRequired = AttendanceSetting::isPinRequired();
         $isSingleDevice = AttendanceSetting::isSingleDeviceEnforced();

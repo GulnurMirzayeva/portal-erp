@@ -115,7 +115,10 @@ class AttendanceController extends Controller
      */
     public function branches()
     {
-        $branches = AttendanceBranch::withCount(['workers', 'logs'])->orderBy('name')->get();
+        $branches = AttendanceBranch::withCount([
+            'activeWorkers as workers_count',
+            'logs',
+        ])->orderBy('name')->get();
         return view('attendance.branches', compact('branches'));
     }
 
@@ -338,12 +341,20 @@ class AttendanceController extends Controller
     {
         $branchId = $request->input('branch_id');
         $search = $request->input('search');
+        $status = $request->input('status', 'active'); // Defolt olaraq yalnız aktiv işçilər
 
         $query = AttendanceWorker::with('branch');
 
         if ($branchId && $branchId !== 'all') {
             $query->where('attendance_branch_id', $branchId);
         }
+
+        if ($status === 'active') {
+            $query->where('is_active', true);
+        } elseif ($status === 'inactive') {
+            $query->where('is_active', false);
+        }
+        // $status === 'all' olduqda heç bir is_active filtri tətbiq olunmur
 
         if ($search) {
             $query->where(function ($q) use ($search) {
@@ -356,7 +367,13 @@ class AttendanceController extends Controller
         $branches = AttendanceBranch::orderBy('name')->get();
         $isPinRequired = AttendanceSetting::isPinRequired();
 
-        return view('attendance.workers', compact('workers', 'branches', 'branchId', 'search', 'isPinRequired'));
+        $stats = [
+            'total' => AttendanceWorker::count(),
+            'active' => AttendanceWorker::where('is_active', true)->count(),
+            'inactive' => AttendanceWorker::where('is_active', false)->count(),
+        ];
+
+        return view('attendance.workers', compact('workers', 'branches', 'branchId', 'search', 'status', 'stats', 'isPinRequired'));
     }
 
     /**
@@ -392,6 +409,43 @@ class AttendanceController extends Controller
         return response()->json([
             'success' => true,
             'message' => "{$worker->name} üçün cihaz bağlaması sıfırlandı. İşçi yeni telefondan qeydiyyatdan keçə bilər.",
+        ]);
+    }
+
+    /**
+     * İşçinin statusunu aktiv/deaktiv edir və PortalWebsite DB ilə sinxron saxlayır.
+     */
+    public function toggleWorkerStatus(int $id): JsonResponse
+    {
+        $worker = AttendanceWorker::findOrFail($id);
+        $newStatus = !$worker->is_active;
+        $worker->is_active = $newStatus;
+        $worker->save();
+
+        $portalUpdated = false;
+        if ($worker->portal_worker_id) {
+            try {
+                $portalStatus = $newStatus ? 'active' : 'archived';
+                DB::connection('portal_website')->table('workers')
+                    ->where('id', $worker->portal_worker_id)
+                    ->update([
+                        'status' => $portalStatus,
+                        'updated_at' => now(),
+                    ]);
+                $portalUpdated = true;
+            } catch (\Exception $e) {
+                Log::warning("PortalWebsite DB worker status sync error: " . $e->getMessage());
+            }
+        }
+
+        $statusText = $newStatus ? 'aktiv edildi' : 'deaktiv edildi';
+        $syncNote = $portalUpdated ? ' (Portal Website-da da yeniləndi)' : '';
+
+        return response()->json([
+            'success' => true,
+            'is_active' => $newStatus,
+            'status_label' => $newStatus ? 'Aktiv' : 'Deaktiv',
+            'message' => "İşçi '{$worker->name}' uğurla {$statusText}{$syncNote}.",
         ]);
     }
 

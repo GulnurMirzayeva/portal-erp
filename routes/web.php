@@ -135,10 +135,11 @@ Route::middleware('auth')->group(function () {
             Route::delete('/branches/{id}', [AttendanceController::class, 'destroyBranch'])->name('branches.destroy');
         });
 
-        // Yalnız Admin: İşçi PIN və Cihaz İdarəetməsi
+        // Yalnız Admin: İşçi PIN, Status və Cihaz İdarəetməsi
         Route::middleware('role_or_permission:Admin|attendance.manage-workers')->group(function () {
             Route::post('/workers/{id}/pin', [AttendanceController::class, 'updateWorkerPin'])->name('workers.pin');
             Route::post('/workers/{id}/reset-device', [AttendanceController::class, 'resetWorkerDevice'])->name('workers.resetDevice');
+            Route::post('/workers/{id}/toggle-status', [AttendanceController::class, 'toggleWorkerStatus'])->name('workers.toggleStatus');
         });
     });
 });

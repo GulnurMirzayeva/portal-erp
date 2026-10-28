@@ -72,6 +72,30 @@
         align-items: center;
         gap: 5px;
     }
+    .att-pill-active-count {
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid #a7f3d0;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .att-pill-inactive-count {
+        background: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
 
     /* Filter Panel Card */
     .filter-panel-card {
@@ -119,14 +143,14 @@
         background: #2563eb;
     }
 
-    /* 3-Column Aligned Grid */
+    /* 4-Column Aligned Grid */
     .filter-form-grid {
         display: grid;
-        grid-template-columns: 1.5fr 1.2fr 190px;
+        grid-template-columns: 1.4fr 1.1fr 1.1fr 190px;
         gap: 16px;
         align-items: flex-end;
     }
-    @media (max-width: 900px) {
+    @media (max-width: 1050px) {
         .filter-form-grid {
             grid-template-columns: 1fr 1fr;
         }
@@ -447,6 +471,68 @@
         box-shadow: 0 2px 6px rgba(245, 158, 11, 0.15);
         transform: translateY(-1px);
     }
+    .worker-btn-deactivate {
+        background: #fff1f2;
+        border: 1.5px solid #fecdd3;
+        color: #e11d48;
+    }
+    .worker-btn-deactivate:hover {
+        background: #ffe4e6;
+        border-color: #f43f5e;
+        color: #be123c;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(225, 29, 72, 0.15);
+    }
+    .worker-btn-activate {
+        background: #ecfdf5;
+        border: 1.5px solid #a7f3d0;
+        color: #059669;
+    }
+    .worker-btn-activate:hover {
+        background: #d1fae5;
+        border-color: #34d399;
+        color: #047857;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(5, 150, 105, 0.15);
+    }
+
+    /* Status Badges */
+    .status-badge-active {
+        background: #ecfdf5;
+        color: #059669;
+        border: 1px solid #a7f3d0;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .status-badge-inactive {
+        background: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .status-badge-active .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #10b981;
+    }
+    .status-badge-inactive .status-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #ef4444;
+    }
 
     /* Custom Attendance Modal styles */
     .att-modal-backdrop {
@@ -576,18 +662,34 @@
                 İşçilər və Fərdi PIN Kod İdarəetməsi
             </h5>
             <div class="att-top-desc">
-                Hər işçiyə 4 rəqəmli fərdi PIN kod təyin edin, filial təhkimatına və qoşulmuş cihazlara nəzarət edin.
+                Hər filial üzrə yalnız aktiv işçilər görünür. Statusu dəyişərək və ya sinxronizasiya edərək işçilərin QR siyahısını idarə edin.
                 <span class="att-pill-pin">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
                     {{ $isPinRequired ? '4 Rəqəmli PIN Tələbi Aktiv' : 'PIN-siz Rejim' }}
                 </span>
+                <span class="att-pill-active-count">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    {{ $stats['active'] ?? 0 }} Aktiv İşçi
+                </span>
+                @if(($stats['inactive'] ?? 0) > 0)
+                <span class="att-pill-inactive-count">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                    {{ $stats['inactive'] }} Deaktiv
+                </span>
+                @endif
                 <span class="att-pill-workers">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle></svg>
-                    {{ $workers->total() }} İşçi Qeydiyyatda
+                    {{ $stats['total'] ?? $workers->total() }} Cəmi Baza
                 </span>
             </div>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
+            @if(auth()->user()->hasRole('Admin') || auth()->user()->can('attendance.sync'))
+            <button type="button" id="btnSyncWorkers" class="att-btn att-btn-outline att-btn-sm" title="Vebsaytdan yeni filial və işçiləri sinxronizasiya et">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#107c41" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                Sinxron et
+            </button>
+            @endif
             <a href="{{ route('attendance.settings') }}" class="att-btn att-btn-outline att-btn-sm">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 Tənzimləmələr
@@ -610,7 +712,7 @@
                 <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="#107c41" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                 <span>Süzgəc və Axtarış Paneli</span>
             </div>
-            @if($search || ($branchId && $branchId !== 'all'))
+            @if($search || ($branchId && $branchId !== 'all') || ($status && $status !== 'active'))
                 <span class="filter-active-pill">
                     <span class="filter-active-dot"></span>
                     Aktiv Süzgəc Tətbiq Edilib
@@ -642,7 +744,20 @@
                 </select>
             </div>
 
-            {{-- 3. Əməliyyatlar (Axtar & Sıfırla - Vahid 42px Hündürlük) --}}
+            {{-- 3. Status --}}
+            <div class="filter-field-col">
+                <label class="filter-col-label">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 14"></polyline></svg>
+                    Status
+                </label>
+                <select name="status" class="filter-ctrl filter-select">
+                    <option value="active" {{ ($status ?? 'active') == 'active' ? 'selected' : '' }}>Yalnız Aktivlər (Defolt)</option>
+                    <option value="inactive" {{ ($status ?? '') == 'inactive' ? 'selected' : '' }}>Yalnız Deaktivlər</option>
+                    <option value="all" {{ ($status ?? '') == 'all' ? 'selected' : '' }}>Bütün İşçilər (Hamısı)</option>
+                </select>
+            </div>
+
+            {{-- 4. Əməliyyatlar (Axtar & Sıfırla - Vahid 42px Hündürlük) --}}
             <div class="filter-field-col">
                 <label class="filter-col-label">
                     <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
@@ -680,9 +795,10 @@
                         <th>İşçinin Adı</th>
                         <th>Əlaqə Nömrəsi</th>
                         <th>Təhkim Olunduğu Filial</th>
+                        <th>Status</th>
                         <th>4 Rəqəmli PIN Kod</th>
                         <th>Bağlanmış Cihaz</th>
-                        <th style="width: 220px;">Əməliyyatlar</th>
+                        <th style="width: 250px;">Əməliyyatlar</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -719,6 +835,14 @@
                                 </span>
                             </td>
 
+                            {{-- Status --}}
+                            <td>
+                                <span class="status-badge-{{ $w->is_active ? 'active' : 'inactive' }}" id="statusBadge_{{ $w->id }}">
+                                    <span class="status-dot"></span>
+                                    {{ $w->is_active ? 'Aktiv' : 'Deaktiv' }}
+                                </span>
+                            </td>
+
                             {{-- PIN Kod --}}
                             <td>
                                 <span class="pin-code-badge" id="pinDisplay_{{ $w->id }}">
@@ -744,13 +868,29 @@
                             {{-- Əməliyyatlar --}}
                             <td>
                                 @if(auth()->user()->hasRole('Admin') || auth()->user()->can('attendance.manage-workers'))
-                                <div class="d-flex align-items-center gap-2">
+                                <div class="d-flex align-items-center gap-2 flex-wrap">
                                     <button type="button" class="worker-btn-action worker-btn-pin btn-change-pin"
                                         data-id="{{ $w->id }}"
                                         data-name="{{ $w->name }}"
-                                        data-pin="{{ $w->pin_code }}">
+                                        data-pin="{{ $w->pin_code }}"
+                                        title="Fərdi 4 rəqəmli PIN kodu dəyiş">
                                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
-                                        PIN Dəyiş
+                                        PIN
+                                    </button>
+
+                                    <button type="button" class="worker-btn-action {{ $w->is_active ? 'worker-btn-deactivate' : 'worker-btn-activate' }} btn-toggle-status"
+                                        id="btnToggleStatus_{{ $w->id }}"
+                                        data-id="{{ $w->id }}"
+                                        data-name="{{ $w->name }}"
+                                        data-active="{{ $w->is_active ? '1' : '0' }}"
+                                        title="{{ $w->is_active ? 'İşçini deaktiv et (QR səhifəsində görünməyəcək)' : 'İşçini yenidən aktiv et' }}">
+                                        @if($w->is_active)
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                                            <span>Deaktiv et</span>
+                                        @else
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                            <span>Aktiv et</span>
+                                        @endif
                                     </button>
 
                                     @if($w->registered_device_uuid)
@@ -759,7 +899,7 @@
                                             data-name="{{ $w->name }}"
                                             title="İşçi yeni telefon alanda cihaz bağlamasını sıfırlayır">
                                             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                                            Sıfırla
+                                            <span>Sıfırla</span>
                                         </button>
                                     @endif
                                 </div>
@@ -770,7 +910,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7">
+                            <td colspan="8">
                                 <div class="text-center py-5 text-muted">
                                     <div class="mb-2">
                                         <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#cbd5e1" stroke-width="1.8"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -936,6 +1076,103 @@
                 location.reload();
             })
             .catch(e => alert('Xəta baş verdi!'));
+        });
+    });
+
+    // Status Dəyişdir (Aktiv <-> Deaktiv)
+    document.querySelectorAll('.btn-toggle-status').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const id = this.dataset.id;
+            const name = this.dataset.name;
+            const currentActive = this.dataset.active === '1';
+            const actionText = currentActive ? 'DEAKTİV etmək' : 'AKTİV etmək';
+            const consequenceText = currentActive 
+                ? 'İşçi deaktiv edildikdə filialın QR skan səhifəsində artıq GÖRÜNMƏYƏCƏK və qeydiyyat apara bilməyəcək.'
+                : 'İşçi aktiv edildikdə yenidən filialın QR skan səhifəsində görünəcək.';
+
+            if (!confirm(`'${name}' adlı işçini ${actionText} istədiyinizdən əminsiniz?\n\n${consequenceText}`)) {
+                return;
+            }
+
+            this.disabled = true;
+            const originalContent = this.innerHTML;
+            this.innerHTML = '<span style="font-size: 11px;">Gözləyin...</span>';
+
+            fetch(`/attendance/workers/${id}/toggle-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                }
+            })
+            .then(r => r.json())
+            .then(data => {
+                if (data.success) {
+                    const badge = document.getElementById('statusBadge_' + id);
+                    if (data.is_active) {
+                        if (badge) {
+                            badge.className = 'status-badge-active';
+                            badge.innerHTML = '<span class="status-dot"></span> Aktiv';
+                        }
+                        btn.className = 'worker-btn-action worker-btn-deactivate btn-toggle-status';
+                        btn.dataset.active = '1';
+                        btn.title = 'İşçini deaktiv et (QR skanda görünməsin)';
+                        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg><span>Deaktiv et</span>`;
+                    } else {
+                        if (badge) {
+                            badge.className = 'status-badge-inactive';
+                            badge.innerHTML = '<span class="status-dot"></span> Deaktiv';
+                        }
+                        btn.className = 'worker-btn-action worker-btn-activate btn-toggle-status';
+                        btn.dataset.active = '0';
+                        btn.title = 'İşçini yenidən aktiv et';
+                        btn.innerHTML = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg><span>Aktiv et</span>`;
+                    }
+                    alert(data.message);
+                    
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const currentStatusFilter = urlParams.get('status') || 'active';
+                    if ((currentStatusFilter === 'active' && !data.is_active) || (currentStatusFilter === 'inactive' && data.is_active)) {
+                        window.location.reload();
+                    }
+                } else {
+                    alert('Xəta: ' + (data.message || 'Bilinməyən xəta'));
+                    this.innerHTML = originalContent;
+                    this.disabled = false;
+                }
+            })
+            .catch(err => {
+                alert('Serverlə əlaqə xətası baş verdi.');
+                this.innerHTML = originalContent;
+                this.disabled = false;
+            });
+        });
+    });
+
+    // Portal-dan Sinxron etmə
+    document.getElementById('btnSyncWorkers')?.addEventListener('click', function() {
+        if (!confirm('PortalWebsite-dan yeni filiallar və işçilər sinxronizasiya edilsin?\n\nDeaktiv edilmiş işçilər qorunacaq və yenidən aktiv olmayacaq.')) return;
+        const btn = this;
+        btn.disabled = true;
+        btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="spinner-border spinner-border-sm me-1"></svg> Sinxron edilir...`;
+
+        fetch("{{ route('attendance.workers.sync') }}", {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                'Accept': 'application/json'
+            }
+        })
+        .then(r => r.json())
+        .then(data => {
+            alert(data.message || 'Tamamlandı!');
+            location.reload();
+        })
+        .catch(e => {
+            alert('Sinxronizasiya xətası baş verdi!');
+            btn.disabled = false;
+            btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#107c41" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Sinxron et`;
         });
     });
 </script>

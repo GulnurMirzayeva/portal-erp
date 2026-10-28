@@ -67,6 +67,11 @@ class AttendanceBranch extends Model
         return $this->hasMany(AttendanceWorker::class, 'attendance_branch_id');
     }
 
+    public function activeWorkers(): HasMany
+    {
+        return $this->hasMany(AttendanceWorker::class, 'attendance_branch_id')->where('is_active', true);
+    }
+
     public function logs(): HasMany
     {
         return $this->hasMany(AttendanceLog::class, 'branch_id');

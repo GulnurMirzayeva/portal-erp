@@ -474,14 +474,15 @@ class AttendanceService
                 }
             }
 
-            // 3. İşçiləri çəkirik
-            $portalWorkers = DB::connection('portal_website')->table('workers')
+            // 3. İşçiləri çəkirik və sinxronlaşdırırıq
+            $activePortalWorkers = DB::connection('portal_website')->table('workers')
                 ->where('status', 'active')
                 ->get();
 
+            $activePortalWorkerIds = $activePortalWorkers->pluck('id')->all();
             $branchesMap = AttendanceBranch::pluck('id', 'portal_branch_id');
 
-            foreach ($portalWorkers as $pw) {
+            foreach ($activePortalWorkers as $pw) {
                 $attBranchId = $branchesMap[$pw->branch_id] ?? null;
 
                 // Defolt PIN: telefonun son 4 rəqəmi, yoxdursa '1234'
@@ -512,10 +513,15 @@ class AttendanceService
                         'phone' => $pw->phone,
                         'portal_branch_id' => $pw->branch_id,
                         'attendance_branch_id' => $attBranchId,
-                        'is_active' => true,
                     ]);
                 }
             }
+
+            // 4. Portal Website-da aktiv olmayan (archived, inactive və ya silinmiş) işçiləri ERP-də avtomatik DEAKTİV edirik!
+            $deactivatedCount = AttendanceWorker::whereNotNull('portal_worker_id')
+                ->whereNotIn('portal_worker_id', $activePortalWorkerIds)
+                ->where('is_active', true)
+                ->update(['is_active' => false]);
         } catch (\Exception $e) {
             $dbError = $e->getMessage();
             Log::warning("PortalWebsite DB sync xətası (API məlumatları saxlanıldı): " . $dbError);
@@ -523,11 +529,15 @@ class AttendanceService
 
         $totalBranches = AttendanceBranch::count();
         $totalWorkers = AttendanceWorker::count();
+        $activeWorkers = AttendanceWorker::where('is_active', true)->count();
 
         if ($totalBranches > 0) {
-            $message = "Sinxronizasiya tamamlandı! Baza üzrə cəmi {$totalBranches} filial mövcuddur.";
+            $message = "Sinxronizasiya tamamlandı! Baza üzrə cəmi {$totalBranches} filial və {$activeWorkers} aktiv işçi mövcuddur.";
             if ($workersCount > 0) {
                 $message .= " {$workersCount} yeni işçi əlavə edildi.";
+            }
+            if (!empty($deactivatedCount) && $deactivatedCount > 0) {
+                $message .= " {$deactivatedCount} işçi deaktiv edildi (Portal-da aktiv olmadığı üçün).";
             } elseif ($dbError) {
                 $message .= " (Filiallar API vasitəsilə uğurla çəkildi).";
             }
@@ -537,6 +547,8 @@ class AttendanceService
                 'message' => $message,
                 'branches_synced' => $totalBranches,
                 'workers_synced' => $totalWorkers,
+                'active_workers' => $activeWorkers,
+                'deactivated_workers' => $deactivatedCount ?? 0,
                 'db_error' => $dbError,
             ];
         }
@@ -561,8 +573,8 @@ class AttendanceService
         $now = Carbon::now();
         $closedCount = 0;
 
-        // Bütün aktiv işçiləri yoxlayırıq
-        $workers = AttendanceWorker::where('is_active', true)->get();
+        // Bütün işçiləri yoxlayırıq (açıq qalmış girişləri bağlamaq üçün)
+        $workers = AttendanceWorker::all();
 
         foreach ($workers as $worker) {
             // İşçinin ən son uğurlu qeydiyyatı
