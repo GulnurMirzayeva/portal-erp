@@ -50,38 +50,41 @@ class AttendanceWorker extends Model
     }
 
     /**
+     * İşçinin hal-hazırda açıq olan (çıxışı edilməmiş) giriş logunu qaytarır.
+     */
+    public function currentCheckInLog(): ?AttendanceLog
+    {
+        $lastLog = $this->logs()
+            ->where('status', 'success')
+            ->latest('scanned_at')
+            ->first();
+
+        if ($lastLog && $lastLog->type === 'check_in') {
+            // Əgər avtomatik çıxış aktivdirsə və vaxtı keçibsə, açıq sayılmır
+            if (AttendanceSetting::isAutoCheckoutEnabled()) {
+                $autoCheckoutTime = AttendanceSetting::getAutoCheckoutTime();
+                $checkInTime = Carbon::parse($lastLog->scanned_at);
+                $sameDayCutoff = $checkInTime->copy()->setTimeFromTimeString($autoCheckoutTime);
+                $targetCheckoutAt = $checkInTime->greaterThanOrEqualTo($sameDayCutoff)
+                    ? $sameDayCutoff->copy()->addDay()
+                    : $sameDayCutoff->copy();
+
+                if (Carbon::now()->greaterThanOrEqualTo($targetCheckoutAt)) {
+                    return null;
+                }
+            }
+
+            return $lastLog;
+        }
+
+        return null;
+    }
+
+    /**
      * Növbəti gözlənilən hərəkət (check_in yoxsa check_out).
      */
     public function getNextActionAttribute(): string
     {
-        $lastLog = $this->todayLastLog();
-
-        if (!$lastLog) {
-            // Əgər bu gün hələ log yoxdursa, amma əvvəldən açıq qalmış qeydiyyat varsa:
-            $latestOverall = $this->logs()
-                ->where('status', 'success')
-                ->latest('scanned_at')
-                ->first();
-
-            if ($latestOverall && $latestOverall->type === 'check_in') {
-                if (AttendanceSetting::isAutoCheckoutEnabled()) {
-                    $autoCheckoutTime = AttendanceSetting::getAutoCheckoutTime();
-                    $checkInTime = Carbon::parse($latestOverall->scanned_at);
-                    $sameDayCutoff = $checkInTime->copy()->setTimeFromTimeString($autoCheckoutTime);
-                    $targetCheckoutAt = $checkInTime->greaterThanOrEqualTo($sameDayCutoff)
-                        ? $sameDayCutoff->copy()->addDay()
-                        : $sameDayCutoff->copy();
-
-                    if (Carbon::now()->greaterThanOrEqualTo($targetCheckoutAt)) {
-                        return 'check_in';
-                    }
-                }
-                return 'check_out';
-            }
-
-            return 'check_in';
-        }
-
-        return $lastLog->type === 'check_in' ? 'check_out' : 'check_in';
+        return $this->currentCheckInLog() ? 'check_out' : 'check_in';
     }
 }

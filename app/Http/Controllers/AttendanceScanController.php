@@ -56,6 +56,7 @@ class AttendanceScanController extends Controller
             ->where('is_active', true)
             ->get()
             ->mapWithKeys(function ($w) {
+                $checkInLog = $w->currentCheckInLog();
                 return [$w->registered_device_uuid => [
                     'id' => $w->id,
                     'name' => $w->name,
@@ -63,6 +64,9 @@ class AttendanceScanController extends Controller
                     'branch_id' => $w->attendance_branch_id,
                     'branch_name' => $w->branch?->name ?: 'Ümumi',
                     'next_action' => $w->next_action,
+                    'active_checkin_branch_id' => $checkInLog?->branch_id,
+                    'active_checkin_branch_name' => $checkInLog?->branch_name,
+                    'active_checkin_time' => $checkInLog ? \Carbon\Carbon::parse($checkInLog->scanned_at)->format('H:i') : null,
                 ]];
             });
 
@@ -104,6 +108,8 @@ class AttendanceScanController extends Controller
             return response()->json(['found' => false]);
         }
 
+        $checkInLog = $worker->currentCheckInLog();
+
         return response()->json([
             'found' => true,
             'worker' => [
@@ -113,6 +119,9 @@ class AttendanceScanController extends Controller
                 'branch_id' => $worker->attendance_branch_id,
                 'branch_name' => $worker->branch?->name ?: 'Ümumi',
                 'next_action' => $worker->next_action,
+                'active_checkin_branch_id' => $checkInLog?->branch_id,
+                'active_checkin_branch_name' => $checkInLog?->branch_name,
+                'active_checkin_time' => $checkInLog ? \Carbon\Carbon::parse($checkInLog->scanned_at)->format('H:i') : null,
             ],
         ]);
     }

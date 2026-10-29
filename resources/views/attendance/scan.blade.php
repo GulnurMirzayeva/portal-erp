@@ -578,6 +578,32 @@
             gap: 10px;
         }
 
+        .rec-mismatch-banner {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1.5px solid rgba(239, 68, 68, 0.35);
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            text-align: left;
+            animation: fadeInSlide 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .rec-mismatch-title {
+            font-size: 13.5px;
+            font-weight: 700;
+            color: #f87171;
+            line-height: 1.3;
+        }
+
+        .rec-mismatch-desc {
+            font-size: 12px;
+            color: #e2e8f0;
+            margin-top: 3px;
+            line-height: 1.45;
+        }
+
         .rec-notice-banner svg {
             flex-shrink: 0;
             margin-top: 2px;
@@ -657,6 +683,17 @@
             </div>
         </div>
 
+        {{-- Fərqli filialda açıq giriş xəbərdarlıq banneri --}}
+        <div class="rec-mismatch-banner" id="recMismatchBanner" style="display: none;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.2" style="flex-shrink:0; margin-top:2px;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <div>
+                <div class="rec-mismatch-title">Fərqli Filialda Açıq Girişiniz Var!</div>
+                <div class="rec-mismatch-desc" id="recMismatchText">
+                    Siz hal-hazırda başqa filialda işə daxil olmusunuz. İşdən çıxışı yalnız giriş etdiyiniz filialda təsdiqləyə bilərsiniz.
+                </div>
+            </div>
+        </div>
+
         <div class="rec-notice-banner" id="recSubstituteNotice" style="display: none;">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
             <div>
@@ -685,8 +722,11 @@
                 @php
                     $nextAct = $w->next_action;
                     $initials = mb_substr($w->name, 0, 1);
+                    $checkInLog = $w->currentCheckInLog();
+                    $activeBranchId = $checkInLog?->branch_id;
+                    $activeBranchName = $checkInLog?->branch_name;
                 @endphp
-                <div class="worker-card" data-worker-id="{{ $w->id }}" data-worker-name="{{ $w->name }}" data-next-action="{{ $nextAct }}">
+                <div class="worker-card" data-worker-id="{{ $w->id }}" data-worker-name="{{ $w->name }}" data-next-action="{{ $nextAct }}" data-active-branch-id="{{ $activeBranchId }}" data-active-branch-name="{{ $activeBranchName }}">
                     <div class="worker-info">
                         <div class="avatar-initial">{{ $initials }}</div>
                         <div>
@@ -712,8 +752,11 @@
                 @php
                     $nextAct = $w->next_action;
                     $initials = mb_substr($w->name, 0, 1);
+                    $checkInLog = $w->currentCheckInLog();
+                    $activeBranchId = $checkInLog?->branch_id;
+                    $activeBranchName = $checkInLog?->branch_name;
                 @endphp
-                <div class="worker-card" data-worker-id="{{ $w->id }}" data-worker-name="{{ $w->name }}" data-next-action="{{ $nextAct }}">
+                <div class="worker-card" data-worker-id="{{ $w->id }}" data-worker-name="{{ $w->name }}" data-next-action="{{ $nextAct }}" data-active-branch-id="{{ $activeBranchId }}" data-active-branch-name="{{ $activeBranchName }}">
                     <div class="worker-info">
                         <div class="avatar-initial">{{ $initials }}</div>
                         <div>
@@ -783,6 +826,7 @@
     // 1. Konfiqurasiya və Məlumatlar
     const branchToken = "{{ $branch->qr_token }}";
     const currentBranchId = {{ $branch->id }};
+    const currentBranchName = "{{ addslashes($branch->name) }}";
     const branchLat = {{ $branch->latitude ?: 'null' }};
     const branchLng = {{ $branch->longitude ?: 'null' }};
     const branchRadius = {{ $allowedRadius ?? ($branch->radius_meters ?: 100) }};
@@ -814,6 +858,8 @@
     let selectedWorkerId = null;
     let selectedWorkerName = null;
     let selectedNextAction = 'check_in';
+    let selectedWorkerActiveBranchId = null;
+    let selectedWorkerActiveBranchName = null;
     let enteredPin = "";
     let isSubmitting = false;
 
@@ -844,6 +890,22 @@
     // 6. Düymə vəziyyəti yeniləyici
     function updateSubmitButtonState() {
         if (!submitBtn || !btnLabel) return;
+
+        // Fərqli filial yoxlanışı (İşçi başqa filialda giriş edibsə, bu filialdan çıxış edə bilməz)
+        const activeBranchId = recognizedWorker ? recognizedWorker.active_checkin_branch_id : selectedWorkerActiveBranchId;
+        const activeBranchName = recognizedWorker ? recognizedWorker.active_checkin_branch_name : selectedWorkerActiveBranchName;
+
+        if (activeBranchId && String(activeBranchId) !== String(currentBranchId)) {
+            submitBtn.disabled = true;
+            submitBtn.className = 'btn-submit';
+            submitBtn.style.opacity = '0.55';
+            submitBtn.style.cursor = 'not-allowed';
+            btnLabel.textContent = 'ÇIXIŞ YALNIZ GİRİŞ FİLİALINDA MÜMKÜNDÜR';
+            return;
+        }
+
+        submitBtn.style.opacity = '1';
+        submitBtn.style.cursor = 'pointer';
 
         if (!selectedWorkerId) {
             submitBtn.disabled = true;
@@ -925,6 +987,27 @@
 
         const subNotice = document.getElementById('recSubstituteNotice');
         if (subNotice) subNotice.style.display = isSubstitute ? 'flex' : 'none';
+
+        // Fərqli filialda açıq giriş yoxlanışı
+        const hasBranchMismatch = worker.active_checkin_branch_id && String(worker.active_checkin_branch_id) !== String(currentBranchId);
+        const mismatchBanner = document.getElementById('recMismatchBanner');
+        const mismatchText = document.getElementById('recMismatchText');
+        const statusIndicator = document.getElementById('recStatusIndicator');
+
+        if (hasBranchMismatch) {
+            if (mismatchBanner) mismatchBanner.style.display = 'flex';
+            if (mismatchText) {
+                mismatchText.innerHTML = 'Siz hal-hazırda <strong>' + (worker.active_checkin_branch_name || 'başqa') + '</strong> filialında işə giriş etmisiniz. İşdən çıxışı yalnız giriş etdiyiniz <strong>' + (worker.active_checkin_branch_name || '') + '</strong> filialında təsdiqləyə bilərsiniz!';
+            }
+            if (statusIndicator) statusIndicator.style.display = 'none';
+
+            setTimeout(() => {
+                showModal(false, 'Diqqət: Siz hal-hazırda "' + (worker.active_checkin_branch_name || 'başqa') + '" filialında işə giriş etmisiniz!\n\nİşdən çıxışı yalnız giriş etdiyiniz filialın (' + (worker.active_checkin_branch_name || '') + ') QR kodunu oxudaraq təsdiqləyə bilərsiniz.');
+            }, 300);
+        } else {
+            if (mismatchBanner) mismatchBanner.style.display = 'none';
+            if (statusIndicator) statusIndicator.style.display = 'flex';
+        }
 
         // Status indikatoru
         updateRecognizedStatusUI(selectedNextAction);
@@ -1063,6 +1146,12 @@
                 selectedWorkerId = this.getAttribute('data-worker-id');
                 selectedWorkerName = this.getAttribute('data-worker-name');
                 selectedNextAction = this.getAttribute('data-next-action') || 'check_in';
+                selectedWorkerActiveBranchId = this.getAttribute('data-active-branch-id') || null;
+                selectedWorkerActiveBranchName = this.getAttribute('data-active-branch-name') || null;
+
+                if (selectedWorkerActiveBranchId && String(selectedWorkerActiveBranchId) !== String(currentBranchId)) {
+                    showModal(false, 'Diqqət: ' + selectedWorkerName + ' hal-hazırda "' + selectedWorkerActiveBranchName + '" filialında işə giriş edib!\n\nİşdən çıxışı yalnız giriş etdiyiniz filialın (' + selectedWorkerActiveBranchName + ') QR kodunu oxudaraq təsdiqləyə bilərsiniz.');
+                }
 
                 if (isPinRequired) {
                     if (pinBox) pinBox.style.display = 'block';
@@ -1123,6 +1212,15 @@
         submitBtn.addEventListener('click', function() {
             if (!selectedWorkerId || isSubmitting) return;
 
+            // Fərqli filial bloklaması
+            const activeBranchId = recognizedWorker ? recognizedWorker.active_checkin_branch_id : selectedWorkerActiveBranchId;
+            const activeBranchName = recognizedWorker ? recognizedWorker.active_checkin_branch_name : selectedWorkerActiveBranchName;
+
+            if (activeBranchId && String(activeBranchId) !== String(currentBranchId)) {
+                showModal(false, 'Diqqət: Siz hal-hazırda "' + (activeBranchName || 'başqa') + '" filialında işə giriş etmisiniz!\n\nİşdən çıxışı yalnız giriş etdiyiniz filialda (' + (activeBranchName || '') + ') qeydə ala bilərsiniz.');
+                return;
+            }
+
             if (!currentLat || !currentLng) {
                 alert('Davamiyyəti təsdiqləmək üçün zəhmət olmasa ekrandakı məkan (GPS) icazəsini təsdiqləyin.');
                 checkLocation();
@@ -1160,35 +1258,43 @@
                 isSubmitting = false;
                 showModal(ok, data.message || (ok ? 'Uğurlu!' : 'Xəta baş verdi!'), data);
                 if (ok) {
+                    const newNextAction = data.next_action || (selectedNextAction === 'check_in' ? 'check_out' : 'check_in');
+
                     if (!recognizedWorker || String(recognizedWorker.id) !== String(selectedWorkerId)) {
                         recognizedWorker = {
                             id: selectedWorkerId,
                             name: selectedWorkerName,
                             branch_id: data.branch_id || currentBranchId,
                             branch_name: data.branch_name || '',
-                            next_action: data.next_action || (selectedNextAction === 'check_in' ? 'check_out' : 'check_in')
+                            next_action: newNextAction,
+                            active_checkin_branch_id: (newNextAction === 'check_out' ? currentBranchId : null),
+                            active_checkin_branch_name: (newNextAction === 'check_out' ? currentBranchName : null)
                         };
                         boundWorkers[deviceUuid] = recognizedWorker;
                         document.cookie = "pg_att_device_uuid=" + encodeURIComponent(deviceUuid) + "; path=/; max-age=" + (365*24*60*60) + "; SameSite=Lax";
                     } else {
-                        if (data.next_action) {
-                            recognizedWorker.next_action = data.next_action;
-                        }
+                        recognizedWorker.next_action = newNextAction;
+                        recognizedWorker.active_checkin_branch_id = (newNextAction === 'check_out' ? currentBranchId : null);
+                        recognizedWorker.active_checkin_branch_name = (newNextAction === 'check_out' ? currentBranchName : null);
                     }
 
-                    selectedNextAction = data.next_action || (selectedNextAction === 'check_in' ? 'check_out' : 'check_in');
+                    selectedNextAction = newNextAction;
+                    selectedWorkerActiveBranchId = recognizedWorker.active_checkin_branch_id;
+                    selectedWorkerActiveBranchName = recognizedWorker.active_checkin_branch_name;
 
                     // Tanınmış kart vəziyyətini yeniləyirik
                     applyRecognizedWorker(recognizedWorker);
 
                     // Siyahıdakı manual kartı da yeniləyirik
                     const card = document.querySelector('.worker-card[data-worker-id="' + selectedWorkerId + '"]');
-                    if (card && data.next_action) {
-                        card.setAttribute('data-next-action', data.next_action);
+                    if (card) {
+                        card.setAttribute('data-next-action', newNextAction);
+                        card.setAttribute('data-active-branch-id', recognizedWorker.active_checkin_branch_id || '');
+                        card.setAttribute('data-active-branch-name', recognizedWorker.active_checkin_branch_name || '');
                         const tag = card.querySelector('.action-tag');
                         if (tag) {
-                            tag.className = 'action-tag ' + (data.next_action === 'check_in' ? 'tag-in' : 'tag-out');
-                            tag.textContent = data.next_action === 'check_in' ? 'GİRİŞ' : 'ÇIXIŞ';
+                            tag.className = 'action-tag ' + (newNextAction === 'check_in' ? 'tag-in' : 'tag-out');
+                            tag.textContent = newNextAction === 'check_in' ? 'GİRİŞ' : 'ÇIXIŞ';
                         }
                     }
                     clearPin();

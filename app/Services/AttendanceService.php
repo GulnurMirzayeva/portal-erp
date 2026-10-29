@@ -100,6 +100,42 @@ class AttendanceService
         // Hərəkət növünü təyin edirik (Giriş və ya Çıxış)
         $actionType = $forceType ?: $worker->next_action;
 
+        // 2.1. Filial uyğunluğu yoxlanışı: İşçi bir filialda giriş edibsə, çıxışı da yalnız həmin filialdan etməlidir!
+        $currentCheckIn = $worker->currentCheckInLog();
+        if ($currentCheckIn && (int) $currentCheckIn->branch_id !== (int) $branch->id) {
+            $checkedInBranchName = $currentCheckIn->branch_name ?: 'digər filial';
+            $details = "İşçi '{$worker->name}' hal-hazırda '{$checkedInBranchName}' filialında aktiv işdədir (Giriş: {$currentCheckIn->scanned_at}). '{$branch->name}' filialından çıxış və ya yeni giriş cəhdi bloklandı.";
+
+            $this->logAttempt([
+                'worker_id' => $worker->id,
+                'worker_name' => $worker->name,
+                'branch_id' => $branch->id,
+                'branch_name' => $branch->name,
+                'date' => $today,
+                'type' => $actionType,
+                'scanned_at' => $now,
+                'latitude' => $userLat,
+                'longitude' => $userLng,
+                'distance_meters' => null,
+                'device_uuid' => $deviceUuid,
+                'device_model' => $deviceModel,
+                'ip_address' => $ipAddress,
+                'user_agent' => $userAgent,
+                'status' => 'rejected',
+                'rejection_reason' => 'branch_mismatch',
+                'rejection_details' => $details,
+                'is_violation' => true,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => "Siz hal-hazırda \"{$checkedInBranchName}\" filialında işə giriş etmisiniz! İşdən çıxışı yalnız giriş etdiyiniz filialda (\"{$checkedInBranchName}\") qeydə ala bilərsiniz.",
+                'reason' => 'branch_mismatch',
+                'checked_in_branch_id' => $currentCheckIn->branch_id,
+                'checked_in_branch_name' => $checkedInBranchName,
+            ];
+        }
+
         // 3. PIN Kod yoxlanışı (Əgər sistemdə aktivdirsə)
         $isPinRequired = AttendanceSetting::isPinRequired();
         if ($isPinRequired) {
