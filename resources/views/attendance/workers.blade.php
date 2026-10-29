@@ -312,8 +312,50 @@
     }
 
     /* Enterprise Table */
+    /* Table Responsive Wrapper & Touch Scroll */
+    .table-responsive {
+        width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        position: relative;
+        display: block;
+    }
+    .table-responsive::-webkit-scrollbar {
+        height: 6px;
+    }
+    .table-responsive::-webkit-scrollbar-track {
+        background: #f1f5f9;
+    }
+    .table-responsive::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 999px;
+    }
+    .table-responsive::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+
+    .mobile-scroll-hint {
+        display: none;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 9px 14px;
+        background: #f0fdf4;
+        border-bottom: 1px solid #dcfce7;
+        color: #15803d;
+        font-size: 12px;
+        font-weight: 600;
+    }
+    @media (max-width: 991px) {
+        .mobile-scroll-hint {
+            display: flex;
+        }
+    }
+
+    /* Enterprise Table */
     .table-modern {
         width: 100%;
+        min-width: 980px;
         border-collapse: separate;
         border-spacing: 0;
     }
@@ -335,6 +377,7 @@
         border-bottom: 1px solid #f1f5f9;
         vertical-align: middle;
         background: #ffffff;
+        white-space: nowrap;
     }
     .table-modern tbody tr {
         transition: background-color 0.15s ease;
@@ -761,6 +804,12 @@
                 Qeydiyyatda Olan İşçilərin Siyahısı
                 <span class="data-count-tag">{{ $workers->total() }} işçi</span>
             </h6>
+        </div>
+
+        <div class="mobile-scroll-hint">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8L22 12L18 16"></path><path d="M6 8L2 12L6 16"></path></svg>
+            <span>Cədvəli tam görmək üçün sağa-sola sürüşdürə bilərsiniz</span>
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 8L2 12L6 16"></path><path d="M18 8L22 12L18 16"></path></svg>
         </div>
 
         <div class="table-responsive">
