@@ -22,7 +22,7 @@ class AttendanceScanController extends Controller
     /**
      * İşçinin mobil telefonunda açılan skan səhifəsi.
      */
-    public function showScanPage(string $token)
+    public function showScanPage(Request $request, string $token)
     {
         // Əvvəlki günlərdən açıq qalmış unudulmuş girişləri avtomatik çıxış edirik
         $this->attendanceService->performAutoCheckout();
@@ -50,7 +50,71 @@ class AttendanceScanController extends Controller
         $isSingleDevice = AttendanceSetting::isSingleDeviceEnforced();
         $allowedRadius = (int) AttendanceSetting::get('default_radius_meters', 100);
 
-        return view('attendance.scan', compact('branch', 'workers', 'allWorkers', 'isPinRequired', 'isSingleDevice', 'allowedRadius'));
+        // Təhkim olunmuş aktiv işçilər xəritəsi (Client-side sürətli və oflayn tanınma üçün)
+        $boundWorkers = AttendanceWorker::with('branch')
+            ->whereNotNull('registered_device_uuid')
+            ->where('is_active', true)
+            ->get()
+            ->mapWithKeys(function ($w) {
+                return [$w->registered_device_uuid => [
+                    'id' => $w->id,
+                    'name' => $w->name,
+                    'phone' => $w->phone ?: '',
+                    'branch_id' => $w->attendance_branch_id,
+                    'branch_name' => $w->branch?->name ?: 'Ümumi',
+                    'next_action' => $w->next_action,
+                ]];
+            });
+
+        // Cookie vasitəsilə server-side avtomatik tanınma (əgər mövcuddursa)
+        $cookieDeviceUuid = $request->cookie('pg_att_device_uuid');
+        $recognizedWorker = null;
+        if (!empty($cookieDeviceUuid) && isset($boundWorkers[$cookieDeviceUuid])) {
+            $recognizedWorker = $boundWorkers[$cookieDeviceUuid];
+        }
+
+        return view('attendance.scan', compact(
+            'branch',
+            'workers',
+            'allWorkers',
+            'isPinRequired',
+            'isSingleDevice',
+            'allowedRadius',
+            'boundWorkers',
+            'recognizedWorker'
+        ));
+    }
+
+    /**
+     * Cihaz UUID əsasında işçini axtarır (Fallback AJAX lookup).
+     */
+    public function lookupDevice(Request $request, string $token): JsonResponse
+    {
+        $deviceUuid = $request->input('device_uuid') ?: $request->cookie('pg_att_device_uuid');
+        if (empty($deviceUuid)) {
+            return response()->json(['found' => false]);
+        }
+
+        $worker = AttendanceWorker::with('branch')
+            ->where('registered_device_uuid', $deviceUuid)
+            ->where('is_active', true)
+            ->first();
+
+        if (!$worker) {
+            return response()->json(['found' => false]);
+        }
+
+        return response()->json([
+            'found' => true,
+            'worker' => [
+                'id' => $worker->id,
+                'name' => $worker->name,
+                'phone' => $worker->phone ?: '',
+                'branch_id' => $worker->attendance_branch_id,
+                'branch_name' => $worker->branch?->name ?: 'Ümumi',
+                'next_action' => $worker->next_action,
+            ],
+        ]);
     }
 
     /**

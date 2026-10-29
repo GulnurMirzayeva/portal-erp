@@ -456,6 +456,166 @@
             cursor: pointer;
             width: 100%;
         }
+
+        /* Recognized Worker Card */
+        .recognized-card {
+            background: linear-gradient(145deg, rgba(18, 26, 44, 0.95), rgba(12, 17, 30, 0.98));
+            backdrop-filter: blur(14px);
+            border: 1.5px solid rgba(59, 130, 246, 0.35);
+            border-radius: 22px;
+            padding: 22px 20px;
+            box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), 0 0 30px rgba(59, 130, 246, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            animation: fadeInSlide 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes fadeInSlide {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .rec-header-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .rec-substitute-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(245, 158, 11, 0.15);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            color: #fbbf24;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.6px;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 20px;
+        }
+
+        .rec-profile {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            gap: 12px;
+        }
+
+        .rec-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 20px;
+            background: linear-gradient(135deg, #2563eb, #7c3aed);
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            color: #fff;
+            flex-shrink: 0;
+            margin: 0 auto;
+        }
+
+        .rec-details {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .rec-greeting {
+            font-size: 12px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            text-align: center;
+        }
+
+        .rec-name {
+            font-size: 20px;
+            font-weight: 800;
+            color: #ffffff;
+            line-height: 1.25;
+            margin-top: 4px;
+            text-align: center;
+            word-break: break-word;
+        }
+
+        .rec-branch-pill {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            margin-top: 8px;
+            font-size: 12px;
+            color: #93c5fd;
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.25);
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-weight: 600;
+            text-align: center;
+        }
+
+        .rec-notice-banner {
+            background: rgba(245, 158, 11, 0.1);
+            border: 1px solid rgba(245, 158, 11, 0.28);
+            border-radius: 14px;
+            padding: 10px 14px;
+            font-size: 12px;
+            line-height: 1.45;
+            color: #fde68a;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .rec-notice-banner svg {
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .rec-status-indicator {
+            border-radius: 14px;
+            padding: 12px 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .rec-status-indicator.ready-in {
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+        }
+
+        .rec-status-indicator.ready-out {
+            background: rgba(239, 68, 68, 0.12);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            color: #f87171;
+        }
+
+        .rec-status-title {
+            font-weight: 700;
+            font-size: 14px;
+            color: #fff;
+        }
+
+        .rec-status-desc {
+            font-size: 12px;
+            opacity: 0.85;
+            margin-top: 2px;
+        }
     </style>
 </head>
 <body>
@@ -476,60 +636,99 @@
         <span id="gpsText">GPS məkanınız yoxlanılır...</span>
     </div>
 
-    {{-- Workers Section --}}
-    <div class="section-header">
-        <span class="section-title">İşçini Seçin</span>
-        <button type="button" class="toggle-btn" id="toggleWorkersBtn">Digər filialdan əvəzedici</button>
+    {{-- Recognized Worker Card (Cihaz tanındıqda avtomatik görünür) --}}
+    <div class="recognized-card" id="recognizedCard" style="display: none;">
+        <div class="rec-header-row" id="recHeaderRow" style="display: none;">
+            <div class="rec-substitute-badge" id="recSubstituteBadge" style="display: none;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                <span>Əvəzedici İşçi</span>
+            </div>
+        </div>
+
+        <div class="rec-profile">
+            <div class="rec-avatar" id="recAvatar">--</div>
+            <div class="rec-details">
+                <div class="rec-greeting">Xoş gəlmisiniz,</div>
+                <div class="rec-name" id="recName">Yüklənir...</div>
+                <div class="rec-branch-pill" id="recBranchPill">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                    <span id="recBranchName">Əsas Filial</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="rec-notice-banner" id="recSubstituteNotice" style="display: none;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <div>
+                Hazırda <strong>{{ $branch->name }}</strong> filialındasınız. Davamiyyətiniz bu filiala əvəzedici olaraq yazılacaq.
+            </div>
+        </div>
+
+        <div class="rec-status-indicator ready-in" id="recStatusIndicator">
+            <div class="pulse-dot" id="recStatusDot"></div>
+            <div>
+                <div class="rec-status-title" id="recStatusTitle">İşə giriş üçün hazırdır</div>
+                <div class="rec-status-desc" id="recStatusDesc">Girişi qeydə almaq üçün aşağıdakı düyməni sıxın</div>
+            </div>
+        </div>
     </div>
 
-    <div class="workers-grid" id="branchWorkersList">
-        @forelse($workers as $w)
-            @php
-                $nextAct = $w->next_action;
-                $initials = mb_substr($w->name, 0, 1);
-            @endphp
-            <div class="worker-card" data-worker-id="{{ $w->id }}" data-worker-name="{{ $w->name }}" data-next-action="{{ $nextAct }}">
-                <div class="worker-info">
-                    <div class="avatar-initial">{{ $initials }}</div>
-                    <div>
-                        <div class="worker-name">{{ $w->name }}</div>
-                        <div class="worker-phone">{{ $w->phone ?: 'Əlaqə nömrəsi yoxdur' }}</div>
-                    </div>
-                </div>
-                <div>
-                    <span class="action-tag {{ $nextAct === 'check_in' ? 'tag-in' : 'tag-out' }}">
-                        {{ $nextAct === 'check_in' ? 'GİRİŞ' : 'ÇIXIŞ' }}
-                    </span>
-                </div>
-            </div>
-        @empty
-            <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 14px;">
-                Bu filiala təhkim edilmiş işçi tapılmadı. "Digər filialdan əvəzedici" düyməsindən istifadə edin.
-            </div>
-        @endforelse
-    </div>
+    {{-- Workers Section (Yalnız cihaz ilk dəfə təhkim olunmamış halda görünür) --}}
+    <div id="workersSelectionSection">
+        <div class="section-header">
+            <span class="section-title">İşçini Seçin</span>
+            <button type="button" class="toggle-btn" id="toggleWorkersBtn">Digər filialdan əvəzedici</button>
+        </div>
 
-    <div class="workers-grid" id="allWorkersList" style="display: none;">
-        @foreach($allWorkers as $w)
-            @php
-                $nextAct = $w->next_action;
-                $initials = mb_substr($w->name, 0, 1);
-            @endphp
-            <div class="worker-card" data-worker-id="{{ $w->id }}" data-worker-name="{{ $w->name }}" data-next-action="{{ $nextAct }}">
-                <div class="worker-info">
-                    <div class="avatar-initial">{{ $initials }}</div>
+        <div class="workers-grid" id="branchWorkersList">
+            @forelse($workers as $w)
+                @php
+                    $nextAct = $w->next_action;
+                    $initials = mb_substr($w->name, 0, 1);
+                @endphp
+                <div class="worker-card" data-worker-id="{{ $w->id }}" data-worker-name="{{ $w->name }}" data-next-action="{{ $nextAct }}">
+                    <div class="worker-info">
+                        <div class="avatar-initial">{{ $initials }}</div>
+                        <div>
+                            <div class="worker-name">{{ $w->name }}</div>
+                            <div class="worker-phone">{{ $w->phone ?: 'Əlaqə nömrəsi yoxdur' }}</div>
+                        </div>
+                    </div>
                     <div>
-                        <div class="worker-name">{{ $w->name }}</div>
-                        <div class="worker-phone">{{ $w->branch?->name ?: 'Ümumi' }}</div>
+                        <span class="action-tag {{ $nextAct === 'check_in' ? 'tag-in' : 'tag-out' }}">
+                            {{ $nextAct === 'check_in' ? 'GİRİŞ' : 'ÇIXIŞ' }}
+                        </span>
                     </div>
                 </div>
-                <div>
-                    <span class="action-tag {{ $nextAct === 'check_in' ? 'tag-in' : 'tag-out' }}">
-                        {{ $nextAct === 'check_in' ? 'GİRİŞ' : 'ÇIXIŞ' }}
-                    </span>
+            @empty
+                <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 14px;">
+                    Bu filiala təhkim edilmiş işçi tapılmadı. "Digər filialdan əvəzedici" düyməsindən istifadə edin.
                 </div>
-            </div>
-        @endforeach
+            @endforelse
+        </div>
+
+        <div class="workers-grid" id="allWorkersList" style="display: none;">
+            @foreach($allWorkers as $w)
+                @php
+                    $nextAct = $w->next_action;
+                    $initials = mb_substr($w->name, 0, 1);
+                @endphp
+                <div class="worker-card" data-worker-id="{{ $w->id }}" data-worker-name="{{ $w->name }}" data-next-action="{{ $nextAct }}">
+                    <div class="worker-info">
+                        <div class="avatar-initial">{{ $initials }}</div>
+                        <div>
+                            <div class="worker-name">{{ $w->name }}</div>
+                            <div class="worker-phone">{{ $w->branch?->name ?: 'Ümumi' }}</div>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="action-tag {{ $nextAct === 'check_in' ? 'tag-in' : 'tag-out' }}">
+                            {{ $nextAct === 'check_in' ? 'GİRİŞ' : 'ÇIXIŞ' }}
+                        </span>
+                    </div>
+                </div>
+            @endforeach
+        </div>
     </div>
 
     {{-- PIN Pad Box (Görünür əgər PIN tələb olunursa) --}}
@@ -580,19 +779,36 @@
     </div>
 </div>
 
-    </div>
-</div>
-
 <script>
-    // Konfiqurasiya
+    // 1. Konfiqurasiya və Məlumatlar
     const branchToken = "{{ $branch->qr_token }}";
+    const currentBranchId = {{ $branch->id }};
     const branchLat = {{ $branch->latitude ?: 'null' }};
     const branchLng = {{ $branch->longitude ?: 'null' }};
     const branchRadius = {{ $allowedRadius ?? ($branch->radius_meters ?: 100) }};
     const isPinRequired = {{ $isPinRequired ? 'true' : 'false' }};
     const submitUrl = "{{ route('attendance.scan.submit', ['token' => $branch->qr_token]) }}";
+    const lookupUrl = "{{ route('attendance.scan.lookup-device', ['token' => $branch->qr_token]) }}";
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
 
+    const boundWorkers = @json($boundWorkers ?? []);
+    let recognizedWorker = @json($recognizedWorker ?? null);
+
+    // 2. DOM Elementləri (Ən başda təyin edilir)
+    const submitBtn = document.getElementById('submitBtn');
+    const btnLabel = document.getElementById('btnLabel');
+    const gpsBanner = document.getElementById('gpsBanner');
+    const gpsText = document.getElementById('gpsText');
+    const pinBox = document.getElementById('pinBox');
+    const recognizedCard = document.getElementById('recognizedCard');
+    const workersSelectionSection = document.getElementById('workersSelectionSection');
+    const resultModal = document.getElementById('resultModal');
+    const modalIcon = document.getElementById('modalIcon');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalDesc = document.getElementById('modalDesc');
+    const modalCloseBtn = document.getElementById('modalCloseBtn');
+
+    // 3. Cari Vəziyyət
     let currentLat = null;
     let currentLng = null;
     let selectedWorkerId = null;
@@ -601,18 +817,19 @@
     let enteredPin = "";
     let isSubmitting = false;
 
-    // Device UUID (LocalStorage + Cookie)
+    // 4. Device UUID
     function getDeviceUuid() {
         let uuid = localStorage.getItem('pg_att_device_uuid');
         if (!uuid) {
             uuid = 'dev_' + (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).substr(2, 9)));
             localStorage.setItem('pg_att_device_uuid', uuid);
         }
+        document.cookie = "pg_att_device_uuid=" + encodeURIComponent(uuid) + "; path=/; max-age=" + (365*24*60*60) + "; SameSite=Lax";
         return uuid;
     }
     const deviceUuid = getDeviceUuid();
 
-    // Device Model
+    // 5. Device Model
     function getDeviceModel() {
         const ua = navigator.userAgent;
         if (/iPhone/i.test(ua)) return 'Apple iPhone';
@@ -624,18 +841,145 @@
         return 'Web Brauzer';
     }
 
-    // Live Clock
+    // 6. Düymə vəziyyəti yeniləyici
+    function updateSubmitButtonState() {
+        if (!submitBtn || !btnLabel) return;
+
+        if (!selectedWorkerId) {
+            submitBtn.disabled = true;
+            btnLabel.textContent = "İşçini Seçin";
+            return;
+        }
+
+        if (isPinRequired && enteredPin.length < 4) {
+            submitBtn.disabled = true;
+            btnLabel.textContent = "4 Rəqəmli PIN Kodu Daxil Edin";
+            return;
+        }
+
+        submitBtn.disabled = false;
+        if (selectedNextAction === 'check_in') {
+            submitBtn.className = 'btn-submit btn-in';
+            btnLabel.textContent = 'İŞƏ GİRİŞİ TƏSDİQLƏ';
+        } else {
+            submitBtn.className = 'btn-submit btn-out';
+            btnLabel.textContent = 'İŞDƏN ÇIXIŞI TƏSDİQLƏ';
+        }
+    }
+
+    // 7. Recognized Card Status UI
+    function updateRecognizedStatusUI(action) {
+        const indicator = document.getElementById('recStatusIndicator');
+        const dot = document.getElementById('recStatusDot');
+        const title = document.getElementById('recStatusTitle');
+        const desc = document.getElementById('recStatusDesc');
+
+        if (!indicator) return;
+
+        if (action === 'check_in') {
+            indicator.className = 'rec-status-indicator ready-in';
+            if (dot) {
+                dot.style.background = '#10b981';
+                dot.style.boxShadow = '0 0 10px #10b981';
+            }
+            if (title) title.textContent = 'İşə Giriş Gözlənilir';
+            if (desc) desc.textContent = 'İş gününə başlamaq üçün aşağıdakı düyməni sıxın';
+        } else {
+            indicator.className = 'rec-status-indicator ready-out';
+            if (dot) {
+                dot.style.background = '#ef4444';
+                dot.style.boxShadow = '0 0 10px #ef4444';
+            }
+            if (title) title.textContent = 'Hal-hazırda İşdəsiniz';
+            if (desc) desc.textContent = 'İş gününü tamamlamaq üçün çıxışı təsdiqləyin';
+        }
+    }
+
+    // 8. Tanınmış İşçi Tətbiqi
+    function applyRecognizedWorker(worker) {
+        if (!worker) return;
+        recognizedWorker = worker;
+        selectedWorkerId = worker.id;
+        selectedWorkerName = worker.name;
+        selectedNextAction = worker.next_action || 'check_in';
+
+        // Profil detalları
+        const nameEl = document.getElementById('recName');
+        if (nameEl) nameEl.textContent = worker.name;
+
+        const initials = worker.name ? worker.name.trim().charAt(0) : 'U';
+        const avatarEl = document.getElementById('recAvatar');
+        if (avatarEl) avatarEl.textContent = initials;
+
+        const branchEl = document.getElementById('recBranchName');
+        if (branchEl) {
+            branchEl.textContent = worker.branch_name ? ('Əsas filial: ' + worker.branch_name) : 'Əsas filial: Təyin edilməyib';
+        }
+
+        // Əvəzedici yoxlanışı
+        const isSubstitute = worker.branch_id && String(worker.branch_id) !== String(currentBranchId);
+        const subRow = document.getElementById('recHeaderRow');
+        if (subRow) subRow.style.display = isSubstitute ? 'flex' : 'none';
+        const subBadge = document.getElementById('recSubstituteBadge');
+        if (subBadge) subBadge.style.display = isSubstitute ? 'inline-flex' : 'none';
+
+        const subNotice = document.getElementById('recSubstituteNotice');
+        if (subNotice) subNotice.style.display = isSubstitute ? 'flex' : 'none';
+
+        // Status indikatoru
+        updateRecognizedStatusUI(selectedNextAction);
+
+        // Kartları göstər / gizlət
+        if (recognizedCard) recognizedCard.style.display = 'flex';
+        if (workersSelectionSection) workersSelectionSection.style.display = 'none';
+
+        if (isPinRequired) {
+            if (pinBox) pinBox.style.display = 'block';
+            clearPin();
+        } else {
+            if (pinBox) pinBox.style.display = 'none';
+        }
+
+        updateSubmitButtonState();
+    }
+
+    // 9. Cihaz Tanıma Yoxlanışı
+    function checkAutoRecognition() {
+        if (recognizedWorker) {
+            applyRecognizedWorker(recognizedWorker);
+            return;
+        }
+
+        if (boundWorkers && boundWorkers[deviceUuid]) {
+            applyRecognizedWorker(boundWorkers[deviceUuid]);
+            return;
+        }
+
+        if (deviceUuid) {
+            fetch(lookupUrl + '?device_uuid=' + encodeURIComponent(deviceUuid))
+                .then(res => res.json())
+                .then(data => {
+                    if (data.found && data.worker) {
+                        applyRecognizedWorker(data.worker);
+                    }
+                })
+                .catch(() => {});
+        }
+    }
+
+    // 10. Live Clock
     function updateClock() {
         const now = new Date();
         const days = ['Bazar', 'Bazar ertəsi', 'Çərşənbə axşamı', 'Çərşənbə', 'Cümə axşamı', 'Cümə', 'Şənbə'];
         const day = days[now.getDay()];
         const time = now.toLocaleTimeString('az-AZ', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-        document.getElementById('liveClock').textContent = day + ' • ' + time;
+        const clockEl = document.getElementById('liveClock');
+        if (clockEl) clockEl.textContent = day + ' • ' + time;
     }
     setInterval(updateClock, 1000);
     updateClock();
 
-    // Haversine məsafə hesablayıcı (Brauzer daxilində dərhal indikator üçün)
+    // 11. Haversine məsafə hesablayıcı
     function calculateDistance(lat1, lon1, lat2, lon2) {
         const R = 6371000;
         const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -647,19 +991,16 @@
         return Math.round(R * c);
     }
 
-    // Geolocation yoxlanışı (Avtomatik olaraq birbaşa brauzerdən sistem icazəsi istənilir)
-    const gpsBanner = document.getElementById('gpsBanner');
-    const gpsText = document.getElementById('gpsText');
-
+    // 12. GPS Yoxlanışı
     function checkLocation() {
         if (!navigator.geolocation) {
-            gpsBanner.className = 'gps-banner danger';
-            gpsText.textContent = 'Brauzeriniz GPS məkan xidmətini dəstəkləmir.';
+            if (gpsBanner) gpsBanner.className = 'gps-banner danger';
+            if (gpsText) gpsText.textContent = 'Brauzeriniz GPS məkan xidmətini dəstəkləmir.';
             return;
         }
 
-        gpsBanner.className = 'gps-banner loading';
-        gpsText.textContent = 'GPS məkanınız yoxlanılır...';
+        if (gpsBanner) gpsBanner.className = 'gps-banner loading';
+        if (gpsText) gpsText.textContent = 'GPS məkanınız yoxlanılır...';
 
         navigator.geolocation.getCurrentPosition(
             (pos) => {
@@ -669,24 +1010,26 @@
                 if (branchLat && branchLng) {
                     const dist = calculateDistance(currentLat, currentLng, branchLat, branchLng);
                     if (dist <= branchRadius) {
-                        gpsBanner.className = 'gps-banner success';
-                        gpsText.textContent = 'Məkan təsdiqləndi! Filialdan ' + dist + 'm məsafədəsiniz (İcazə: ' + branchRadius + 'm).';
+                        if (gpsBanner) gpsBanner.className = 'gps-banner success';
+                        if (gpsText) gpsText.textContent = 'Məkan təsdiqləndi! Filialdan ' + dist + 'm məsafədəsiniz (İcazə: ' + branchRadius + 'm).';
                     } else {
-                        gpsBanner.className = 'gps-banner danger';
-                        gpsText.textContent = 'Filialdan kənardasınız! Məsafə: ' + dist + 'm (Maksimal icazə: ' + branchRadius + 'm).';
+                        if (gpsBanner) gpsBanner.className = 'gps-banner danger';
+                        if (gpsText) gpsText.textContent = 'Filialdan kənardasınız! Məsafə: ' + dist + 'm (Maksimal icazə: ' + branchRadius + 'm).';
                     }
                 } else {
-                    gpsBanner.className = 'gps-banner success';
-                    gpsText.textContent = 'Məkan aktivdir.';
+                    if (gpsBanner) gpsBanner.className = 'gps-banner success';
+                    if (gpsText) gpsText.textContent = 'Məkan aktivdir.';
                 }
                 updateSubmitButtonState();
             },
             (err) => {
-                gpsBanner.className = 'gps-banner danger';
-                if (err.code === 1) {
-                    gpsText.textContent = 'Məkan icazəsi verilmədi! Zəhmət olmasa ekrandakı icazəni təsdiqləyin.';
-                } else {
-                    gpsText.textContent = 'Məkan koordinatları müəyyən edilmədi. GPS-i açıb yenidən cəhd edin.';
+                if (gpsBanner) gpsBanner.className = 'gps-banner danger';
+                if (gpsText) {
+                    if (err.code === 1) {
+                        gpsText.textContent = 'Məkan icazəsi verilmədi! Zəhmət olmasa ekrandakı icazəni təsdiqləyin.';
+                    } else {
+                        gpsText.textContent = 'Məkan koordinatları müəyyən edilmədi. GPS-i açıb yenidən cəhd edin.';
+                    }
                 }
                 updateSubmitButtonState();
             },
@@ -694,7 +1037,6 @@
         );
     }
 
-    // İstifadəçi brauzerə qayıtdıqda avtomatik yenidən yoxlama
     document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && (!currentLat || !currentLng)) {
             checkLocation();
@@ -707,10 +1049,7 @@
         }
     });
 
-    // Səhifə açılan kimi birbaşa sistem icazəsi sorğusunu işə sal
-    checkLocation();
-
-    // İşçi seçimi
+    // 13. Manual İşçi siyahısı seçimi (ilk dəfə üçün)
     function attachWorkerListeners() {
         document.querySelectorAll('.worker-card').forEach(card => {
             card.addEventListener('click', function() {
@@ -726,7 +1065,7 @@
                 selectedNextAction = this.getAttribute('data-next-action') || 'check_in';
 
                 if (isPinRequired) {
-                    document.getElementById('pinBox').style.display = 'block';
+                    if (pinBox) pinBox.style.display = 'block';
                     clearPin();
                 }
 
@@ -734,19 +1073,21 @@
             });
         });
     }
-    attachWorkerListeners();
 
-    // Digər filiallar toggle
     const toggleWorkersBtn = document.getElementById('toggleWorkersBtn');
-    let showingAll = false;
-    toggleWorkersBtn.addEventListener('click', () => {
-        showingAll = !showingAll;
-        document.getElementById('branchWorkersList').style.display = showingAll ? 'none' : 'flex';
-        document.getElementById('allWorkersList').style.display = showingAll ? 'flex' : 'none';
-        toggleWorkersBtn.textContent = showingAll ? 'Yalnız bu filialın işçiləri' : 'Digər filialdan əvəzedici';
-    });
+    if (toggleWorkersBtn) {
+        let showingAll = false;
+        toggleWorkersBtn.addEventListener('click', () => {
+            showingAll = !showingAll;
+            const branchList = document.getElementById('branchWorkersList');
+            const allList = document.getElementById('allWorkersList');
+            if (branchList) branchList.style.display = showingAll ? 'none' : 'flex';
+            if (allList) allList.style.display = showingAll ? 'flex' : 'none';
+            toggleWorkersBtn.textContent = showingAll ? 'Yalnız bu filialın işçiləri' : 'Digər filialdan əvəzedici';
+        });
+    }
 
-    // PIN funksiyaları
+    // 14. PIN Kod funksiyaları
     function updatePinDots() {
         for (let i = 1; i <= 4; i++) {
             const dot = document.getElementById('dot' + i);
@@ -777,121 +1118,123 @@
         updatePinDots();
     };
 
-    // Düymə vəziyyəti
-    const submitBtn = document.getElementById('submitBtn');
-    const btnLabel = document.getElementById('btnLabel');
+    // 15. Submit Handler
+    if (submitBtn) {
+        submitBtn.addEventListener('click', function() {
+            if (!selectedWorkerId || isSubmitting) return;
 
-    function updateSubmitButtonState() {
-        if (!selectedWorkerId) {
+            if (!currentLat || !currentLng) {
+                alert('Davamiyyəti təsdiqləmək üçün zəhmət olmasa ekrandakı məkan (GPS) icazəsini təsdiqləyin.');
+                checkLocation();
+                return;
+            }
+
+            isSubmitting = true;
             submitBtn.disabled = true;
-            btnLabel.textContent = "İşçini Seçin";
-            return;
-        }
+            if (btnLabel) btnLabel.textContent = "Yoxlanılır və qeydə alınır...";
 
-        if (isPinRequired && enteredPin.length < 4) {
-            submitBtn.disabled = true;
-            btnLabel.textContent = "4 Rəqəmli PIN Kodu Daxil Edin";
-            return;
-        }
+            const payload = {
+                worker_id: selectedWorkerId,
+                pin_code: enteredPin,
+                latitude: currentLat,
+                longitude: currentLng,
+                device_uuid: deviceUuid,
+                device_model: getDeviceModel(),
+                type: selectedNextAction
+            };
 
-        submitBtn.disabled = false;
-        if (selectedNextAction === 'check_in') {
-            submitBtn.className = 'btn-submit btn-in';
-            btnLabel.textContent = selectedWorkerName + ' • İŞƏ GİRİŞİ TƏSDİQLƏ';
-        } else {
-            submitBtn.className = 'btn-submit btn-out';
-            btnLabel.textContent = selectedWorkerName + ' • İŞDƏN ÇIXIŞI TƏSDİQLƏ';
-        }
-    }
-
-    // Submit handler
-    submitBtn.addEventListener('click', function() {
-        if (!selectedWorkerId || isSubmitting) return;
-
-        if (!currentLat || !currentLng) {
-            alert('Davamiyyəti təsdiqləmək üçün zəhmət olmasa ekrandakı məkan (GPS) icazəsini təsdiqləyin.');
-            checkLocation();
-            return;
-        }
-
-        isSubmitting = true;
-        submitBtn.disabled = true;
-        btnLabel.textContent = "Yoxlanılır və qeydə alınır...";
-
-        const payload = {
-            worker_id: selectedWorkerId,
-            pin_code: enteredPin,
-            latitude: currentLat,
-            longitude: currentLng,
-            device_uuid: deviceUuid,
-            device_model: getDeviceModel(),
-            type: selectedNextAction
-        };
-
-        fetch(submitUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': csrfToken,
-                'Accept': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        })
-        .then(async response => {
-            const data = await response.json();
-            return { ok: response.ok, data };
-        })
-        .then(({ ok, data }) => {
-            isSubmitting = false;
-            showModal(ok, data.message || (ok ? 'Uğurlu!' : 'Xəta baş verdi!'), data);
-            if (ok) {
-                // Kartdakı növbəti hərəkəti yeniləyirik
-                const card = document.querySelector('.worker-card[data-worker-id="' + selectedWorkerId + '"]');
-                if (card && data.next_action) {
-                    card.setAttribute('data-next-action', data.next_action);
-                    const tag = card.querySelector('.action-tag');
-                    if (tag) {
-                        tag.className = 'action-tag ' + (data.next_action === 'check_in' ? 'tag-in' : 'tag-out');
-                        tag.textContent = data.next_action === 'check_in' ? 'GİRİŞ' : 'ÇIXIŞ';
+            fetch(submitUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(async response => {
+                const data = await response.json();
+                return { ok: response.ok, data };
+            })
+            .then(({ ok, data }) => {
+                isSubmitting = false;
+                showModal(ok, data.message || (ok ? 'Uğurlu!' : 'Xəta baş verdi!'), data);
+                if (ok) {
+                    if (!recognizedWorker || String(recognizedWorker.id) !== String(selectedWorkerId)) {
+                        recognizedWorker = {
+                            id: selectedWorkerId,
+                            name: selectedWorkerName,
+                            branch_id: data.branch_id || currentBranchId,
+                            branch_name: data.branch_name || '',
+                            next_action: data.next_action || (selectedNextAction === 'check_in' ? 'check_out' : 'check_in')
+                        };
+                        boundWorkers[deviceUuid] = recognizedWorker;
+                        document.cookie = "pg_att_device_uuid=" + encodeURIComponent(deviceUuid) + "; path=/; max-age=" + (365*24*60*60) + "; SameSite=Lax";
+                    } else {
+                        if (data.next_action) {
+                            recognizedWorker.next_action = data.next_action;
+                        }
                     }
+
+                    selectedNextAction = data.next_action || (selectedNextAction === 'check_in' ? 'check_out' : 'check_in');
+
+                    // Tanınmış kart vəziyyətini yeniləyirik
+                    applyRecognizedWorker(recognizedWorker);
+
+                    // Siyahıdakı manual kartı da yeniləyirik
+                    const card = document.querySelector('.worker-card[data-worker-id="' + selectedWorkerId + '"]');
+                    if (card && data.next_action) {
+                        card.setAttribute('data-next-action', data.next_action);
+                        const tag = card.querySelector('.action-tag');
+                        if (tag) {
+                            tag.className = 'action-tag ' + (data.next_action === 'check_in' ? 'tag-in' : 'tag-out');
+                            tag.textContent = data.next_action === 'check_in' ? 'GİRİŞ' : 'ÇIXIŞ';
+                        }
+                    }
+                    clearPin();
+                } else {
+                    submitBtn.disabled = false;
+                    updateSubmitButtonState();
                 }
-                clearPin();
-            } else {
+            })
+            .catch(err => {
+                isSubmitting = false;
                 submitBtn.disabled = false;
                 updateSubmitButtonState();
-            }
-        })
-        .catch(err => {
-            isSubmitting = false;
-            submitBtn.disabled = false;
-            updateSubmitButtonState();
-            showModal(false, 'Şəbəkə və ya server xətası baş verdi. Zəhmət olmasa yenidən cəhd edin.');
+                showModal(false, 'Şəbəkə və ya server xətası baş verdi. Zəhmət olmasa yenidən cəhd edin.');
+            });
         });
-    });
+    }
 
-    // Modal
-    const resultModal = document.getElementById('resultModal');
-    const modalIcon = document.getElementById('modalIcon');
-    const modalTitle = document.getElementById('modalTitle');
-    const modalDesc = document.getElementById('modalDesc');
-    const modalCloseBtn = document.getElementById('modalCloseBtn');
-
+    // 16. Modal
     function showModal(isSuccess, message, extraData) {
-        modalIcon.className = 'result-icon ' + (isSuccess ? 'success' : 'danger');
-        modalIcon.textContent = isSuccess ? '✓' : '✕';
-        modalTitle.textContent = isSuccess ? 'Uğurla Qeydə Alındı!' : 'Diqqət: Xəta!';
+        if (!resultModal) return;
+        if (modalIcon) {
+            modalIcon.className = 'result-icon ' + (isSuccess ? 'success' : 'danger');
+            modalIcon.textContent = isSuccess ? '✓' : '✕';
+        }
+        if (modalTitle) {
+            modalTitle.textContent = isSuccess ? 'Uğurla Qeydə Alındı!' : 'Diqqət: Xəta!';
+        }
         
         let desc = message;
         if (isSuccess && extraData && extraData.time) {
-            desc += '\nSaat: ' + extraData.time + ' (' + extraData.branch_name + ')';
+            desc += '\nSaat: ' + extraData.time + ' (' + (extraData.branch_name || '') + ')';
         }
-        modalDesc.textContent = desc;
+        if (modalDesc) modalDesc.textContent = desc;
         resultModal.style.display = 'flex';
     }
 
-    modalCloseBtn.addEventListener('click', () => {
-        resultModal.style.display = 'none';
-    });
+    if (modalCloseBtn && resultModal) {
+        modalCloseBtn.addEventListener('click', () => {
+            resultModal.style.display = 'none';
+        });
+    }
+
+    // 17. İcra Başlanğıcı
+    checkLocation();
+    attachWorkerListeners();
+    checkAutoRecognition();
 </script>
 
 </body>

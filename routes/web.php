@@ -34,6 +34,7 @@ use App\Services\PortalWebsiteService;
 // QR Davamiyyət: Mobil Skan və Çap (Açıq Marşrutlar)
 Route::prefix('attendance')->name('attendance.')->group(function () {
     Route::get('/scan/{token}', [AttendanceScanController::class, 'showScanPage'])->name('scan');
+    Route::get('/scan/{token}/lookup-device', [AttendanceScanController::class, 'lookupDevice'])->name('scan.lookup-device');
     Route::post('/scan/{token}/submit', [AttendanceScanController::class, 'submitAttendance'])->name('scan.submit');
     Route::get('/branch/{token}/qr-image', [AttendanceScanController::class, 'qrImage'])->name('qr.image');
     Route::get('/branch/{token}/qr-download', [AttendanceScanController::class, 'qrDownload'])->name('qr.download');

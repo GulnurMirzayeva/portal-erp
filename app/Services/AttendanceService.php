@@ -236,8 +236,78 @@ class AttendanceService
             }
         }
 
-        // 5. Cihaz Limiti Yoxlanışı (1 Telefonda yalnız 1 işçi)
+        // 5. Cihaz Limiti və Təhkimat Yoxlanışı (1 Telefonda yalnız 1 işçi)
         if (AttendanceSetting::isSingleDeviceEnforced() && !empty($deviceUuid)) {
+            // A) Bu cihaz artıq bazada başqa aktiv işçiyə təhkim olunubmu?
+            $boundToOtherWorker = AttendanceWorker::where('registered_device_uuid', $deviceUuid)
+                ->where('id', '!=', $worker->id)
+                ->where('is_active', true)
+                ->first();
+
+            if ($boundToOtherWorker) {
+                $details = "Bu cihaz artıq '{$boundToOtherWorker->name}' (ID: {$boundToOtherWorker->id}) üçün təhkim olunub. '{$worker->name}' bu telefonla qeydiyyat edə bilməz.";
+
+                $this->logAttempt([
+                    'worker_id' => $worker->id,
+                    'worker_name' => $worker->name,
+                    'branch_id' => $branch->id,
+                    'branch_name' => $branch->name,
+                    'date' => $today,
+                    'type' => $actionType,
+                    'scanned_at' => $now,
+                    'latitude' => $userLat,
+                    'longitude' => $userLng,
+                    'distance_meters' => $distance,
+                    'device_uuid' => $deviceUuid,
+                    'device_model' => $deviceModel,
+                    'ip_address' => $ipAddress,
+                    'user_agent' => $userAgent,
+                    'status' => 'rejected',
+                    'rejection_reason' => 'device_bound_to_other',
+                    'rejection_details' => $details,
+                    'is_violation' => true,
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => "Bu telefon artıq başqa işçiyə ({$boundToOtherWorker->name}) təhkim edilib! Hər kəs yalnız öz şəxsi telefonundan istifadə etməlidir.",
+                    'reason' => 'device_bound_to_other',
+                ];
+            }
+
+            // B) Bu işçinin artıq təhkim olunmuş başqa cihazı varmı?
+            if (!empty($worker->registered_device_uuid) && $worker->registered_device_uuid !== $deviceUuid) {
+                $details = "'{$worker->name}' artıq başqa bir telefona təhkim edilib ({$worker->registered_device_uuid}). Fərqli telefon cəhdi: {$deviceUuid}.";
+
+                $this->logAttempt([
+                    'worker_id' => $worker->id,
+                    'worker_name' => $worker->name,
+                    'branch_id' => $branch->id,
+                    'branch_name' => $branch->name,
+                    'date' => $today,
+                    'type' => $actionType,
+                    'scanned_at' => $now,
+                    'latitude' => $userLat,
+                    'longitude' => $userLng,
+                    'distance_meters' => $distance,
+                    'device_uuid' => $deviceUuid,
+                    'device_model' => $deviceModel,
+                    'ip_address' => $ipAddress,
+                    'user_agent' => $userAgent,
+                    'status' => 'rejected',
+                    'rejection_reason' => 'worker_bound_to_other_device',
+                    'rejection_details' => $details,
+                    'is_violation' => true,
+                ]);
+
+                return [
+                    'success' => false,
+                    'message' => "Siz artıq başqa bir telefona təhkim edilmisiniz! Qeydiyyat yalnız öz şəxsi telefonunuzdan edilə bilər (Telefon dəyişikliyi üçün rəhbərliyə müraciət edin).",
+                    'reason' => 'worker_bound_to_other_device',
+                ];
+            }
+
+            // C) Bu gün bu cihazdan başqa işçi tərəfindən qeydiyyat aparılıbmı?
             $otherWorkerLog = AttendanceLog::where('date', $today)
                 ->where('device_uuid', $deviceUuid)
                 ->where('worker_id', '!=', $worker->id)
