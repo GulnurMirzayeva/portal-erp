@@ -715,7 +715,7 @@
             </div>
         </div>
         <div class="d-flex align-items-center gap-2 flex-wrap">
-            @if(auth()->user()->hasAnyRole(['Admin', 'Director']) || auth()->user()->can('attendance.export'))
+            @if(auth()->user()->hasAnyRole(['Admin', 'Director', 'HR']) || auth()->user()->can('attendance.export'))
             <a href="{{ route('attendance.export', request()->all()) }}" class="att-btn att-btn-outline att-btn-sm" title="Jurnalı Excel sənədi kimi yüklə">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
                 Excel İxrac

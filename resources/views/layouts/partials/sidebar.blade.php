@@ -1,7 +1,7 @@
 <aside class="vertical-menu" id="vertical-menu">
     {{-- Brand Logo --}}
     <div class="navbar-brand-box">
-        <a href="{{ route('dashboard') }}" class="logo logo-dark">
+        <a href="{{ auth()->user()->can('dashboard.view') ? route('dashboard') : (auth()->user()->can('attendance.view') ? route('attendance.index') : '#') }}" class="logo logo-dark">
             <span class="logo-sm">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="brand-icon">
                     <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
@@ -26,6 +26,7 @@
     <div class="sidebar-scroll" id="sidebarScroll">
         <ul class="metismenu list-unstyled" id="side-menu">
             {{-- Category: Menu --}}
+            @can('dashboard.view')
             <li class="menu-title">MENU</li>
 
             {{-- Dashboard --}}
@@ -40,6 +41,7 @@
                     <span class="menu-text">Dashboard</span>
                 </a>
             </li>
+            @endcan
 
             {{-- Category: Apps & ERP Modules --}}
             <li class="menu-title">ERP MODULLARI</li>
@@ -149,7 +151,7 @@
             @endcan
 
             {{-- Davamiyyət (QR Giriş-Çıxış) --}}
-            @if(auth()->user()->hasAnyRole(['Admin', 'Director']) || auth()->user()->can('attendance.view'))
+            @if(auth()->user()->hasAnyRole(['Admin', 'Director', 'HR']) || auth()->user()->can('attendance.view'))
             @php
                 $isAttendanceActive = request()->routeIs('attendance.*');
             @endphp

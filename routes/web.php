@@ -5,9 +5,15 @@ use App\Http\Controllers\Auth\ForgotPasswordController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return auth()->check()
-        ? redirect()->route('dashboard')
-        : redirect()->route('login');
+    if (!auth()->check()) {
+        return redirect()->route('login');
+    }
+
+    if (!auth()->user()->can('dashboard.view') && auth()->user()->can('attendance.view')) {
+        return redirect()->route('attendance.index');
+    }
+
+    return redirect()->route('dashboard');
 });
 
 Route::get('/login', [LoginController::class, 'showLoginForm'])
@@ -110,14 +116,14 @@ Route::middleware('auth')->group(function () {
             ->name('expense-classifications.toggle');
     });
 
-    // Davamiyyət İdarəetməsi (Admin və Direktor üçün)
-    Route::middleware('role_or_permission:Admin|Director|attendance.view')->prefix('attendance')->name('attendance.')->group(function () {
+    // Davamiyyət İdarəetməsi (Admin, Direktor və HR üçün)
+    Route::middleware('role_or_permission:Admin|Director|HR|attendance.view')->prefix('attendance')->name('attendance.')->group(function () {
         Route::get('/', [AttendanceController::class, 'index'])->name('index');
         Route::get('/violations', [AttendanceController::class, 'violations'])->name('violations');
         Route::get('/branches', [AttendanceController::class, 'branches'])->name('branches');
         Route::get('/workers', [AttendanceController::class, 'workers'])->name('workers');
         Route::get('/export', [AttendanceController::class, 'exportExcel'])
-            ->middleware('role_or_permission:Admin|Director|attendance.export')
+            ->middleware('role_or_permission:Admin|Director|HR|attendance.export')
             ->name('export');
 
         // Yalnız Admin: Sinxronizasiya

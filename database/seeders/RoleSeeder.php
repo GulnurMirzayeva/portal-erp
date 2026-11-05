@@ -44,8 +44,15 @@ class RoleSeeder extends Seeder
         $crmRole = Role::firstOrCreate(['name' => 'CRM', 'guard_name' => 'web']);
         $crmRole->syncPermissions($crmPermissions);
 
+        // 5. HR: Yalnız Davamiyyət (QR) modulu üzrə baxış və export (eyni Director kimi)
+        $hrPermissions = Permission::where(function ($q) {
+            $q->where('name', 'attendance.view')
+              ->orWhere('name', 'attendance.export');
+        })->get();
+        $hrRole = Role::firstOrCreate(['name' => 'HR', 'guard_name' => 'web']);
+        $hrRole->syncPermissions($hrPermissions);
+
         // Əlavə köməkçi rollar (varsa qorunur)
-        Role::firstOrCreate(['name' => 'HR', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'Marketing', 'guard_name' => 'web']);
         Role::firstOrCreate(['name' => 'Director Manager', 'guard_name' => 'web']);
     }

@@ -65,5 +65,15 @@ class AdminUserSeeder extends Seeder
             ]
         );
         $crm->syncRoles(['CRM']);
+
+        // 5. HR: Yalnız Davamiyyət (QR) modulu (eyni Direktor kimi baxış və ixrac hüququ)
+        $hr = User::updateOrCreate(
+            ['email' => 'hr@portal.land'],
+            [
+                'name' => 'HR Menecer',
+                'password' => Hash::make('Hr12345!'),
+            ]
+        );
+        $hr->syncRoles(['HR']);
     }
 }

@@ -25,6 +25,11 @@ class LoginController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
+            $user = Auth::user();
+            if (!$user->can('dashboard.view') && $user->can('attendance.view')) {
+                return redirect()->route('attendance.index');
+            }
+
             return redirect()->intended('/dashboard');
         }
 
