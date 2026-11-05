@@ -130,6 +130,27 @@
             color: #f87171;
         }
 
+        .inapp-warning-banner {
+            background: #fffbeb;
+            border: 1.5px solid #fde68a;
+            color: #92400e;
+            border-radius: 14px;
+            padding: 12px 14px;
+            font-size: 12.5px;
+            line-height: 1.4;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            box-shadow: 0 2px 8px rgba(217, 119, 6, 0.08);
+            text-align: left;
+        }
+        .inapp-warning-banner svg {
+            flex-shrink: 0;
+            margin-top: 2px;
+            color: #d97706;
+        }
+
         .pulse-dot {
             width: 10px;
             height: 10px;
@@ -656,6 +677,14 @@
         <div class="clock-display" id="liveClock">Yüklənir...</div>
     </div>
 
+    {{-- In-App Browser Warning Banner --}}
+    <div class="inapp-warning-banner" id="inAppBanner" style="display: none;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+        <div>
+            <strong>Diqqət:</strong> Siz WhatsApp linki ilə daxil olursunuz. Zəhmət olmasa filialdakı QR kodu birbaşa telefonunuzun kamerası ilə oxudaraq daxil olun.
+        </div>
+    </div>
+
     {{-- GPS Status Banner --}}
     <div class="gps-banner loading" id="gpsBanner">
         <div class="pulse-dot"></div>
@@ -865,15 +894,39 @@
 
     // 4. Device UUID
     function getDeviceUuid() {
-        let uuid = localStorage.getItem('pg_att_device_uuid');
+        let uuid = null;
+        try {
+            uuid = localStorage.getItem('pg_att_device_uuid');
+        } catch (e) {}
+
+        // Əgər localStorage boşdursa, 1 illik Cookie-dən bərpa et
+        if (!uuid) {
+            const m = document.cookie.match(/(?:^|; )pg_att_device_uuid=([^;]*)/);
+            if (m && m[1]) {
+                uuid = decodeURIComponent(m[1]);
+                try { localStorage.setItem('pg_att_device_uuid', uuid); } catch (e) {}
+            }
+        }
+
         if (!uuid) {
             uuid = 'dev_' + (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).substr(2, 9)));
-            localStorage.setItem('pg_att_device_uuid', uuid);
+            try { localStorage.setItem('pg_att_device_uuid', uuid); } catch (e) {}
         }
         document.cookie = "pg_att_device_uuid=" + encodeURIComponent(uuid) + "; path=/; max-age=" + (365*24*60*60) + "; SameSite=Lax";
         return uuid;
     }
     const deviceUuid = getDeviceUuid();
+
+    // 4.1 In-App Browser (WhatsApp, Instagram, Telegram) yoxlanışı
+    function checkInAppBrowser() {
+        const ua = navigator.userAgent || '';
+        const isInApp = /WhatsApp|FBAN|FBAV|Instagram|Telegram|Line/i.test(ua);
+        const banner = document.getElementById('inAppBanner');
+        if (isInApp && banner) {
+            banner.style.display = 'flex';
+        }
+    }
+    checkInAppBrowser();
 
     // 5. Device Model
     function getDeviceModel() {
@@ -1326,6 +1379,8 @@
         let desc = message;
         if (isSuccess && extraData && extraData.time) {
             desc += '\nSaat: ' + extraData.time + ' (' + (extraData.branch_name || '') + ')';
+        } else if (!isSuccess && extraData && extraData.reason === 'worker_bound_to_other_device') {
+            desc += '\n\nZəhmət olmasa filialdakı rəsmi QR kodu birbaşa telefonunuzun kamerası ilə oxudaraq daxil olun (linklə qeydiyyat qəbul edilmir).';
         }
         if (modalDesc) modalDesc.textContent = desc;
         resultModal.style.display = 'flex';
