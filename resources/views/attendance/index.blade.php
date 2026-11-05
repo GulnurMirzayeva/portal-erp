@@ -136,6 +136,138 @@
     .stat-icon-emerald { background: #ecfdf5; color: #107c41; border: 1px solid #a7f3d0; }
     .stat-icon-sky { background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; }
     .stat-icon-rose { background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; }
+    .stat-icon-amber { background: #fff7ed; color: #ea580c; border: 1px solid #fed7aa; }
+    .stat-card-clickable { cursor: pointer; }
+
+    /* Tabs Wrap */
+    .data-tabs-wrap {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #f1f5f9;
+        padding: 4px;
+        border-radius: 14px;
+        flex-wrap: wrap;
+    }
+    .data-tab-btn {
+        border: none;
+        background: transparent;
+        padding: 8px 16px;
+        font-size: 13px;
+        font-weight: 700;
+        color: #64748b;
+        border-radius: 10px;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .data-tab-btn:hover {
+        color: #0f172a;
+    }
+    .data-tab-btn.active {
+        background: #ffffff;
+        color: #0f172a;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    }
+    .tab-badge-blue {
+        background: #eff6ff;
+        color: #2563eb;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 20px;
+        border: 1px solid #dbeafe;
+    }
+    .tab-badge-amber {
+        background: #fff7ed;
+        color: #c2410c;
+        font-size: 11px;
+        font-weight: 800;
+        padding: 2px 8px;
+        border-radius: 20px;
+        border: 1px solid #fed7aa;
+    }
+
+    /* Absent View Styles */
+    .absent-banner-box {
+        padding: 14px 20px;
+        background: #fffbeb;
+        border-bottom: 1px solid #fef3c7;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+    .absent-banner-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .absent-banner-icon {
+        width: 38px;
+        height: 38px;
+        border-radius: 10px;
+        background: #fef3c7;
+        color: #d97706;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+    .absent-banner-text {
+        font-size: 13px;
+        color: #92400e;
+        line-height: 1.4;
+    }
+    .absent-banner-text strong {
+        color: #78350f;
+    }
+    .badge-status-absent {
+        background: #fef2f2;
+        color: #dc2626;
+        border: 1px solid #fecaca;
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11.5px;
+        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .action-contact-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 9px;
+        border-radius: 8px;
+        font-size: 11.5px;
+        font-weight: 700;
+        text-decoration: none !important;
+        transition: all 0.15s ease;
+    }
+    .action-contact-wa {
+        background: #ecfdf5;
+        color: #059669 !important;
+        border: 1px solid #a7f3d0;
+    }
+    .action-contact-wa:hover {
+        background: #d1fae5;
+        color: #047857 !important;
+        transform: translateY(-1px);
+    }
+    .action-contact-tel {
+        background: #f1f5f9;
+        color: #475569 !important;
+        border: 1px solid #cbd5e1;
+    }
+    .action-contact-tel:hover {
+        background: #e2e8f0;
+        color: #1e293b !important;
+        transform: translateY(-1px);
+    }
 
     /* Filter Panel Card */
     .filter-panel-card {
@@ -783,6 +915,18 @@
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
             </div>
         </a>
+
+        {{-- 5. QR ilə Giriş Etməyənlər --}}
+        <div class="stat-card-modern stat-card-clickable" id="cardAbsentWorkers" title="QR ilə daxil olmayan işçilərin siyahısına keç">
+            <div>
+                <div class="stat-metric-title">QR ilə Giriş Etməyənlər</div>
+                <div class="stat-metric-val" style="color: #ea580c;">{{ $stats['absent_count'] }}</div>
+                <div class="stat-metric-subtitle">{{ $stats['total_active_workers'] }} aktiv işçidən (Bax ↓)</div>
+            </div>
+            <div class="stat-icon-wrap stat-icon-amber">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="17" y1="8" x2="23" y2="14"></line><line x1="23" y1="8" x2="17" y2="14"></line></svg>
+            </div>
+        </div>
     </div>
 
     {{-- Süzgəc və Axtarış Paneli (Dəqiq Ölçülər və Bərabər Hizada Grid) --}}
@@ -871,14 +1015,36 @@
     </div>
 
     {{-- Cədvəl Kartı --}}
-    <div class="data-card-modern">
+    <div class="data-card-modern" id="attendanceDataCard">
         <div class="data-card-header">
-            <h6 class="data-table-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#107c41" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-                Gündəlik Giriş-Çıxış Qeydiyyatları
-                <span class="data-count-tag">{{ $logs->total() }} qeyd</span>
-            </h6>
+            <div class="data-tabs-wrap">
+                <button type="button" class="data-tab-btn active" id="tabBtnLogs" data-target="viewLogsTab">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                    <span>Gündəlik Giriş-Çıxış Jurnalı</span>
+                    <span class="tab-badge-blue">{{ $logs->total() }}</span>
+                </button>
+                <button type="button" class="data-tab-btn" id="tabBtnAbsent" data-target="viewAbsentTab">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="17" y1="8" x2="23" y2="14"></line><line x1="23" y1="8" x2="17" y2="14"></line></svg>
+                    <span>QR ilə Giriş Etməyənlər</span>
+                    <span class="tab-badge-amber">{{ $absentWorkers->count() }} nəfər</span>
+                </button>
+            </div>
+
+            <div class="d-flex align-items-center gap-2">
+                {{-- Excel İxrac for Absent --}}
+                <div id="absentActionButtons" style="display: none;">
+                    @if(auth()->user()->hasAnyRole(['Admin', 'Director', 'HR']) || auth()->user()->can('attendance.export'))
+                    <a href="{{ route('attendance.export', array_merge(request()->all(), ['export_type' => 'absent'])) }}" class="att-btn att-btn-outline att-btn-sm" title="QR ilə girməyənlərin siyahısını Excel olaraq yüklə">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                        Gəlməyənləri Excel İxrac Et
+                    </a>
+                    @endif
+                </div>
+            </div>
         </div>
+
+        {{-- 1-ci Görünüş: Giriş-Çıxış Jurnalı --}}
+        <div id="viewLogsTab">
 
         <div class="mobile-scroll-hint">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8L22 12L18 16"></path><path d="M6 8L2 12L6 16"></path></svg>
@@ -1066,6 +1232,141 @@
                 </div>
             </div>
         @endif
+        </div>
+
+        {{-- 2-ci Görünüş: QR ilə Giriş Etməyənlər --}}
+        <div id="viewAbsentTab" style="display: none;">
+            <div class="absent-banner-box">
+                <div class="absent-banner-info">
+                    <div class="absent-banner-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                    <div class="absent-banner-text">
+                        <strong>Davamiyyətə əsasən QR kodu oxutmayan aktiv işçilər</strong>
+                        <div>
+                            Tarix: <strong>{{ $targetDate }}</strong> | Cəmi aktiv işçi: <strong>{{ $stats['total_active_workers'] }}</strong> nəfər | Giriş etməyən: <strong class="text-danger">{{ $absentWorkers->count() }}</strong> nəfər
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex align-items-center gap-2">
+                    <input type="text" id="absentSearchInput" class="filter-ctrl" placeholder="İşçi adı və ya filial ilə axtar..." style="height: 38px; font-size: 13px; width: 240px;">
+                </div>
+            </div>
+
+            <div class="mobile-scroll-hint">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M18 8L22 12L18 16"></path><path d="M6 8L2 12L6 16"></path></svg>
+                <span>Cədvəli tam görmək üçün sağa-sola sürüşdürə bilərsiniz</span>
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 8L2 12L6 16"></path><path d="M18 8L22 12L18 16"></path></svg>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table-modern">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">№</th>
+                            <th>İşçi</th>
+                            <th>Əsas Filial</th>
+                            <th>Əlaqə</th>
+                            <th>Cihaz Təhkimatı</th>
+                            <th>Davamiyyət Statusu</th>
+                        </tr>
+                    </thead>
+                    <tbody id="absentWorkersTableBody">
+                        @forelse($absentWorkers as $idx => $aw)
+                            <tr class="absent-worker-row">
+                                <td class="text-muted fw-bold" style="font-size: 12px;">#{{ $idx + 1 }}</td>
+
+                                {{-- İşçi --}}
+                                <td>
+                                    <div class="worker-cell">
+                                        <div class="worker-avatar" style="background: #fff7ed; color: #ea580c; border-color: #fed7aa;">
+                                            {{ mb_substr($aw->name ?: '?', 0, 1) }}
+                                        </div>
+                                        <div>
+                                            <div class="worker-name">{{ $aw->name }}</div>
+                                            <div class="worker-phone">Sistem ID: #{{ $aw->id }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+
+                                {{-- Filial --}}
+                                <td>
+                                    @if($aw->branch)
+                                        <span class="branch-cell-pill">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                                            {{ $aw->branch->name }}
+                                        </span>
+                                    @else
+                                        <span class="text-muted small">Təyin olunmayıb</span>
+                                    @endif
+                                </td>
+
+                                {{-- Əlaqə --}}
+                                <td>
+                                    @if($aw->phone)
+                                        @php
+                                            $cleanPhone = preg_replace('/[^0-9]/', '', $aw->phone);
+                                            if (str_starts_with($cleanPhone, '0')) {
+                                                $waNumber = '994' . substr($cleanPhone, 1);
+                                            } elseif (str_starts_with($cleanPhone, '994')) {
+                                                $waNumber = $cleanPhone;
+                                            } else {
+                                                $waNumber = '994' . $cleanPhone;
+                                            }
+                                        @endphp
+                                        <div class="d-flex align-items-center gap-1 flex-wrap">
+                                            <a href="tel:{{ $aw->phone }}" class="action-contact-btn action-contact-tel" title="Zəng et: {{ $aw->phone }}">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                                                {{ $aw->phone }}
+                                            </a>
+                                            <a href="https://wa.me/{{ $waNumber }}" target="_blank" class="action-contact-btn action-contact-wa" title="WhatsApp-da yaz">
+                                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+                                                WhatsApp
+                                            </a>
+                                        </div>
+                                    @else
+                                        <span class="text-muted small">—</span>
+                                    @endif
+                                </td>
+
+                                {{-- Cihaz Təhkimatı --}}
+                                <td>
+                                    @if($aw->registered_device_uuid)
+                                        <span class="badge bg-light text-dark border px-2 py-1" style="font-size: 11.5px; font-weight: 600;">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+                                            Cihaz Bağlıdır
+                                        </span>
+                                    @else
+                                        <span class="text-muted small" style="font-size: 11.5px;">Sərbəst</span>
+                                    @endif
+                                </td>
+
+                                {{-- Status --}}
+                                <td>
+                                    <span class="badge-status-absent">
+                                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>
+                                        QR ilə daxil olmayıb
+                                    </span>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6">
+                                    <div class="empty-state-wrap">
+                                        <div class="empty-icon-box" style="background: #ecfdf5; border-color: #a7f3d0; color: #059669;">
+                                            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                                        </div>
+                                        <h6 class="fw-bold text-dark mb-1">Əla! Bütün aktiv işçilər QR kodla giriş ediblər</h6>
+                                        <p class="small text-muted mb-0">Seçilmiş kriteriyalar və tarix üzrə qeydiyyatdan keçməyən işçi yoxdur.</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
 </div>
@@ -1073,6 +1374,48 @@
 
 @push('scripts')
 <script>
+    // Tab switching between Logs and Absent
+    const tabBtnLogs = document.getElementById('tabBtnLogs');
+    const tabBtnAbsent = document.getElementById('tabBtnAbsent');
+    const viewLogsTab = document.getElementById('viewLogsTab');
+    const viewAbsentTab = document.getElementById('viewAbsentTab');
+    const absentActionButtons = document.getElementById('absentActionButtons');
+    const cardAbsentWorkers = document.getElementById('cardAbsentWorkers');
+
+    function showLogsTab() {
+        tabBtnLogs?.classList.add('active');
+        tabBtnAbsent?.classList.remove('active');
+        if (viewLogsTab) viewLogsTab.style.display = 'block';
+        if (viewAbsentTab) viewAbsentTab.style.display = 'none';
+        if (absentActionButtons) absentActionButtons.style.display = 'none';
+    }
+
+    function showAbsentTab() {
+        tabBtnAbsent?.classList.add('active');
+        tabBtnLogs?.classList.remove('active');
+        if (viewAbsentTab) viewAbsentTab.style.display = 'block';
+        if (viewLogsTab) viewLogsTab.style.display = 'none';
+        if (absentActionButtons) absentActionButtons.style.display = 'block';
+    }
+
+    tabBtnLogs?.addEventListener('click', showLogsTab);
+    tabBtnAbsent?.addEventListener('click', showAbsentTab);
+
+    cardAbsentWorkers?.addEventListener('click', function() {
+        showAbsentTab();
+        document.getElementById('attendanceDataCard')?.scrollIntoView({ behavior: 'smooth' });
+    });
+
+    // Client-side quick search for absent workers
+    document.getElementById('absentSearchInput')?.addEventListener('input', function() {
+        const query = this.value.toLowerCase().trim();
+        document.querySelectorAll('#absentWorkersTableBody tr.absent-worker-row').forEach(row => {
+            const text = row.innerText.toLowerCase();
+            row.style.display = text.includes(query) ? '' : 'none';
+        });
+    });
+
+    // Portal sync
     document.getElementById('btnSyncWorkers')?.addEventListener('click', function() {
         if (!confirm('PortalWebsite-dan yeni filiallar və işçilər sinxronizasiya edilsin?')) return;
         const btn = this;

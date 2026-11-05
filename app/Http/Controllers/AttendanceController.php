@@ -56,19 +56,59 @@ class AttendanceController extends Controller
 
         $logs = $query->orderBy('scanned_at', 'desc')->paginate(30)->withQueryString();
 
-        // Statistika
         $today = Carbon::today()->toDateString();
+        $targetDate = ($selectedDate && $selectedDate !== 'all') ? $selectedDate : $today;
+
+        // Seçilmiş tarixdə (və ya bu gün) uğurla QR ilə daxil olmuş işçilərin ID-ləri
+        $presentWorkerIds = AttendanceLog::where('date', $targetDate)
+            ->where('status', 'success')
+            ->whereNotNull('worker_id')
+            ->pluck('worker_id')
+            ->unique()
+            ->toArray();
+
+        // Aktiv olan, lakin həmin gün QR ilə qeydiyyatdan keçməyən işçilər
+        $absentWorkersQuery = AttendanceWorker::with('branch')
+            ->where('is_active', true)
+            ->whereNotIn('id', $presentWorkerIds);
+
+        if ($selectedBranchId && $selectedBranchId !== 'all') {
+            $absentWorkersQuery->where('attendance_branch_id', $selectedBranchId);
+        }
+
+        $absentWorkers = $absentWorkersQuery->orderBy('name')->get();
+
+        $totalActiveWorkersQuery = AttendanceWorker::where('is_active', true);
+        if ($selectedBranchId && $selectedBranchId !== 'all') {
+            $totalActiveWorkersQuery->where('attendance_branch_id', $selectedBranchId);
+        }
+        $totalActiveWorkersCount = $totalActiveWorkersQuery->count();
+
+        // Statistika
         $stats = [
             'total_today' => AttendanceLog::where('date', $today)->where('status', 'success')->count(),
             'check_ins_today' => AttendanceLog::where('date', $today)->where('status', 'success')->where('type', 'check_in')->count(),
             'check_outs_today' => AttendanceLog::where('date', $today)->where('status', 'success')->where('type', 'check_out')->count(),
             'violations_today' => AttendanceLog::where('date', $today)->where('is_violation', true)->count(),
+            'absent_count' => $absentWorkers->count(),
+            'total_active_workers' => $totalActiveWorkersCount,
         ];
 
         $branches = AttendanceBranch::orderBy('name')->get();
         $isPinRequired = AttendanceSetting::isPinRequired();
 
-        return view('attendance.index', compact('logs', 'stats', 'branches', 'selectedDate', 'selectedBranchId', 'selectedType', 'selectedStatus', 'isPinRequired'));
+        return view('attendance.index', compact(
+            'logs',
+            'stats',
+            'branches',
+            'selectedDate',
+            'selectedBranchId',
+            'selectedType',
+            'selectedStatus',
+            'isPinRequired',
+            'absentWorkers',
+            'targetDate'
+        ));
     }
 
     /**
@@ -482,6 +522,71 @@ class AttendanceController extends Controller
     {
         $date = $request->input('date', Carbon::today()->toDateString());
         $branchId = $request->input('branch_id');
+        $exportType = $request->input('export_type');
+
+        // Əgər QR ilə daxil olmayanların ixracı tələb olunursa
+        if ($exportType === 'absent') {
+            $targetDate = ($date && $date !== 'all') ? $date : Carbon::today()->toDateString();
+
+            $presentWorkerIds = AttendanceLog::where('date', $targetDate)
+                ->where('status', 'success')
+                ->whereNotNull('worker_id')
+                ->pluck('worker_id')
+                ->unique()
+                ->toArray();
+
+            $absentWorkersQuery = AttendanceWorker::with('branch')
+                ->where('is_active', true)
+                ->whereNotIn('id', $presentWorkerIds);
+
+            if ($branchId && $branchId !== 'all') {
+                $absentWorkersQuery->where('attendance_branch_id', $branchId);
+            }
+
+            $absentWorkers = $absentWorkersQuery->orderBy('name')->get();
+
+            $spreadsheet = new Spreadsheet();
+            $sheet = $spreadsheet->getActiveSheet();
+            $sheet->setTitle('QR Giriş Etməyənlər');
+
+            $headers = ['№', 'Tarix', 'İşçi', 'Əsas Filial', 'Əlaqə Nömrəsi', 'Cihaz Vəziyyəti', 'Davamiyyət Statusu'];
+            $sheet->fromArray($headers, null, 'A1');
+
+            $sheet->getStyle('A1:G1')->getFont()->setBold(true);
+            $sheet->getStyle('A1:G1')->getFill()->setFillType(\PhpOffice\PhpSpreadsheet\Style\Fill::FILL_SOLID)
+                ->getStartColor()->setARGB('FFDC2626');
+            $sheet->getStyle('A1:G1')->getFont()->getColor()->setARGB('FFFFFFFF');
+
+            $rows = [];
+            foreach ($absentWorkers as $idx => $worker) {
+                $rows[] = [
+                    $idx + 1,
+                    $targetDate,
+                    $worker->name,
+                    $worker->branch?->name ?: 'Təyin olunmayıb',
+                    $worker->phone ?: 'Əlaqə qeyd edilməyib',
+                    $worker->registered_device_uuid ? 'Cihaz Bağlıdır' : 'Sərbəst (Cihaz yoxdur)',
+                    'QR ilə giriş qeydə alınmayıb',
+                ];
+            }
+
+            if (!empty($rows)) {
+                $sheet->fromArray($rows, null, 'A2');
+            }
+
+            foreach (range('A', 'G') as $col) {
+                $sheet->getColumnDimension($col)->setAutoSize(true);
+            }
+
+            $fileName = 'QR_Giris_Etmeyenler_' . ($date === 'all' ? Carbon::today()->toDateString() : $date) . '.xlsx';
+
+            return response()->streamDownload(function () use ($spreadsheet) {
+                $writer = new Xlsx($spreadsheet);
+                $writer->save('php://output');
+            }, $fileName, [
+                'Content-Type' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            ]);
+        }
 
         $query = AttendanceLog::query();
         if ($date !== 'all') {
