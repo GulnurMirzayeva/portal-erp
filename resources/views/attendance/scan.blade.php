@@ -897,22 +897,29 @@
         let uuid = null;
         try {
             uuid = localStorage.getItem('pg_att_device_uuid');
+            if (uuid === 'undefined' || uuid === 'null' || !uuid) {
+                uuid = null;
+            }
         } catch (e) {}
 
         // Əgər localStorage boşdursa, 1 illik Cookie-dən bərpa et
         if (!uuid) {
-            const m = document.cookie.match(/(?:^|; )pg_att_device_uuid=([^;]*)/);
-            if (m && m[1]) {
-                uuid = decodeURIComponent(m[1]);
-                try { localStorage.setItem('pg_att_device_uuid', uuid); } catch (e) {}
-            }
+            try {
+                const m = document.cookie.match(/(?:^|; )pg_att_device_uuid=([^;]*)/);
+                if (m && m[1] && m[1] !== 'undefined' && m[1] !== 'null') {
+                    uuid = decodeURIComponent(m[1]);
+                    try { localStorage.setItem('pg_att_device_uuid', uuid); } catch (e) {}
+                }
+            } catch (e) {}
         }
 
         if (!uuid) {
             uuid = 'dev_' + (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).substr(2, 9)));
             try { localStorage.setItem('pg_att_device_uuid', uuid); } catch (e) {}
         }
-        document.cookie = "pg_att_device_uuid=" + encodeURIComponent(uuid) + "; path=/; max-age=" + (365*24*60*60) + "; SameSite=Lax";
+        try {
+            document.cookie = "pg_att_device_uuid=" + encodeURIComponent(uuid) + "; path=/; max-age=" + (365*24*60*60) + "; SameSite=Lax";
+        } catch (e) {}
         return uuid;
     }
     const deviceUuid = getDeviceUuid();
@@ -1379,8 +1386,6 @@
         let desc = message;
         if (isSuccess && extraData && extraData.time) {
             desc += '\nSaat: ' + extraData.time + ' (' + (extraData.branch_name || '') + ')';
-        } else if (!isSuccess && extraData && extraData.reason === 'worker_bound_to_other_device') {
-            desc += '\n\nZəhmət olmasa filialdakı rəsmi QR kodu birbaşa telefonunuzun kamerası ilə oxudaraq daxil olun (linklə qeydiyyat qəbul edilmir).';
         }
         if (modalDesc) modalDesc.textContent = desc;
         resultModal.style.display = 'flex';

@@ -311,39 +311,7 @@ class AttendanceService
                 ];
             }
 
-            // B) Bu işçinin artıq təhkim olunmuş başqa cihazı varmı?
-            if (!empty($worker->registered_device_uuid) && $worker->registered_device_uuid !== $deviceUuid) {
-                $details = "'{$worker->name}' artıq başqa bir telefona təhkim edilib ({$worker->registered_device_uuid}). Fərqli telefon cəhdi: {$deviceUuid}.";
-
-                $this->logAttempt([
-                    'worker_id' => $worker->id,
-                    'worker_name' => $worker->name,
-                    'branch_id' => $branch->id,
-                    'branch_name' => $branch->name,
-                    'date' => $today,
-                    'type' => $actionType,
-                    'scanned_at' => $now,
-                    'latitude' => $userLat,
-                    'longitude' => $userLng,
-                    'distance_meters' => $distance,
-                    'device_uuid' => $deviceUuid,
-                    'device_model' => $deviceModel,
-                    'ip_address' => $ipAddress,
-                    'user_agent' => $userAgent,
-                    'status' => 'rejected',
-                    'rejection_reason' => 'worker_bound_to_other_device',
-                    'rejection_details' => $details,
-                    'is_violation' => true,
-                ]);
-
-                return [
-                    'success' => false,
-                    'message' => "Siz artıq başqa bir telefona təhkim edilmisiniz! Qeydiyyat yalnız öz şəxsi telefonunuzdan edilə bilər (Telefon dəyişikliyi üçün rəhbərliyə müraciət edin).",
-                    'reason' => 'worker_bound_to_other_device',
-                ];
-            }
-
-            // C) Bu gün bu cihazdan başqa işçi tərəfindən qeydiyyat aparılıbmı?
+            // B) Bu gün bu cihazdan başqa işçi tərəfindən qeydiyyat aparılıbmı?
             $otherWorkerLog = AttendanceLog::where('date', $today)
                 ->where('device_uuid', $deviceUuid)
                 ->where('worker_id', '!=', $worker->id)
@@ -419,8 +387,8 @@ class AttendanceService
             'is_violation' => false,
         ]);
 
-        // İşçiyə cihazı ilk dəfədirsə bağlayırıq
-        if (empty($worker->registered_device_uuid) && !empty($deviceUuid)) {
+        // İşçiyə cihaz bağlamasını tətbiq edirik / yeniləyirik
+        if (!empty($deviceUuid) && $worker->registered_device_uuid !== $deviceUuid) {
             $worker->update(['registered_device_uuid' => $deviceUuid]);
         }
 
