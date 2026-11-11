@@ -24,9 +24,6 @@ class AttendanceScanController extends Controller
      */
     public function showScanPage(Request $request, string $token)
     {
-        // Əvvəlki günlərdən açıq qalmış unudulmuş girişləri avtomatik çıxış edirik
-        $this->attendanceService->performAutoCheckout();
-
         $branch = AttendanceBranch::where('qr_token', $token)
             ->where('is_active', true)
             ->firstOrFail();
@@ -77,16 +74,22 @@ class AttendanceScanController extends Controller
             $recognizedWorker = $boundWorkers[$cookieDeviceUuid];
         }
 
-        return view('attendance.scan', compact(
-            'branch',
-            'workers',
-            'allWorkers',
-            'isPinRequired',
-            'isSingleDevice',
-            'allowedRadius',
-            'boundWorkers',
-            'recognizedWorker'
-        ));
+        return response()
+            ->view('attendance.scan', compact(
+                'branch',
+                'workers',
+                'allWorkers',
+                'isPinRequired',
+                'isSingleDevice',
+                'allowedRadius',
+                'boundWorkers',
+                'recognizedWorker'
+            ))
+            ->withHeaders([
+                'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+                'Pragma' => 'no-cache',
+                'Expires' => 'Sat, 01 Jan 2000 00:00:00 GMT',
+            ]);
     }
 
     /**
@@ -123,6 +126,9 @@ class AttendanceScanController extends Controller
                 'active_checkin_branch_name' => $checkInLog?->branch_name,
                 'active_checkin_time' => $checkInLog ? \Carbon\Carbon::parse($checkInLog->scanned_at)->format('H:i') : null,
             ],
+        ])->withHeaders([
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
         ]);
     }
 

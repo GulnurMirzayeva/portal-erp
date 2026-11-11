@@ -52,11 +52,11 @@ class AttendanceSetting extends Model
     }
 
     /**
-     * Avtomatik çıxışın aktiv olub-olmadığını qaytarır.
+     * Avtomatik çıxış deaktiv edilib — işçilər yalnız özləri çıxış etdikdə qeydə alınır.
      */
     public static function isAutoCheckoutEnabled(): bool
     {
-        return static::get('auto_checkout_enabled', '1') === '1';
+        return false;
     }
 
     /**

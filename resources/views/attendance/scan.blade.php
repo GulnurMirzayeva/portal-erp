@@ -891,6 +891,8 @@
     let selectedWorkerActiveBranchName = null;
     let enteredPin = "";
     let isSubmitting = false;
+    let isCooldownActive = false;
+    let cooldownTimerId = null;
 
     // 4. Device UUID
     function getDeviceUuid() {
@@ -950,6 +952,10 @@
     // 6. Düymə vəziyyəti yeniləyici
     function updateSubmitButtonState() {
         if (!submitBtn || !btnLabel) return;
+        if (isSubmitting) {
+            submitBtn.disabled = true;
+            return;
+        }
 
         // Fərqli filial yoxlanışı (İşçi başqa filialda giriş edibsə, bu filialdan çıxış edə bilməz)
         const activeBranchId = recognizedWorker ? recognizedWorker.active_checkin_branch_id : selectedWorkerActiveBranchId;
@@ -979,7 +985,6 @@
             return;
         }
 
-        submitBtn.disabled = false;
         if (selectedNextAction === 'check_in') {
             submitBtn.className = 'btn-submit btn-in';
             btnLabel.textContent = 'İŞƏ GİRİŞİ TƏSDİQLƏ';
@@ -987,6 +992,7 @@
             submitBtn.className = 'btn-submit btn-out';
             btnLabel.textContent = 'İŞDƏN ÇIXIŞI TƏSDİQLƏ';
         }
+        submitBtn.disabled = isSubmitting || isCooldownActive;
     }
 
     // 7. Recognized Card Status UI
@@ -1267,10 +1273,58 @@
         updatePinDots();
     };
 
+    function updateWorkerCardDom(workerId, newNextAction, activeBranchId, activeBranchName) {
+        const card = document.querySelector('.worker-card[data-worker-id="' + workerId + '"]');
+        if (!card) return;
+
+        card.setAttribute('data-next-action', newNextAction);
+        card.setAttribute('data-active-branch-id', activeBranchId || '');
+        card.setAttribute('data-active-branch-name', activeBranchName || '');
+        const tag = card.querySelector('.action-tag');
+        if (tag) {
+            tag.className = 'action-tag ' + (newNextAction === 'check_in' ? 'tag-in' : 'tag-out');
+            tag.textContent = newNextAction === 'check_in' ? 'GİRİŞ' : 'ÇIXIŞ';
+        }
+    }
+
+    function syncWorkerActionUI(newNextAction, activeBranchId, activeBranchName, workerBranchName, allowBind) {
+        if (allowBind && (!recognizedWorker || String(recognizedWorker.id) !== String(selectedWorkerId))) {
+            recognizedWorker = {
+                id: selectedWorkerId,
+                name: selectedWorkerName,
+                branch_id: currentBranchId,
+                branch_name: workerBranchName || '',
+                next_action: newNextAction,
+                active_checkin_branch_id: activeBranchId,
+                active_checkin_branch_name: activeBranchName
+            };
+            boundWorkers[deviceUuid] = recognizedWorker;
+            try {
+                document.cookie = "pg_att_device_uuid=" + encodeURIComponent(deviceUuid) + "; path=/; max-age=" + (365*24*60*60) + "; SameSite=Lax";
+            } catch (e) {}
+        } else if (recognizedWorker && String(recognizedWorker.id) === String(selectedWorkerId)) {
+            recognizedWorker.next_action = newNextAction;
+            recognizedWorker.active_checkin_branch_id = activeBranchId;
+            recognizedWorker.active_checkin_branch_name = activeBranchName;
+        }
+
+        selectedNextAction = newNextAction;
+        selectedWorkerActiveBranchId = activeBranchId;
+        selectedWorkerActiveBranchName = activeBranchName;
+
+        if (recognizedWorker && String(recognizedWorker.id) === String(selectedWorkerId)) {
+            applyRecognizedWorker(recognizedWorker);
+        } else {
+            updateSubmitButtonState();
+        }
+
+        updateWorkerCardDom(selectedWorkerId, newNextAction, activeBranchId, activeBranchName);
+    }
+
     // 15. Submit Handler
     if (submitBtn) {
         submitBtn.addEventListener('click', function() {
-            if (!selectedWorkerId || isSubmitting) return;
+            if (!selectedWorkerId || isSubmitting || isCooldownActive) return;
 
             // Fərqli filial bloklaması
             const activeBranchId = recognizedWorker ? recognizedWorker.active_checkin_branch_id : selectedWorkerActiveBranchId;
@@ -1316,56 +1370,36 @@
             })
             .then(({ ok, data }) => {
                 isSubmitting = false;
-                showModal(ok, data.message || (ok ? 'Uğurlu!' : 'Xəta baş verdi!'), data);
                 if (ok) {
+                    isCooldownActive = true;
+                    if (cooldownTimerId) {
+                        clearTimeout(cooldownTimerId);
+                        cooldownTimerId = null;
+                    }
                     const newNextAction = data.next_action || (selectedNextAction === 'check_in' ? 'check_out' : 'check_in');
+                    const nextActiveBranchId = (newNextAction === 'check_out' ? currentBranchId : null);
+                    const nextActiveBranchName = (newNextAction === 'check_out' ? currentBranchName : null);
 
-                    if (!recognizedWorker || String(recognizedWorker.id) !== String(selectedWorkerId)) {
-                        recognizedWorker = {
-                            id: selectedWorkerId,
-                            name: selectedWorkerName,
-                            branch_id: data.branch_id || currentBranchId,
-                            branch_name: data.branch_name || '',
-                            next_action: newNextAction,
-                            active_checkin_branch_id: (newNextAction === 'check_out' ? currentBranchId : null),
-                            active_checkin_branch_name: (newNextAction === 'check_out' ? currentBranchName : null)
-                        };
-                        boundWorkers[deviceUuid] = recognizedWorker;
-                        document.cookie = "pg_att_device_uuid=" + encodeURIComponent(deviceUuid) + "; path=/; max-age=" + (365*24*60*60) + "; SameSite=Lax";
-                    } else {
-                        recognizedWorker.next_action = newNextAction;
-                        recognizedWorker.active_checkin_branch_id = (newNextAction === 'check_out' ? currentBranchId : null);
-                        recognizedWorker.active_checkin_branch_name = (newNextAction === 'check_out' ? currentBranchName : null);
-                    }
-
-                    selectedNextAction = newNextAction;
-                    selectedWorkerActiveBranchId = recognizedWorker.active_checkin_branch_id;
-                    selectedWorkerActiveBranchName = recognizedWorker.active_checkin_branch_name;
-
-                    // Tanınmış kart vəziyyətini yeniləyirik
-                    applyRecognizedWorker(recognizedWorker);
-
-                    // Siyahıdakı manual kartı da yeniləyirik
-                    const card = document.querySelector('.worker-card[data-worker-id="' + selectedWorkerId + '"]');
-                    if (card) {
-                        card.setAttribute('data-next-action', newNextAction);
-                        card.setAttribute('data-active-branch-id', recognizedWorker.active_checkin_branch_id || '');
-                        card.setAttribute('data-active-branch-name', recognizedWorker.active_checkin_branch_name || '');
-                        const tag = card.querySelector('.action-tag');
-                        if (tag) {
-                            tag.className = 'action-tag ' + (newNextAction === 'check_in' ? 'tag-in' : 'tag-out');
-                            tag.textContent = newNextAction === 'check_in' ? 'GİRİŞ' : 'ÇIXIŞ';
-                        }
-                    }
+                    syncWorkerActionUI(newNextAction, nextActiveBranchId, nextActiveBranchName, data.branch_name || '', true);
                     clearPin();
                 } else {
-                    submitBtn.disabled = false;
+                    isCooldownActive = false;
+                    if (data && data.next_action) {
+                        syncWorkerActionUI(
+                            data.next_action,
+                            data.active_checkin_branch_id || null,
+                            data.active_checkin_branch_name || null,
+                            recognizedWorker ? recognizedWorker.branch_name : '',
+                            false
+                        );
+                    }
                     updateSubmitButtonState();
                 }
+                showModal(ok, data.message || (ok ? 'Uğurlu!' : 'Xəta baş verdi!'), data);
             })
             .catch(err => {
                 isSubmitting = false;
-                submitBtn.disabled = false;
+                isCooldownActive = false;
                 updateSubmitButtonState();
                 showModal(false, 'Şəbəkə və ya server xətası baş verdi. Zəhmət olmasa yenidən cəhd edin.');
             });
@@ -1394,8 +1428,23 @@
     if (modalCloseBtn && resultModal) {
         modalCloseBtn.addEventListener('click', () => {
             resultModal.style.display = 'none';
+            if (isCooldownActive) {
+                if (cooldownTimerId) clearTimeout(cooldownTimerId);
+                cooldownTimerId = setTimeout(() => {
+                    isCooldownActive = false;
+                    cooldownTimerId = null;
+                    updateSubmitButtonState();
+                }, 1500);
+            }
         });
     }
+
+    // Brauzer BFCache (arxa/qabaq və ya saxlanılmış tab) bərpası zamanı təzə statusu yüklə
+    window.addEventListener('pageshow', (event) => {
+        if (event.persisted) {
+            window.location.reload();
+        }
+    });
 
     // 17. İcra Başlanğıcı
     checkLocation();

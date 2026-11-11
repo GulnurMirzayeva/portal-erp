@@ -28,9 +28,6 @@ class AttendanceController extends Controller
      */
     public function index(Request $request)
     {
-        // Unudulmuş açıq seansları təyin olunmuş saatda (məs: 06:00) avtomatik çıxış edirik
-        $this->attendanceService->performAutoCheckout();
-
         $selectedDate = $request->input('date', Carbon::today()->toDateString());
         $selectedBranchId = $request->input('branch_id');
         $selectedType = $request->input('type');
@@ -473,8 +470,6 @@ class AttendanceController extends Controller
             'track_late_arrivals' => AttendanceSetting::get('track_late_arrivals', '0'),
             'work_start_time' => AttendanceSetting::get('work_start_time', '09:00'),
             'late_tolerance_minutes' => AttendanceSetting::get('late_tolerance_minutes', '15'),
-            'auto_checkout_enabled' => AttendanceSetting::get('auto_checkout_enabled', '1'),
-            'auto_checkout_time' => AttendanceSetting::get('auto_checkout_time', '06:00'),
         ];
 
         return view('attendance.settings', compact('settings'));
@@ -492,8 +487,6 @@ class AttendanceController extends Controller
             'track_late_arrivals' => 'required|in:0,1',
             'work_start_time' => 'required|string',
             'late_tolerance_minutes' => 'required|integer|min:0|max:120',
-            'auto_checkout_enabled' => 'required|in:0,1',
-            'auto_checkout_time' => 'required|string',
         ]);
 
         AttendanceSetting::set('require_pin', $request->input('require_pin'), 'PIN kod tələb olunsun');
@@ -504,13 +497,7 @@ class AttendanceController extends Controller
         AttendanceSetting::set('track_late_arrivals', $request->input('track_late_arrivals'), 'Gecikmə vaxtının izlənməsi');
         AttendanceSetting::set('work_start_time', $request->input('work_start_time'), 'İşin başlama saatı');
         AttendanceSetting::set('late_tolerance_minutes', $request->input('late_tolerance_minutes'), 'Gecikmə limiti (dəqiqə)');
-        AttendanceSetting::set('auto_checkout_enabled', $request->input('auto_checkout_enabled'), 'Avtomatik çıxış (Auto-checkout) aktiv/deaktiv');
-        AttendanceSetting::set('auto_checkout_time', $request->input('auto_checkout_time'), 'Avtomatik çıxış saatı');
-
-        // Tənzimləmə aktiv edildikdə dərhal unudulmuş çıxışları icra edirik
-        if ($request->input('auto_checkout_enabled') === '1') {
-            $this->attendanceService->performAutoCheckout();
-        }
+        AttendanceSetting::set('auto_checkout_enabled', '0', 'Avtomatik çıxış deaktivdir');
 
         return redirect()->route('attendance.settings')->with('success', 'Davamiyyət tənzimləmələri uğurla yeniləndi.');
     }

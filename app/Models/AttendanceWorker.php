@@ -50,30 +50,17 @@ class AttendanceWorker extends Model
     }
 
     /**
-     * İşçinin hal-hazırda açıq olan (çıxışı edilməmiş) giriş logunu qaytarır.
+     * İşçinin hal-hazırda açıq olan (özü çıxış edənədək bağlı olmayan) giriş logunu qaytarır.
      */
     public function currentCheckInLog(): ?AttendanceLog
     {
         $lastLog = $this->logs()
             ->where('status', 'success')
             ->latest('scanned_at')
+            ->latest('id')
             ->first();
 
         if ($lastLog && $lastLog->type === 'check_in') {
-            // Əgər avtomatik çıxış aktivdirsə və vaxtı keçibsə, açıq sayılmır
-            if (AttendanceSetting::isAutoCheckoutEnabled()) {
-                $autoCheckoutTime = AttendanceSetting::getAutoCheckoutTime();
-                $checkInTime = Carbon::parse($lastLog->scanned_at);
-                $sameDayCutoff = $checkInTime->copy()->setTimeFromTimeString($autoCheckoutTime);
-                $targetCheckoutAt = $checkInTime->greaterThanOrEqualTo($sameDayCutoff)
-                    ? $sameDayCutoff->copy()->addDay()
-                    : $sameDayCutoff->copy();
-
-                if (Carbon::now()->greaterThanOrEqualTo($targetCheckoutAt)) {
-                    return null;
-                }
-            }
-
             return $lastLog;
         }
 
