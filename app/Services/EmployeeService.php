@@ -382,12 +382,10 @@ class EmployeeService
         $actorType = WorkerType::where('slug', 'aktyor')->first();
         $branchesByPortalId = AttendanceBranch::whereNotNull('portal_branch_id')->get()->keyBy('portal_branch_id');
 
-        // Saytdan aktiv işçiləri çəkirik
+        // Saytdan bütün işçiləri (həm aktiv, həm arxiv) çəkirik
         $portalWorkers = [];
         try {
-            $portalWorkers = DB::connection('portal_website')->table('workers')
-                ->where('status', 'active')
-                ->get();
+            $portalWorkers = DB::connection('portal_website')->table('workers')->get();
         } catch (Exception $e) {
             Log::warning("PortalWebsite workers çəkilərkən xəta: " . $e->getMessage());
         }
@@ -396,9 +394,13 @@ class EmployeeService
         if (empty($portalWorkers) || count($portalWorkers) === 0) {
             $attWorkers = AttendanceWorker::where('is_active', true)->get();
             foreach ($attWorkers as $aw) {
-                $emp = Employee::where('phone', $aw->phone)
-                    ->orWhere('portal_worker_id', $aw->portal_worker_id)
-                    ->first();
+                $emp = null;
+                if ($aw->portal_worker_id) {
+                    $emp = Employee::where('portal_worker_id', $aw->portal_worker_id)->first();
+                }
+                if (!$emp && $aw->phone) {
+                    $emp = Employee::where('phone', $aw->phone)->first();
+                }
 
                 $parsedNames = $this->parseFirstAndLastName($aw->name);
 
@@ -449,13 +451,8 @@ class EmployeeService
         }
 
         foreach ($portalWorkers as $pw) {
-            $emp = Employee::where('portal_worker_id', $pw->id)
-                ->orWhere(function ($q) use ($pw) {
-                    if (!empty($pw->phone)) {
-                        $q->where('phone', $pw->phone);
-                    }
-                })
-                ->first();
+            // Yalnız portal_worker_id ilə axtarırıq ki, eyni placeholder nömrəsi olan işçilər bir-birini əzməsin!
+            $emp = Employee::where('portal_worker_id', $pw->id)->first();
 
             $parsedNames = $this->parseFirstAndLastName($pw->name);
 
@@ -465,8 +462,8 @@ class EmployeeService
             $isFemale = false;
 
             foreach ($roles as $r) {
-                // Əgər köhnə vəzifə Aktrisa idisə (portal_worker_type_id = 2), cinsiyyəti qadın edirik və Aktyor tipinə bağlayırıq
-                if ((int)$r->worker_type_id === 2) {
+                // Köhnə sayt bazasında ID: 9 = Aktrisa (ID: 2 isə Operator-dur!)
+                if ((int)$r->worker_type_id === 9) {
                     $isFemale = true;
                     if ($actorType) $matchedWorkerTypeIds[] = $actorType->id;
                     continue;
@@ -482,9 +479,7 @@ class EmployeeService
             $branch = $branchesByPortalId->get($pw->branch_id);
 
             // Cihaz UUID və PIN AttendanceWorker-dən çəkirik
-            $attWorker = AttendanceWorker::where('portal_worker_id', $pw->id)
-                ->orWhere('phone', $pw->phone)
-                ->first();
+            $attWorker = AttendanceWorker::where('portal_worker_id', $pw->id)->first();
 
             $pin = $attWorker?->pin_code;
             if (empty($pin) && !empty($pw->phone)) {
@@ -494,6 +489,8 @@ class EmployeeService
                 }
             }
             if (empty($pin)) $pin = '1234';
+
+            $status = ($pw->status === 'active') ? 'active' : 'dismissed';
 
             $data = [
                 'portal_worker_id' => $pw->id,
@@ -505,7 +502,7 @@ class EmployeeService
                 'pin_code' => $pin,
                 'gender' => $isFemale ? 'female' : 'male',
                 'is_intern' => false,
-                'status' => 'active',
+                'status' => $status,
                 'hire_date' => !empty($pw->hire_date) ? Carbon::parse($pw->hire_date) : Carbon::today(),
                 'registered_device_uuid' => $attWorker?->registered_device_uuid,
             ];
