@@ -35,6 +35,7 @@ use App\Http\Controllers\CrmTrafficController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExpenseClassificationController;
 use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\WorkerTypeController;
 use App\Services\PortalWebsiteService;
 
 // QR Davamiyyət: Mobil Skan və Çap (Açıq Marşrutlar)
@@ -147,6 +148,34 @@ Route::middleware('auth')->group(function () {
             Route::post('/workers/{id}/pin', [AttendanceController::class, 'updateWorkerPin'])->name('workers.pin');
             Route::post('/workers/{id}/reset-device', [AttendanceController::class, 'resetWorkerDevice'])->name('workers.resetDevice');
         });
+    });
+
+    // HR & İşçilər: Dinamik İşçi Tipləri və Vizual Bonus Qaydaları
+    Route::prefix('hr/worker-types')->name('worker-types.')->group(function () {
+        Route::get('/', [WorkerTypeController::class, 'index'])
+            ->middleware('role_or_permission:Admin|Director|HR|worker-types.view')
+            ->name('index');
+        Route::get('/create', [WorkerTypeController::class, 'create'])
+            ->middleware('role_or_permission:Admin|worker-types.create')
+            ->name('create');
+        Route::post('/', [WorkerTypeController::class, 'store'])
+            ->middleware('role_or_permission:Admin|worker-types.create')
+            ->name('store');
+        Route::post('/seed-defaults', [WorkerTypeController::class, 'seedDefaults'])
+            ->middleware('role_or_permission:Admin|worker-types.create')
+            ->name('seed-defaults');
+        Route::get('/{workerType}/edit', [WorkerTypeController::class, 'edit'])
+            ->middleware('role_or_permission:Admin|worker-types.edit')
+            ->name('edit');
+        Route::put('/{workerType}', [WorkerTypeController::class, 'update'])
+            ->middleware('role_or_permission:Admin|worker-types.edit')
+            ->name('update');
+        Route::patch('/{workerType}/toggle', [WorkerTypeController::class, 'toggleStatus'])
+            ->middleware('role_or_permission:Admin|worker-types.edit')
+            ->name('toggle');
+        Route::delete('/{workerType}', [WorkerTypeController::class, 'destroy'])
+            ->middleware('role_or_permission:Admin|worker-types.delete')
+            ->name('destroy');
     });
 });
 

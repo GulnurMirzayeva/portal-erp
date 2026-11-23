@@ -49,6 +49,12 @@ class PermissionSeeder extends Seeder
             'employees.edit',
             'employees.delete',
 
+            // Dinamik İşçi Tipləri & Bonus Qaydaları
+            'worker-types.view',
+            'worker-types.create',
+            'worker-types.edit',
+            'worker-types.delete',
+
             // Davamiyyət (QR)
             'attendance.view',
             'attendance.export',

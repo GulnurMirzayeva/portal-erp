@@ -445,6 +445,47 @@ class PortalWebsiteService
     }
 
     /**
+     * Bütün filialların aktiv oyunlarını əldə edir (Bonus qaydaları və işçi oyun təhkimatı üçün).
+     */
+    public function getAllGames(): array
+    {
+        try {
+            $games = DB::connection('portal_website')->table('games')
+                ->leftJoin('game_translations', function ($join) {
+                    $join->on('games.id', '=', 'game_translations.game_id')
+                        ->where('game_translations.locale', '=', 'az');
+                })
+                ->leftJoin('branch_translations', function ($join) {
+                    $join->on('games.branch_id', '=', 'branch_translations.branch_id')
+                        ->where('branch_translations.locale', '=', 'az');
+                })
+                ->where('games.game_type', '!=', 'archived')
+                ->select([
+                    'games.id',
+                    'games.branch_id',
+                    DB::raw('COALESCE(game_translations.name, games.slug) as name'),
+                    'branch_translations.name as branch_name',
+                ])
+                ->orderBy('branch_translations.name')
+                ->orderBy('name')
+                ->get();
+
+            return $games->map(function ($g) {
+                return [
+                    'id' => (int) $g->id,
+                    'branch_id' => (int) $g->branch_id,
+                    'name' => $g->name,
+                    'branch_name' => $g->branch_name ?? 'Ümumi',
+                    'label' => trim(($g->name ?? '') . (!empty($g->branch_name) ? " ({$g->branch_name})" : '')),
+                ];
+            })->values()->all();
+        } catch (Exception $e) {
+            Log::warning("PortalWebsite getAllGames failed: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
      * Xərclər hesabatını əldə edir (API + Direct DB fallback).
      */
     public function getExpensesReport(array $filters = []): array
