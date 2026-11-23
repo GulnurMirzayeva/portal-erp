@@ -679,8 +679,8 @@
         color: #ffffff !important;
     }
 
-    /* Beautiful Tailwind-compatible Pagination Bar */
-    .pagination-bar {
+    /* Custom Pagination */
+    .custom-pagination-bar {
         padding: 14px 22px;
         border-top: 1px solid #e2e8f0;
         display: flex;
@@ -690,44 +690,55 @@
         flex-wrap: wrap;
         gap: 12px;
     }
-    .pagination-bar nav svg {
-        width: 16px;
-        height: 16px;
+    .custom-pagination-info {
+        font-size: 12.5px;
+        color: #64748b;
+        font-weight: 500;
     }
-    .pagination-bar nav div:first-child {
-        display: none !important;
+    .custom-pagination-info strong {
+        color: #0f172a;
     }
-    .pagination-bar nav div:last-child {
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 4px !important;
+    .custom-pagination-nav {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
     }
-    .pagination-bar nav span,
-    .pagination-bar nav a {
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        min-width: 32px !important;
-        height: 32px !important;
-        padding: 0 8px !important;
-        border-radius: 8px !important;
-        border: 1px solid #cbd5e1 !important;
-        background: #ffffff !important;
-        color: #334155 !important;
-        font-size: 12.5px !important;
-        font-weight: 700 !important;
+    .custom-page-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 32px;
+        height: 32px;
+        padding: 0 8px;
+        border-radius: 8px;
+        border: 1.5px solid #e2e8f0;
+        background: #ffffff;
+        color: #334155;
+        font-size: 12.5px;
+        font-weight: 700;
         text-decoration: none !important;
-        transition: all 0.15s ease !important;
+        transition: all 0.15s ease;
     }
-    .pagination-bar nav a:hover {
-        background: #f1f5f9 !important;
-        color: #0f172a !important;
-        border-color: #94a3b8 !important;
+    .custom-page-btn:hover {
+        background: #f1f5f9;
+        border-color: #cbd5e1;
+        color: #0f172a;
     }
-    .pagination-bar nav span[aria-current="page"] span {
-        background: #107c41 !important;
-        border-color: #0d6334 !important;
+    .custom-page-btn.active {
+        background: #107c41;
+        border-color: #0d6334;
         color: #ffffff !important;
+        box-shadow: 0 2px 6px rgba(16, 124, 65, 0.2);
+    }
+    .custom-page-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        background: #f8fafc;
+    }
+    .custom-page-dots {
+        color: #94a3b8;
+        padding: 0 4px;
+        font-weight: 700;
     }
 </style>
 @endpush
@@ -1126,12 +1137,49 @@
         </div>
 
         @if($employees->hasPages())
-            <div class="pagination-bar">
-                <span style="font-size: 12px; color: #64748b;">
-                    Cəmi <strong>{{ $employees->total() }}</strong> qeyddən <strong>{{ $employees->firstItem() }} – {{ $employees->lastItem() }}</strong> arası
+            <div class="custom-pagination-bar">
+                <span class="custom-pagination-info">
+                    Göstərilir: <strong>{{ $employees->firstItem() }} – {{ $employees->lastItem() }}</strong> / Cəmi: <strong>{{ $employees->total() }}</strong> işçi
                 </span>
-                <div>
-                    {{ $employees->links() }}
+                <div class="custom-pagination-nav">
+                    @if ($employees->onFirstPage())
+                        <span class="custom-page-btn disabled">&laquo;</span>
+                    @else
+                        <a href="{{ $employees->previousPageUrl() }}" class="custom-page-btn">&laquo;</a>
+                    @endif
+
+                    @php
+                        $start = max(1, $employees->currentPage() - 2);
+                        $end = min($employees->lastPage(), $employees->currentPage() + 2);
+                    @endphp
+
+                    @if($start > 1)
+                        <a href="{{ $employees->url(1) }}" class="custom-page-btn">1</a>
+                        @if($start > 2)
+                            <span class="custom-page-dots">&hellip;</span>
+                        @endif
+                    @endif
+
+                    @for ($p = $start; $p <= $end; $p++)
+                        @if ($p == $employees->currentPage())
+                            <span class="custom-page-btn active">{{ $p }}</span>
+                        @else
+                            <a href="{{ $employees->url($p) }}" class="custom-page-btn">{{ $p }}</a>
+                        @endif
+                    @endfor
+
+                    @if($end < $employees->lastPage())
+                        @if($end < $employees->lastPage() - 1)
+                            <span class="custom-page-dots">&hellip;</span>
+                        @endif
+                        <a href="{{ $employees->url($employees->lastPage()) }}" class="custom-page-btn">{{ $employees->lastPage() }}</a>
+                    @endif
+
+                    @if ($employees->hasMorePages())
+                        <a href="{{ $employees->nextPageUrl() }}" class="custom-page-btn">&raquo;</a>
+                    @else
+                        <span class="custom-page-btn disabled">&raquo;</span>
+                    @endif
                 </div>
             </div>
         @endif

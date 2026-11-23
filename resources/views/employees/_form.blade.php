@@ -5,6 +5,35 @@
         margin: 0 auto;
     }
 
+    /* Top Action & Info Bar */
+    .att-top-bar {
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 18px;
+        padding: 20px 24px;
+        margin-bottom: 24px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+    }
+    .att-top-title {
+        font-size: 18px;
+        font-weight: 800;
+        color: #0f172a;
+        margin: 0 0 4px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .att-top-desc {
+        font-size: 13px;
+        color: #64748b;
+        margin: 0;
+    }
+
     /* Settings Card */
     .settings-card {
         background: #ffffff;

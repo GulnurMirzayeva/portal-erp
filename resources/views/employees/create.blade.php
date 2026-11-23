@@ -11,7 +11,7 @@
 
 @section('content')
 <div class="att-wrapper" style="max-width: 900px; margin: 0 auto;">
-    <div class="att-top-bar">
+    <div class="att-top-bar" style="margin-bottom: 24px;">
         <div style="display: flex; align-items: center; gap: 12px;">
             <div style="width: 44px; height: 44px; border-radius: 12px; background: #ecfdf5; color: #059669; border: 1.5px solid #a7f3d0; display: flex; align-items: center; justify-content: center;">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><line x1="19" y1="8" x2="19" y2="14"></line><line x1="22" y1="11" x2="16" y2="11"></line></svg>
@@ -35,18 +35,12 @@
         @csrf
         @include('employees._form')
 
-        <div class="settings-bottom-bar">
-            <div style="display: flex; align-items: center; gap: 8px; color: #64748b; font-size: 13px;">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#107c41" stroke-width="2.2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <span>İşçi dərhal ERP kadr bazasına yazılacaq və QR üçün aktivləşəcək.</span>
-            </div>
-            <div style="display: flex; align-items: center; gap: 8px;">
-                <a href="{{ route('employees.index') }}" class="att-btn att-btn-outline">İmtina</a>
-                <button type="submit" class="att-btn att-btn-primary">
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
-                    İşçini Yadda Saxla
-                </button>
-            </div>
+        <div class="settings-bottom-bar" style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+            <a href="{{ route('employees.index') }}" class="att-btn att-btn-outline">İmtina</a>
+            <button type="submit" class="att-btn att-btn-primary">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                İşçini Yadda Saxla
+            </button>
         </div>
     </form>
 </div>
