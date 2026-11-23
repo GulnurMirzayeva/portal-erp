@@ -44,12 +44,12 @@ class RoleSeeder extends Seeder
         $crmRole = Role::firstOrCreate(['name' => 'CRM', 'guard_name' => 'web']);
         $crmRole->syncPermissions($crmPermissions);
 
-        // 5. HR: Davamiyyət (QR), İşçilər və İşçi Tipləri
+        // 5. HR: Davamiyyət (QR), İşçilər və İşçi Tiplərinə baxış
         $hrPermissions = Permission::where(function ($q) {
             $q->where('name', 'attendance.view')
               ->orWhere('name', 'attendance.export')
-              ->orWhere('name', 'like', 'worker-types.%')
-              ->orWhere('name', 'like', 'employees.%');
+              ->orWhere('name', 'worker-types.view')
+              ->orWhere('name', 'employees.view');
         })->get();
         $hrRole = Role::firstOrCreate(['name' => 'HR', 'guard_name' => 'web']);
         $hrRole->syncPermissions($hrPermissions);
