@@ -1,41 +1,6 @@
 @push('css')
 <style>
-    .att-wrapper {
-        padding-bottom: 50px;
-        max-width: 1180px;
-        margin: 0 auto;
-    }
-
-    /* Top Action & Info Bar */
-    .att-top-bar {
-        background: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 18px;
-        padding: 20px 24px;
-        margin-bottom: 22px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        flex-wrap: wrap;
-    }
-    .att-top-title {
-        font-size: 18px;
-        font-weight: 800;
-        color: #0f172a;
-        margin-bottom: 4px;
-        display: flex;
-        align-items: center;
-        gap: 9px;
-    }
-    .att-top-desc {
-        font-size: 13px;
-        color: #64748b;
-        margin: 0;
-    }
-
-    /* Settings Card */
+    /* Settings Cards & Elevation */
     .settings-card {
         background: #ffffff;
         border: 1px solid #e2e8f0;
@@ -54,25 +19,27 @@
         border-bottom: 1px dashed #e2e8f0;
     }
     .settings-icon-badge {
-        width: 44px;
-        height: 44px;
-        border-radius: 12px;
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     }
     .badge-emerald { background: #ecfdf5; color: #107c41; border: 1.5px solid #a7f3d0; }
     .badge-blue { background: #eff6ff; color: #2563eb; border: 1.5px solid #bfdbfe; }
     .badge-amber { background: #fffbeb; color: #d97706; border: 1.5px solid #fde68a; }
     .badge-indigo { background: #eef2ff; color: #4f46e5; border: 1.5px solid #c7d2fe; }
-    .badge-purple { background: #f5f3ff; color: #7c3aed; border: 1.5px solid #ddd6fe; }
+    .badge-purple { background: #fdf2f8; color: #db2777; border: 1.5px solid #fbcfe8; }
 
     .settings-title {
         font-size: 16px;
         font-weight: 800;
         color: #0f172a;
         margin: 0 0 4px 0;
+        letter-spacing: -0.2px;
     }
     .settings-desc {
         font-size: 12.5px;
@@ -84,11 +51,11 @@
     /* Form Fields */
     .att-field-label {
         display: block;
-        font-size: 12px;
+        font-size: 11.5px;
         font-weight: 700;
         color: #334155;
         text-transform: uppercase;
-        letter-spacing: 0.4px;
+        letter-spacing: 0.5px;
         margin-bottom: 7px;
     }
     .att-input-standard {
@@ -102,7 +69,7 @@
         outline: none;
         background: #ffffff;
         color: #0f172a;
-        transition: all 0.15s ease;
+        transition: all 0.18s ease;
         box-sizing: border-box;
     }
     .att-input-standard:focus {
@@ -111,7 +78,7 @@
     }
     .att-textarea-standard {
         width: 100%;
-        padding: 11px 14px;
+        padding: 12px 14px;
         font-size: 13.5px;
         font-weight: 500;
         border: 1.5px solid #cbd5e1;
@@ -119,8 +86,12 @@
         outline: none;
         background: #ffffff;
         color: #0f172a;
-        transition: all 0.15s ease;
+        transition: all 0.18s ease;
         box-sizing: border-box;
+    }
+    .att-textarea-standard:focus {
+        border-color: #107c41;
+        box-shadow: 0 0 0 3px rgba(16, 124, 65, 0.14);
     }
     .att-select-standard {
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -134,21 +105,21 @@
         appearance: none;
     }
 
-    /* Option Cards */
+    /* Option Cards (Gender, Switches) */
     .option-card-grid {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
+        gap: 12px;
     }
     .option-card {
         border: 1.5px solid #e2e8f0;
         border-radius: 14px;
-        padding: 12px 14px;
+        padding: 12px 16px;
         background: #ffffff;
         cursor: pointer;
         display: flex;
-        align-items: flex-start;
-        gap: 10px;
+        align-items: center;
+        gap: 12px;
         transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         position: relative;
         margin: 0;
@@ -170,8 +141,8 @@
         pointer-events: none;
     }
     .custom-check-indicator {
-        width: 20px;
-        height: 20px;
+        width: 22px;
+        height: 22px;
         border-radius: 7px;
         border: 2px solid #cbd5e1;
         background: #ffffff;
@@ -179,7 +150,6 @@
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        margin-top: 2px;
         transition: all 0.18s ease;
     }
     .custom-radio-indicator { border-radius: 50%; }
@@ -198,7 +168,7 @@
         transform: scale(1);
     }
     .opt-title {
-        font-size: 13px;
+        font-size: 13.5px;
         font-weight: 800;
         color: #0f172a;
         line-height: 1.25;
@@ -206,7 +176,7 @@
     .opt-desc {
         font-size: 11.5px;
         color: #64748b;
-        margin: 3px 0 0 0;
+        margin: 2px 0 0 0;
         line-height: 1.35;
     }
 
@@ -214,14 +184,14 @@
     .role-select-item {
         border: 1.5px solid #e2e8f0;
         border-radius: 14px;
-        padding: 10px 14px;
+        padding: 12px 16px;
         background: #ffffff;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        gap: 12px;
-        transition: all 0.15s ease;
-        margin-bottom: 8px;
+        gap: 14px;
+        transition: all 0.18s ease;
+        margin-bottom: 9px;
     }
     .role-select-item:hover {
         border-color: #cbd5e1;
@@ -230,42 +200,88 @@
     .role-select-item.selected {
         border-color: #107c41;
         background: #f0fdf4;
+        box-shadow: 0 2px 8px rgba(16, 124, 65, 0.08);
     }
     .role-pill-badge {
-        padding: 3px 10px;
-        border-radius: 8px;
-        font-size: 11.5px;
+        padding: 3px 9px;
+        border-radius: 7px;
+        font-size: 11px;
         font-weight: 800;
-        display: inline-flex;
-        align-items: center;
-        gap: 5px;
+        color: #ffffff;
     }
 
-    /* Live Preview */
-    .preview-list {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 8px 16px;
+    /* Live Employee ID Card Mockup */
+    .live-id-card {
+        background: #ffffff;
+        border: 1.5px solid #e2e8f0;
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.04);
     }
-    .preview-row {
+    .live-id-header {
+        background: linear-gradient(135deg, #107c41 0%, #0d6334 100%);
+        padding: 18px 20px;
+        color: #ffffff;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 10px 0;
-        border-bottom: 1px dashed #e2e8f0;
-        font-size: 13px;
-        gap: 12px;
     }
-    .preview-row:last-child { border-bottom: none; }
-    .preview-pill {
-        background: #ffffff;
-        border: 1.5px solid #cbd5e1;
-        color: #0f172a;
-        padding: 4px 12px;
-        border-radius: 10px;
-        font-weight: 800;
+    .live-id-logo {
+        font-size: 13px;
+        font-weight: 900;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+    }
+    .live-id-badge {
+        background: rgba(255, 255, 255, 0.2);
+        color: #ffffff;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-size: 10.5px;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .live-id-body {
+        padding: 20px;
+    }
+    .live-id-avatar-row {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        margin-bottom: 16px;
+    }
+    .live-avatar {
+        width: 56px;
+        height: 56px;
+        border-radius: 16px;
+        font-weight: 900;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+    }
+    .live-id-field {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px dashed #e2e8f0;
         font-size: 12.5px;
+    }
+    .live-id-field:last-child { border-bottom: none; }
+    .live-id-pill {
+        background: #f8fafc;
+        border: 1px solid #cbd5e1;
+        color: #0f172a;
+        padding: 3px 10px;
+        border-radius: 8px;
+        font-weight: 800;
+        font-size: 12px;
     }
 
     /* Buttons */
@@ -273,10 +289,11 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        gap: 7px;
+        gap: 8px;
         font-size: 13px;
         font-weight: 700;
-        padding: 10px 20px;
+        height: 42px;
+        padding: 0 20px;
         border-radius: 12px;
         cursor: pointer;
         border: 1.5px solid transparent;
@@ -285,15 +302,15 @@
         box-sizing: border-box;
     }
     .att-btn-primary {
-        background: #107c41;
+        background: linear-gradient(135deg, #107c41 0%, #0d6334 100%);
         color: #ffffff !important;
         border-color: #0d6334;
-        box-shadow: 0 4px 12px rgba(16, 124, 65, 0.22);
+        box-shadow: 0 4px 14px rgba(16, 124, 65, 0.25);
     }
     .att-btn-primary:hover {
-        background: #0b5e30;
+        background: linear-gradient(135deg, #0d6334 0%, #084924 100%);
         transform: translateY(-1px);
-        box-shadow: 0 6px 16px rgba(16, 124, 65, 0.3);
+        box-shadow: 0 6px 18px rgba(16, 124, 65, 0.35);
     }
     .att-btn-outline {
         background: #ffffff;
@@ -304,29 +321,21 @@
         background: #f8fafc;
         border-color: #94a3b8;
         color: #0f172a !important;
+        transform: translateY(-1px);
     }
 
     .settings-bottom-bar {
         background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 18px;
-        padding: 18px 24px;
+        border-radius: 20px;
+        padding: 20px 26px;
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
         display: flex;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
         flex-wrap: wrap;
-        margin-top: 8px;
-    }
-
-    .att-alert-danger {
-        background: #fef2f2;
-        border: 1.5px solid #fecaca;
-        border-radius: 16px;
-        padding: 14px 20px;
-        margin-bottom: 22px;
-        color: #991b1b;
+        margin-top: 10px;
     }
     .att-info-box {
         background: #f8fafc;
@@ -343,9 +352,12 @@
 </style>
 @endpush
 
-@if($errors->any())
-    <div class="att-alert-danger">
-        <div class="fw-bold mb-1">Xəta baş verdi — zəhmət olmasa düzəliş edin:</div>
+@if(isset($errors) && $errors->any())
+    <div class="alert alert-danger border-0 rounded-4 shadow-sm p-4 mb-4">
+        <div class="d-flex align-items-center gap-2 fw-bold mb-2">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+            <span>Düzəliş tələb olunur:</span>
+        </div>
         <ul class="mb-0 ps-3 small">
             @foreach($errors->all() as $error)
                 <li>{{ $error }}</li>
@@ -367,15 +379,15 @@
 <div class="row g-4">
     {{-- Sol Sütun --}}
     <div class="col-lg-7">
-        {{-- 1. Əsas Şəxsi Məlumatlar --}}
+        {{-- 1. Şəxsi Məlumatlar & Cinsiyyət --}}
         <div class="settings-card">
             <div class="settings-card-header">
                 <div class="settings-icon-badge badge-emerald">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
                 </div>
                 <div>
                     <h5 class="settings-title">1. Şəxsi Məlumatlar & Cinsiyyət</h5>
-                    <p class="settings-desc">İşçinin ad-soyadı, cinsiyyəti (Aktyor/Aktrisa ayrımı üçün), əlaqə və QR PIN kodu.</p>
+                    <p class="settings-desc">İşçinin ad-soyadı, cinsiyyəti (Aktyor / Aktrisa təyinatı üçün), telefon və QR PIN kodu.</p>
                 </div>
             </div>
 
@@ -396,11 +408,11 @@
 
                 <div class="col-md-6">
                     <label class="att-field-label">Tabeldə Qısa Ad</label>
-                    <input type="text" name="tabel_display_name" id="inpTabelDisplayName" class="att-input-standard" value="{{ old('tabel_display_name', $employee->tabel_display_name) }}" placeholder="Məs: Əliyev (Boş buraxılarsa soyadı götürülər)">
+                    <input type="text" name="tabel_display_name" id="inpTabelDisplayName" class="att-input-standard" value="{{ old('tabel_display_name', $employee->tabel_display_name) }}" placeholder="Məs: Əliyev (Boş qalsa soyadı götürülər)">
                 </div>
                 <div class="col-md-6">
                     <label class="att-field-label">Telefon Nömrəsi</label>
-                    <input type="text" name="phone" class="att-input-standard" value="{{ old('phone', $employee->phone) }}" placeholder="+994 50 123 45 67">
+                    <input type="text" name="phone" id="inpPhone" class="att-input-standard" value="{{ old('phone', $employee->phone) }}" placeholder="+994 50 123 45 67">
                 </div>
 
                 {{-- Cinsiyyət seçimi --}}
@@ -410,7 +422,7 @@
                         <label class="option-card {{ $selGender === 'male' ? 'active' : '' }}" data-radio-gender>
                             <input type="radio" name="gender" value="male" {{ $selGender === 'male' ? 'checked' : '' }}>
                             <div class="custom-check-indicator custom-radio-indicator">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             </div>
                             <div>
                                 <div class="opt-title">Kişi</div>
@@ -420,7 +432,7 @@
                         <label class="option-card {{ $selGender === 'female' ? 'active' : '' }}" data-radio-gender>
                             <input type="radio" name="gender" value="female" {{ $selGender === 'female' ? 'checked' : '' }}>
                             <div class="custom-check-indicator custom-radio-indicator">
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                             </div>
                             <div>
                                 <div class="opt-title">Qadın</div>
@@ -434,7 +446,8 @@
                     <label class="att-field-label">QR Giriş PIN Kodu <span class="text-danger">*</span></label>
                     <div class="d-flex gap-2">
                         <input type="text" name="pin_code" id="inpPinCode" class="att-input-standard font-monospace fw-bold" style="letter-spacing: 2px;" value="{{ old('pin_code', $employee->pin_code ?: '1234') }}" maxlength="10" required>
-                        <button type="button" class="att-btn att-btn-outline py-1 px-3" onclick="generateRandomPin()" title="Təsadüfi 4 rəqəmli PIN təyin et">
+                        <button type="button" class="att-btn att-btn-outline" style="height: 44px; padding: 0 14px;" onclick="generateRandomPin()" title="Təsadüfi 4 rəqəmli PIN generasiya et">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path></svg>
                             PIN
                         </button>
                     </div>
@@ -442,11 +455,11 @@
 
                 <div class="col-md-4">
                     <label class="att-field-label">İşə Qəbul Tarixi</label>
-                    <input type="date" name="hire_date" class="att-input-standard" value="{{ old('hire_date', optional($employee->hire_date)->format('Y-m-d') ?: now()->toDateString()) }}">
+                    <input type="date" name="hire_date" id="inpHireDate" class="att-input-standard" value="{{ old('hire_date', optional($employee->hire_date)->format('Y-m-d') ?: now()->toDateString()) }}">
                 </div>
                 <div class="col-md-4">
                     <label class="att-field-label">Status <span class="text-danger">*</span></label>
-                    <select name="status" class="att-input-standard att-select-standard">
+                    <select name="status" id="selStatus" class="att-input-standard att-select-standard">
                         <option value="active" {{ old('status', $employee->status) === 'active' ? 'selected' : '' }}>Aktiv</option>
                         <option value="inactive" {{ old('status', $employee->status) === 'inactive' ? 'selected' : '' }}>Deaktiv</option>
                         <option value="dismissed" {{ old('status', $employee->status) === 'dismissed' ? 'selected' : '' }}>İşdən çıxıb</option>
@@ -454,52 +467,51 @@
                 </div>
                 <div class="col-md-4">
                     <label class="att-field-label">QR Davamiyyət</label>
-                    <label class="option-card {{ old('requires_qr', $employee->requires_qr ?? true) ? 'active' : '' }}" style="padding: 10px 12px;" data-check-card>
+                    <label class="option-card {{ old('requires_qr', $employee->requires_qr ?? true) ? 'active' : '' }}" style="padding: 10px 14px; height: 44px;" data-check-card>
                         <input type="checkbox" name="requires_qr" value="1" {{ old('requires_qr', $employee->requires_qr ?? true) ? 'checked' : '' }}>
                         <div class="custom-check-indicator">
-                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                         </div>
                         <div>
-                            <div class="opt-title" style="font-size: 12px;">QR Tələb Olunur</div>
-                            <p class="opt-desc" style="font-size: 11px;">Ofis/Kurator üçün söndürülə bilər</p>
+                            <div class="opt-title" style="font-size: 12.5px;">QR Tələb Olunur</div>
                         </div>
                     </label>
                 </div>
 
                 <div class="col-12">
-                    <label class="att-field-label">Qeyd / Əlavə Məlumat</label>
-                    <textarea name="note" class="att-textarea-standard" rows="2" placeholder="İşçi haqqında qeydlər...">{{ old('note', $employee->note) }}</textarea>
+                    <label class="att-field-label">Qeyd / Xüsusi Təlimat</label>
+                    <textarea name="note" class="att-textarea-standard" rows="2" placeholder="İşçi haqqında daxili qeydlər...">{{ old('note', $employee->note) }}</textarea>
                 </div>
             </div>
         </div>
 
-        {{-- 2. Vəzifələr (Çoxlu Vəzifə İcazəsi) --}}
+        {{-- 2. Vəzifələr & Stajorluq --}}
         <div class="settings-card">
             <div class="settings-card-header">
                 <div class="settings-icon-badge badge-blue">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
                 </div>
                 <div>
-                    <h5 class="settings-title">2. Vəzifələr & Stajorluq</h5>
-                    <p class="settings-desc">İşçinin birdən çox vəzifəsi ola bilər (məs: Administrator + Resepşn). Stajor yalnız icazəli rollara şamil olunur.</p>
+                    <h5 class="settings-title">2. Vəzifələr & Stajorluq Statusu</h5>
+                    <p class="settings-desc">İşçinin birdən çox vəzifəsi ola bilər (məs: Administrator + Resepşn). Əsas vəzifəni radio düyməsi ilə seçin.</p>
                 </div>
             </div>
 
             {{-- Stajorluq Seçimi --}}
-            <div class="mb-3">
+            <div class="mb-4">
                 <label class="option-card {{ $selIsIntern ? 'active' : '' }}" style="border-color: #fde68a; background: #fffbeb;" id="internCard" data-check-card>
                     <input type="checkbox" name="is_intern" id="chkIsIntern" value="1" {{ $selIsIntern ? 'checked' : '' }}>
                     <div class="custom-check-indicator" style="border-color: #d97706;">
-                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="3"><polyline points="20 6 9 17 4 12"></polyline></svg>
                     </div>
                     <div>
-                        <div class="opt-title" style="color: #92400e;">Bu İşçi Stajordur (Daimi deyil)</div>
-                        <p class="opt-desc" style="color: #b45309;">Stajor olduqda vizual yarış xalı 0 olur və yalnız stajor qəbul edən vəzifələr (Resepşn, Aktyor...) seçilə bilər.</p>
+                        <div class="opt-title" style="color: #92400e; font-size: 14px;">Bu İşçi Stajordur (Daimi deyil)</div>
+                        <p class="opt-desc" style="color: #b45309;">Stajor olduqda vizual yarış xalı 0 olur və yalnız stajor qəbul edən vəzifələr (Resepşn, Aktyor...) aktiv olur.</p>
                     </div>
                 </label>
             </div>
 
-            <div class="att-field-label mb-2">Vəzifələr Siyahısı (Seçin və Əsas Vəzifəni Qeyd Edin):</div>
+            <div class="att-field-label mb-2">Vəzifələr Siyahısı (İstədiyiniz qədər seçin və Əsas Rolu qeyd edin):</div>
 
             <div class="role-list-container">
                 @foreach($workerTypes as $wt)
@@ -509,18 +521,18 @@
                     @endphp
                     <div class="role-select-item {{ $isChecked ? 'selected' : '' }}" data-role-row data-role-id="{{ $wt->id }}" data-can-intern="{{ $wt->can_have_intern ? '1' : '0' }}" data-requires-game="{{ $wt->requires_game ? '1' : '0' }}">
                         <label class="d-flex align-items-center gap-3 m-0 flex-grow-1" style="cursor: pointer;">
-                            <input type="checkbox" name="worker_type_ids[]" value="{{ $wt->id }}" class="form-check-input mt-0 chk-role" {{ $isChecked ? 'checked' : '' }}>
+                            <input type="checkbox" name="worker_type_ids[]" value="{{ $wt->id }}" class="form-check-input mt-0 chk-role" style="width: 18px; height: 18px; cursor: pointer;" {{ $isChecked ? 'checked' : '' }}>
                             <div>
-                                <div class="fw-bold text-dark" style="font-size: 13.5px;">
-                                    {{ $wt->name }}
+                                <div class="fw-bold text-dark d-flex align-items-center gap-2" style="font-size: 13.5px;">
+                                    <span>{{ $wt->name }}</span>
                                     @if($wt->female_name)
                                         <span class="text-muted fw-normal">/ {{ $wt->female_name }}</span>
                                     @endif
-                                    <span class="badge ms-2" style="background: {{ $wt->badge_color ?: '#475569' }}; font-size: 11px;">
+                                    <span class="role-pill-badge" style="background: {{ $wt->badge_color ?: '#475569' }};">
                                         {{ $wt->short_code }}
                                     </span>
                                 </div>
-                                <div class="small text-muted">
+                                <div class="small text-muted mt-1">
                                     {{ $wt->category_label }} &bull; {{ $wt->scope_label }}
                                     @if(!$wt->can_have_intern)
                                         &bull; <span class="text-danger fw-semibold">Stajor olmur</span>
@@ -530,7 +542,7 @@
                         </label>
                         <label class="d-flex align-items-center gap-1 m-0 text-muted small primary-radio-wrap {{ $isChecked ? '' : 'd-none' }}" style="cursor: pointer;">
                             <input type="radio" name="primary_worker_type_id" value="{{ $wt->id }}" {{ $isPrimary ? 'checked' : '' }}>
-                            <span class="fw-semibold">Əsas rol</span>
+                            <span class="fw-bold text-success">Əsas rol ★</span>
                         </label>
                     </div>
                 @endforeach
@@ -540,34 +552,43 @@
 
     {{-- Sağ Sütun --}}
     <div class="col-lg-5">
-        {{-- Canlı Önizləmə --}}
-        <div class="settings-card">
-            <div class="settings-card-header">
-                <div class="settings-icon-badge badge-indigo">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        {{-- Canlı ID Kart Önizləməsi --}}
+        <div class="settings-card p-0 overflow-hidden" style="border: 1.5px solid #cbd5e1;">
+            <div class="live-id-header">
+                <div class="live-id-logo">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    <span>PORTAL GAMES ID</span>
                 </div>
-                <div>
-                    <h5 class="settings-title">Canlı Tabel & Görünüş Önizləməsi</h5>
-                    <p class="settings-desc">İşçinin filial tabelində və satışlarda necə çıxacağı.</p>
-                </div>
+                <span class="live-id-badge">CANLI TABEL</span>
             </div>
 
-            <div class="preview-list">
-                <div class="preview-row">
-                    <span class="text-muted fw-semibold">Tabeldə Adı:</span>
-                    <span class="preview-pill" id="prevTabelName">Əliyev</span>
+            <div class="live-id-body">
+                <div class="live-id-avatar-row">
+                    <div id="prevAvatar" class="live-avatar avatar-male">A</div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1" id="prevCardName">Əli Əliyev</h5>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-0" style="font-size: 11px;" id="prevCardStatus">Aktiv</span>
+                            <span class="badge bg-light text-dark border px-2 py-0" style="font-size: 11px;" id="prevCardIntern">Daimi Heyət</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="preview-row">
-                    <span class="text-muted fw-semibold">Tabel Rol Kodu:</span>
-                    <span class="preview-pill" style="color: #107c41; border-color: #a7f3d0; background: #ecfdf5;" id="prevTabelRole">akt</span>
+
+                <div class="live-id-field">
+                    <span class="text-muted fw-semibold">Tabel Adı & Kodu:</span>
+                    <span class="live-id-pill font-monospace" style="background: #ecfdf5; color: #047857; border-color: #a7f3d0;" id="prevTabelFullName">
+                        Əliyev / <strong id="prevTabelRole">akt</strong>
+                    </span>
                 </div>
-                <div class="preview-row">
-                    <span class="text-muted fw-semibold">Status:</span>
-                    <span class="preview-pill" id="prevStatus">Daimi İşçi</span>
-                </div>
-                <div class="preview-row">
+
+                <div class="live-id-field">
                     <span class="text-muted fw-semibold">Əsas Filial:</span>
-                    <span class="preview-pill" id="prevBranch">Təyin edilməyib</span>
+                    <span class="live-id-pill" id="prevBranch">Təyin edilməyib</span>
+                </div>
+
+                <div class="live-id-field">
+                    <span class="text-muted fw-semibold">QR PIN Kod:</span>
+                    <span class="live-id-pill font-monospace" style="letter-spacing: 2px;" id="prevPinCode">1234</span>
                 </div>
             </div>
         </div>
@@ -576,7 +597,7 @@
         <div class="settings-card">
             <div class="settings-card-header">
                 <div class="settings-icon-badge badge-amber">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
                 </div>
                 <div>
                     <h5 class="settings-title">3. Filial Təhkimatı</h5>
@@ -585,7 +606,7 @@
             </div>
 
             <div class="mb-3">
-                <label class="att-field-label">Əsas Filial</label>
+                <label class="att-field-label">Əsas Filial <span class="text-danger">*</span></label>
                 <select name="primary_branch_id" id="selPrimaryBranch" class="att-input-standard att-select-standard">
                     <option value="">— Filialsız (Mərkəzi Ofis) —</option>
                     @foreach($branches as $b)
@@ -598,7 +619,7 @@
 
             <div class="mb-2">
                 <label class="att-field-label">Əlavə İdarə Etdiyi Filiallar (Kurator / Çoxlu filial)</label>
-                <div class="d-flex flex-column gap-2" style="max-height: 200px; overflow-y: auto; padding: 4px;">
+                <div class="d-flex flex-column gap-2" style="max-height: 220px; overflow-y: auto; padding: 4px;">
                     @foreach($branches as $b)
                         <label class="d-flex align-items-center gap-2 small text-dark p-2 border rounded-3 bg-light m-0" style="cursor: pointer;">
                             <input type="checkbox" name="managed_branch_ids[]" value="{{ $b->id }}" class="form-check-input mt-0 chk-managed-branch" {{ in_array($b->id, $selectedBranchIds, true) ? 'checked' : '' }}>
@@ -609,20 +630,20 @@
             </div>
         </div>
 
-        {{-- 4. Baxdığı Oyunlar --}}
+        {{-- 4. Baxdığı Daimi Oyunlar --}}
         <div class="settings-card" id="gamesCard">
             <div class="settings-card-header">
                 <div class="settings-icon-badge badge-purple">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                 </div>
                 <div>
                     <h5 class="settings-title">4. Baxdığı Daimi Oyunlar</h5>
-                    <p class="settings-desc">Aktyor və oyun rolları üçün daimi təhkim olunmuş 1 və ya bir neçə oyun (Drakula, Kor və s.).</p>
+                    <p class="settings-desc">Aktyor və oyun rolları üçün daimi təhkim olunmuş 1 və ya bir neçə oyun.</p>
                 </div>
             </div>
 
             <div class="att-info-box mb-3">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7c3aed" stroke-width="2.2" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#db2777" stroke-width="2.2" style="flex-shrink: 0;"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                 <div>
                     Əvəzə getdiyi günlərdə oyunlar <strong>PortalWebsite satışlarından</strong> avtomatik gələcək. Burada isə işçinin daimi baxdığı əsas oyun(lar)ı seçirsiniz.
                 </div>
@@ -644,12 +665,12 @@
             @endif
         </div>
 
-        {{-- 5. Tarixçə Jurnalı (Yalnız Edit səhifəsində) --}}
+        {{-- 5. Tarixçə Jurnalı (Yalnız Edit rejimində) --}}
         @if($employee->exists && $employee->statusHistories->count() > 0)
             <div class="settings-card">
                 <div class="settings-card-header">
                     <div class="settings-icon-badge badge-blue">
-                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
                     </div>
                     <div>
                         <h5 class="settings-title">5. Əmək & Staj Keçid Tarixçəsi</h5>
@@ -688,7 +709,10 @@
 function generateRandomPin() {
     const pin = Math.floor(1000 + Math.random() * 9000).toString();
     const inp = document.getElementById('inpPinCode');
-    if (inp) inp.value = pin;
+    if (inp) {
+        inp.value = pin;
+        inp.dispatchEvent(new Event('input'));
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -696,12 +720,19 @@ document.addEventListener('DOMContentLoaded', function () {
     const inpFirstName = document.getElementById('inpFirstName');
     const inpLastName = document.getElementById('inpLastName');
     const inpTabelDisplayName = document.getElementById('inpTabelDisplayName');
+    const inpPinCode = document.getElementById('inpPinCode');
     const chkIsIntern = document.getElementById('chkIsIntern');
+    const selStatus = document.getElementById('selStatus');
     const selPrimaryBranch = document.getElementById('selPrimaryBranch');
-    const prevTabelName = document.getElementById('prevTabelName');
+
+    const prevCardName = document.getElementById('prevCardName');
+    const prevAvatar = document.getElementById('prevAvatar');
+    const prevCardStatus = document.getElementById('prevCardStatus');
+    const prevCardIntern = document.getElementById('prevCardIntern');
+    const prevTabelFullName = document.getElementById('prevTabelFullName');
     const prevTabelRole = document.getElementById('prevTabelRole');
-    const prevStatus = document.getElementById('prevStatus');
     const prevBranch = document.getElementById('prevBranch');
+    const prevPinCode = document.getElementById('prevPinCode');
     const gamesCard = document.getElementById('gamesCard');
 
     function refreshOptionCardVisual(card, checked) {
@@ -737,7 +768,6 @@ document.addEventListener('DOMContentLoaded', function () {
             const radioWrap = row.querySelector('.primary-radio-wrap');
             if (radioWrap) radioWrap.classList.toggle('d-none', !this.checked);
 
-            // Əgər ilk dəfə seçilirsə və heç bir primary yoxdursa, bunu primary edirik
             if (this.checked && !document.querySelector('input[name="primary_worker_type_id"]:checked')) {
                 const r = row.querySelector('input[type="radio"]');
                 if (r) r.checked = true;
@@ -797,15 +827,27 @@ document.addEventListener('DOMContentLoaded', function () {
             displayName = parts.length > 1 ? parts.slice(1).join(' ') : parts[0];
         }
         if (!displayName) displayName = 'Əliyev';
-        if (prevTabelName) prevTabelName.textContent = displayName;
+
+        if (prevCardName) prevCardName.textContent = full || 'Əli Əliyev';
+
+        // Avatar
+        const gender = getSelectedGender();
+        if (prevAvatar) {
+            prevAvatar.textContent = (full || 'A').substring(0, 1).toUpperCase();
+            prevAvatar.className = 'live-avatar ' + (gender === 'female' ? 'avatar-female' : 'avatar-male');
+        }
 
         // Status & Intern
         const isIntern = chkIsIntern?.checked || false;
-        if (prevStatus) {
-            prevStatus.textContent = isIntern ? 'Stajor İşçi' : 'Daimi İşçi';
-            prevStatus.style.borderColor = isIntern ? '#fde68a' : '#cbd5e1';
-            prevStatus.style.background = isIntern ? '#fffbeb' : '#ffffff';
-            prevStatus.style.color = isIntern ? '#b45309' : '#0f172a';
+        if (prevCardIntern) {
+            prevCardIntern.textContent = isIntern ? 'Stajor' : 'Daimi Heyət';
+            prevCardIntern.className = 'badge border px-2 py-0 ' + (isIntern ? 'bg-warning-subtle text-warning border-warning-subtle' : 'bg-light text-dark');
+        }
+
+        if (prevCardStatus && selStatus) {
+            const stVal = selStatus.value;
+            prevCardStatus.textContent = stVal === 'active' ? 'Aktiv' : (stVal === 'dismissed' ? 'İşdən çıxıb' : 'Deaktiv');
+            prevCardStatus.className = 'badge border px-2 py-0 ' + (stVal === 'active' ? 'bg-success-subtle text-success border-success-subtle' : 'bg-danger-subtle text-danger border-danger-subtle');
         }
 
         // Branch
@@ -814,25 +856,31 @@ document.addEventListener('DOMContentLoaded', function () {
             prevBranch.textContent = selText ? selText.replace(/—.*—/, 'Mərkəzi Ofis') : 'Təyin edilməyib';
         }
 
+        // PIN
+        if (prevPinCode && inpPinCode) {
+            prevPinCode.textContent = inpPinCode.value || '1234';
+        }
+
         // Role code preview
-        const gender = getSelectedGender();
         const selectedCodes = [];
         document.querySelectorAll('[data-role-row]').forEach(row => {
             const cb = row.querySelector('.chk-role');
             if (cb && cb.checked) {
-                const codeBadge = row.querySelector('.badge')?.textContent.trim() || '';
+                const codeBadge = row.querySelector('.role-pill-badge')?.textContent.trim() || '';
                 selectedCodes.push(codeBadge);
             }
         });
 
-        if (selectedCodes.length === 0) {
-            if (prevTabelRole) prevTabelRole.textContent = 'vəzifəsiz';
-        } else {
-            let roleStr = selectedCodes.join('-');
+        let roleStr = 'vəzifəsiz';
+        if (selectedCodes.length > 0) {
+            roleStr = selectedCodes.join('-');
             if (isIntern) {
                 roleStr = 'staj-' + roleStr;
             }
-            if (prevTabelRole) prevTabelRole.textContent = roleStr;
+        }
+        if (prevTabelRole) prevTabelRole.textContent = roleStr;
+        if (prevTabelFullName) {
+            prevTabelFullName.innerHTML = `${displayName} / <strong id="prevTabelRole" style="color: #107c41;">${roleStr}</strong>`;
         }
     }
 
@@ -846,11 +894,12 @@ document.addEventListener('DOMContentLoaded', function () {
         updatePreview();
     });
 
-    [inpFirstName, inpLastName, inpTabelDisplayName].forEach(el => {
+    [inpFirstName, inpLastName, inpTabelDisplayName, inpPinCode].forEach(el => {
         el?.addEventListener('input', updatePreview);
     });
 
     selPrimaryBranch?.addEventListener('change', updatePreview);
+    selStatus?.addEventListener('change', updatePreview);
 
     syncInternRules();
     syncGamesVisibility();
