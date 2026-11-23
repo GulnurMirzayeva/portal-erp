@@ -202,7 +202,7 @@
             {{-- HR / İşçilər Modulu --}}
             @if(auth()->user()->hasAnyRole(['Admin', 'Director', 'HR']) || auth()->user()->can('worker-types.view') || auth()->user()->can('employees.view'))
             @php
-                $isHrActive = request()->routeIs('worker-types.*');
+                $isHrActive = request()->routeIs('worker-types.*') || request()->routeIs('employees.*');
             @endphp
             <li class="{{ $isHrActive ? 'mm-active' : '' }}">
                 <a href="javascript:void(0);" class="waves-effect has-arrow {{ $isHrActive ? 'active' : '' }}" data-toggle="sub-menu" data-target="#menuHr" title="HR / İşçilər">
@@ -218,6 +218,11 @@
                     </span>
                 </a>
                 <ul class="sub-menu {{ $isHrActive ? 'show' : '' }}" id="menuHr">
+                    <li>
+                        <a href="{{ route('employees.index') }}" class="{{ request()->routeIs('employees.*') ? 'active' : '' }}">
+                            <span class="sub-bullet"></span> İşçilər Siyahısı
+                        </a>
+                    </li>
                     <li>
                         <a href="{{ route('worker-types.index') }}" class="{{ request()->routeIs('worker-types.*') ? 'active' : '' }}">
                             <span class="sub-bullet"></span> İşçi Tipləri & Bonuslar

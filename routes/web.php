@@ -33,6 +33,7 @@ use App\Http\Controllers\CrmController;
 use App\Http\Controllers\CrmInquiryController;
 use App\Http\Controllers\CrmTrafficController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\ExpenseClassificationController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\WorkerTypeController;
@@ -175,6 +176,37 @@ Route::middleware('auth')->group(function () {
             ->name('toggle');
         Route::delete('/{workerType}', [WorkerTypeController::class, 'destroy'])
             ->middleware('role_or_permission:Admin|worker-types.delete')
+            ->name('destroy');
+    });
+
+    // HR & İşçilər: Vahid İşçi Kartotekası
+    Route::prefix('hr/employees')->name('employees.')->group(function () {
+        Route::get('/', [EmployeeController::class, 'index'])
+            ->middleware('role_or_permission:Admin|Director|HR|employees.view')
+            ->name('index');
+        Route::get('/create', [EmployeeController::class, 'create'])
+            ->middleware('role_or_permission:Admin|HR|employees.create')
+            ->name('create');
+        Route::post('/', [EmployeeController::class, 'store'])
+            ->middleware('role_or_permission:Admin|HR|employees.create')
+            ->name('store');
+        Route::post('/import', [EmployeeController::class, 'import'])
+            ->middleware('role_or_permission:Admin|HR|employees.create')
+            ->name('import');
+        Route::get('/{employee}/edit', [EmployeeController::class, 'edit'])
+            ->middleware('role_or_permission:Admin|HR|employees.edit')
+            ->name('edit');
+        Route::put('/{employee}', [EmployeeController::class, 'update'])
+            ->middleware('role_or_permission:Admin|HR|employees.edit')
+            ->name('update');
+        Route::patch('/{employee}/toggle', [EmployeeController::class, 'toggleStatus'])
+            ->middleware('role_or_permission:Admin|HR|employees.edit')
+            ->name('toggle');
+        Route::patch('/{employee}/toggle-intern', [EmployeeController::class, 'toggleIntern'])
+            ->middleware('role_or_permission:Admin|HR|employees.edit')
+            ->name('toggle-intern');
+        Route::delete('/{employee}', [EmployeeController::class, 'destroy'])
+            ->middleware('role_or_permission:Admin|HR|employees.delete')
             ->name('destroy');
     });
 });
