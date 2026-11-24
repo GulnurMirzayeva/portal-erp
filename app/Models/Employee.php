@@ -24,6 +24,7 @@ class Employee extends Model
         'pin_code',
         'gender',
         'is_intern',
+        'branch_id',
         'status',
         'hire_date',
         'dismissal_date',

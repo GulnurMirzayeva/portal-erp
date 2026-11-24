@@ -134,6 +134,10 @@ class EmployeeService
             // QR AttendanceWorker cədvəli ilə sinxronlaşdırırıq
             $this->syncToAttendanceWorker($employee);
 
+            if (empty($employee->portal_worker_id)) {
+                $employee->updateQuietly(['portal_worker_id' => $employee->id]);
+            }
+
             return $employee;
         });
     }
@@ -217,6 +221,10 @@ class EmployeeService
             // QR AttendanceWorker cədvəli ilə sinxronlaşdırırıq
             $this->syncToAttendanceWorker($employee);
 
+            if (empty($employee->portal_worker_id)) {
+                $employee->updateQuietly(['portal_worker_id' => $employee->id]);
+            }
+
             return $employee;
         });
     }
@@ -272,12 +280,14 @@ class EmployeeService
     public function syncBranches(Employee $employee, ?int $primaryBranchId, array $managedBranchIds = []): void
     {
         $syncData = [];
+        $portalBranchId = null;
 
         if ($primaryBranchId) {
             $pb = AttendanceBranch::find($primaryBranchId);
             if ($pb) {
+                $portalBranchId = $pb->portal_branch_id ?? $pb->id;
                 $syncData[$pb->id] = [
-                    'portal_branch_id' => $pb->portal_branch_id,
+                    'portal_branch_id' => $portalBranchId,
                     'is_primary' => true,
                 ];
             }
@@ -296,6 +306,7 @@ class EmployeeService
         }
 
         $employee->branches()->sync($syncData);
+        $employee->updateQuietly(['branch_id' => $portalBranchId]);
     }
 
     /**
@@ -527,6 +538,40 @@ class EmployeeService
 
             // AttendanceWorker-i də təzələyirik
             $this->syncToAttendanceWorker($emp);
+        }
+
+        // AttendanceWorker cədvəlində olub portalda hələ olmayan qeydləri də idxal edirik
+        $attWorkers = AttendanceWorker::where('is_active', true)->get();
+        foreach ($attWorkers as $aw) {
+            $emp = null;
+            if ($aw->portal_worker_id) {
+                $emp = Employee::where('portal_worker_id', $aw->portal_worker_id)->first();
+            }
+            if (!$emp && $aw->phone) {
+                $emp = Employee::where('phone', $aw->phone)->first();
+            }
+
+            if (!$emp) {
+                $parsedNames = $this->parseFirstAndLastName($aw->name);
+                $emp = Employee::create([
+                    'portal_worker_id' => $aw->portal_worker_id,
+                    'first_name' => $parsedNames['first_name'],
+                    'last_name' => $parsedNames['last_name'],
+                    'full_name' => $parsedNames['full_name'],
+                    'tabel_display_name' => $parsedNames['last_name'],
+                    'phone' => $aw->phone,
+                    'pin_code' => $aw->pin_code ?: '1234',
+                    'gender' => 'male',
+                    'is_intern' => false,
+                    'status' => 'active',
+                    'hire_date' => Carbon::today(),
+                    'registered_device_uuid' => $aw->registered_device_uuid,
+                ]);
+                if ($aw->attendance_branch_id) {
+                    $emp->branches()->sync([$aw->attendance_branch_id => ['is_primary' => true]]);
+                }
+                $created++;
+            }
         }
 
         return [
