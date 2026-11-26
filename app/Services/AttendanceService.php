@@ -563,53 +563,19 @@ class AttendanceService
                 }
             }
 
-            // 3. İşçiləri çəkirik və sinxronlaşdırırıq
-            $activePortalWorkers = DB::connection('portal_website')->table('workers')
-                ->where('status', 'active')
-                ->get();
+            // 3. ERP-nin öz vahid işçi kartotekasından (employees) aktiv işçiləri sinxronlaşdırırıq
+            $activeEmployees = \App\Models\Employee::where('status', 'active')->get();
+            $activeEmployeeIds = $activeEmployees->pluck('id')->all();
+            $employeeService = app(\App\Services\EmployeeService::class);
 
-            $activePortalWorkerIds = $activePortalWorkers->pluck('id')->all();
-            $branchesMap = AttendanceBranch::pluck('id', 'portal_branch_id');
-
-            foreach ($activePortalWorkers as $pw) {
-                $attBranchId = $branchesMap[$pw->branch_id] ?? null;
-
-                // Defolt PIN: telefonun son 4 rəqəmi, yoxdursa '1234'
-                $defaultPin = '1234';
-                if (!empty($pw->phone)) {
-                    $digitsOnly = preg_replace('/\D/', '', $pw->phone);
-                    if (strlen($digitsOnly) >= 4) {
-                        $defaultPin = substr($digitsOnly, -4);
-                    }
-                }
-
-                $worker = AttendanceWorker::where('portal_worker_id', $pw->id)->first();
-
-                if (!$worker) {
-                    AttendanceWorker::create([
-                        'portal_worker_id' => $pw->id,
-                        'portal_branch_id' => $pw->branch_id,
-                        'attendance_branch_id' => $attBranchId,
-                        'name' => $pw->name,
-                        'phone' => $pw->phone,
-                        'pin_code' => $defaultPin,
-                        'is_active' => true,
-                    ]);
-                    $workersCount++;
-                } else {
-                    $worker->update([
-                        'name' => $pw->name,
-                        'phone' => $pw->phone,
-                        'portal_branch_id' => $pw->branch_id,
-                        'attendance_branch_id' => $attBranchId,
-                        'is_active' => true,
-                    ]);
-                }
+            foreach ($activeEmployees as $emp) {
+                $employeeService->syncToAttendanceWorker($emp);
+                $workersCount++;
             }
 
-            // 4. Portal Website-da aktiv olmayan (archived, inactive və ya silinmiş) işçiləri ERP-də avtomatik DEAKTİV edirik!
+            // 4. ERP-də aktiv olmayan (dismissed/inactive) işçiləri AttendanceWorker-də də deaktiv edirik
             $deactivatedCount = AttendanceWorker::whereNotNull('portal_worker_id')
-                ->whereNotIn('portal_worker_id', $activePortalWorkerIds)
+                ->whereNotIn('portal_worker_id', $activeEmployeeIds)
                 ->where('is_active', true)
                 ->update(['is_active' => false]);
         } catch (\Exception $e) {

@@ -1091,7 +1091,7 @@
 
     // Portal-dan Sinxron etmə
     document.getElementById('btnSyncWorkers')?.addEventListener('click', function() {
-        if (!confirm('PortalWebsite-dan filiallar və işçilər sinxronizasiya edilsin?\n\nVebsaytda aktiv olan işçilər aktivləşəcək, arxivlənmiş/silinmiş işçilər isə avtomatik deaktiv ediləcək.')) return;
+        if (!confirm('ERP işçiləri və filiallar QR davamiyyət üçün yenilənsin?\n\nERP-də aktiv olan işçilər aktivləşəcək, arxivlənmiş işçilər isə avtomatik deaktiv ediləcək.')) return;
         const btn = this;
         btn.disabled = true;
         btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="spinner-border spinner-border-sm me-1"></svg> Sinxron edilir...`;

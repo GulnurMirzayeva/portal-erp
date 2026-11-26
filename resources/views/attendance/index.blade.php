@@ -854,9 +854,9 @@
             </a>
             @endif
             @if(auth()->user()->hasRole('Admin') || auth()->user()->can('attendance.sync'))
-            <button type="button" id="btnSyncWorkers" class="att-btn att-btn-outline att-btn-sm" title="Vebsaytdan yeni filial və işçiləri çək">
+            <button type="button" id="btnSyncWorkers" class="att-btn att-btn-outline att-btn-sm" title="ERP işçilərini və filialları QR cədvəlinə sinxron et">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
-                Portal-dan Sinxron et
+                İşçiləri Yenilə
             </button>
             @endif
             <a href="{{ route('attendance.branches') }}" class="att-btn att-btn-primary att-btn-sm">
@@ -1417,7 +1417,7 @@
 
     // Portal sync
     document.getElementById('btnSyncWorkers')?.addEventListener('click', function() {
-        if (!confirm('PortalWebsite-dan yeni filiallar və işçilər sinxronizasiya edilsin?')) return;
+        if (!confirm('ERP işçiləri və filiallar QR davamiyyət üçün yenilənsin?')) return;
         const btn = this;
         btn.disabled = true;
         btn.innerHTML = `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" class="spinner-border spinner-border-sm me-1"></svg> Sinxron edilir...`;
