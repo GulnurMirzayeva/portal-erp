@@ -348,16 +348,16 @@ class EmployeeService
     {
         $primaryBranch = $employee->primaryBranch();
 
-        $attWorker = AttendanceWorker::where(function ($q) use ($employee) {
-            if ($employee->portal_worker_id) {
-                $q->where('portal_worker_id', $employee->portal_worker_id);
-            }
-            if ($employee->phone) {
-                $q->orWhere('phone', $employee->phone);
-            }
-        })->first();
+        $portalWorkerId = $employee->portal_worker_id ?: $employee->id;
+
+        $attWorker = AttendanceWorker::where('portal_worker_id', $portalWorkerId)->first();
+
+        if (!$attWorker && $employee->phone) {
+            $attWorker = AttendanceWorker::where('phone', $employee->phone)->first();
+        }
 
         $attributes = [
+            'portal_worker_id' => $portalWorkerId,
             'name' => $employee->full_name,
             'phone' => $employee->phone,
             'pin_code' => $employee->pin_code ?: '1234',
@@ -366,10 +366,6 @@ class EmployeeService
             'registered_device_uuid' => $employee->registered_device_uuid,
             'is_active' => ($employee->status === 'active'),
         ];
-
-        if ($employee->portal_worker_id) {
-            $attributes['portal_worker_id'] = $employee->portal_worker_id;
-        }
 
         if ($attWorker) {
             $attWorker->update($attributes);
